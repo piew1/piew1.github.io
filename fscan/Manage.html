@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จัดการผู้ใช้ - Face Scan</title>
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 800px; text-align: center; }
+    h1 { color: #2c3e50; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #3498db; color: white; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .btn { display: inline-block; padding: 8px 16px; margin: 5px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; transition: 0.3s; text-decoration: none; }
+    .btn-back { background-color: #95a5a6; color: white; }
+    .btn-delete { background-color: #e74c3c; color: white; }
+    #status { margin-top: 15px; font-weight: bold; color: #e74c3c; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>จัดการผู้ลงทะเบียนใบหน้า</h1>
+    
+    <div id="user-list">
+      <p>กำลังโหลดข้อมูลผู้ใช้...</p>
+    </div>
+
+    <a href="Index.html" class="btn btn-back">กลับหน้าหลัก</a>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const apiUrl = localStorage.getItem('api_url');
+
+    async function callApi(action, data = {}) {
+      if (!apiUrl) { document.getElementById('status').innerText = "กรุณาตั้งค่า API URL ที่หน้าหลักก่อน"; return null; }
+      try {
+        const url = `${apiUrl}?action=${action}&${new URLSearchParams(data).toString()}`;
+        const res = await fetch(url);
+        return await res.json();
+      } catch (e) {
+        document.getElementById('status').innerText = "API Error: " + e.message;
+        return null;
+      }
+    }
+
+    async function loadUsers() {
+      const res = await callApi('getRegisteredUsers');
+      const listDiv = document.getElementById('user-list');
+      if (res && res.success) {
+        const users = res.data;
+        if (users.length === 0) {
+          listDiv.innerHTML = "<p>ยังไม่มีผู้ลงทะเบียนในระบบ</p>";
+          return;
+        }
+
+        let html = "<table><thead><tr><th>Email</th><th>ชื่อ-นามสกุล</th><th>สถานะ</th><th>การจัดการ</th></tr></thead><tbody>";
+        users.forEach(user => {
+          html += `<tr>
+            <td>${user.email}</td>
+            <td>${user.fullName}</td>
+            <td>${user.status}</td>
+            <td>
+              <button class="btn btn-delete" onclick="deleteUser('${user.email}')">ลบ</button>
+            </td>
+          </tr>`;
+        });
+        html += "</tbody></table>";
+        listDiv.innerHTML = html;
+      }
+    }
+
+    async function deleteUser(email) {
+      if (confirm(`คุณต้องการลบผู้ใช้ ${email} ใช่หรือไม่?`)) {
+        const res = await callApi('deleteUser', { email });
+        if (res && res.success) {
+          alert(res.msg);
+          loadUsers();
+        }
+      }
+    }
+
+    window.onload = loadUsers;
+  </script>
+</body>
+</html>
