@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Face Scan & GPS Tracker</title>
+
+<!-- Google Font: Sarabun -->
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Bootstrap 5.3 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<style>
+/* ===== Root & Theme ===== */
+:root {
+  --purple:     #8B5CF6;
+  --purple-d:   #7C3AED;
+  --pink:       #EC4899;
+  --blue:       #3B82F6;
+  --green:      #10B981;
+  --red:        #EF4444;
+  --orange:     #F59E0B;
+  --p-purple:   #C4B5FD;
+  --p-pink:     #FBCFE8;
+  --p-blue:     #BFDBFE;
+  --p-green:    #BBF7D0;
+  --p-yellow:   #FEF08A;
+  --card-bg:    rgba(255,255,255,0.92);
+  --shadow:     0 8px 32px rgba(0,0,0,0.07);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg,#EDE9FE 0%,#FCE7F3 30%,#DBEAFE 60%,#D1FAE5 100%);
+  background-size: 400% 400%;
+  animation: bgShift 25s ease infinite;
+  color: #1F2937;
+  padding-top: 68px;
+}
+
+@keyframes bgShift {
+  0%,100% { background-position: 0% 50%; }
+  50%     { background-position: 100% 50%; }
+}
+
+/* ===== Navbar ===== */
+.navbar {
+  background: rgba(255,255,255,0.82) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 2px 24px rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+}
+.navbar-brand { font-weight: 800; color: var(--purple) !important; font-size: 1.2rem; }
+.navbar-brand i { font-size: 1.4rem; }
+.nav-link { font-weight: 600; color: #6B7280 !important; border-radius: 10px; margin: 0 2px; transition: all .25s; }
+.nav-link:hover, .nav-link.active { color: var(--purple) !important; background: rgba(139,92,246,0.08); }
+.nav-link.active { box-shadow: inset 0 -2px 0 var(--purple); }
+
+/* ===== Glass Card ===== */
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.55);
+  padding: 1.8rem;
+  transition: transform .2s;
+}
+.glass-card:hover { transform: translateY(-2px); }
+
+/* ===== Buttons ===== */
+.btn-grad-purple {
+  background: linear-gradient(135deg,#A78BFA,#7C3AED);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 13px 28px; font-weight: 700; font-size: 1.05rem;
+  transition: all .3s; box-shadow: 0 4px 14px rgba(124,58,237,.25);
+}
+.btn-grad-purple:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,58,237,.35); color: #fff; }
+.btn-grad-purple:active { transform: scale(.97); }
+.btn-grad-purple:disabled { opacity: .6; transform: none; }
+
+.btn-grad-pink {
+  background: linear-gradient(135deg,#F9A8D4,#DB2777);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 13px 28px; font-weight: 700; font-size: 1.05rem;
+  transition: all .3s; box-shadow: 0 4px 14px rgba(219,39,119,.2);
+}
+.btn-grad-pink:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(219,39,119,.3); color: #fff; }
+
+.btn-grad-green {
+  background: linear-gradient(135deg,#86EFAC,#059669);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 13px 28px; font-weight: 700; font-size: 1.05rem;
+  transition: all .3s; box-shadow: 0 4px 14px rgba(5,150,105,.2);
+}
+.btn-grad-green:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(5,150,105,.3); color: #fff; }
+
+.btn-grad-blue {
+  background: linear-gradient(135deg,#93C5FD,#2563EB);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 13px 28px; font-weight: 700; font-size: 1.05rem;
+  transition: all .3s;
+}
+.btn-grad-blue:hover { transform: translateY(-2px); color: #fff; }
+
+.btn-action {
+  width: 38px; height: 38px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 12px; transition: all .2s; border: none; font-size: 1rem;
+}
+.btn-action:hover { transform: scale(1.12); }
+
+/* ===== Camera ===== */
+.camera-box {
+  width: 100%; max-width: 340px; aspect-ratio: 4/3;
+  border-radius: 18px; overflow: hidden;
+  border: 3px solid var(--p-purple);
+  margin: 0 auto; background: #1a1a2e;
+  position: relative;
+}
+.camera-box video, .camera-box canvas { width: 100%; height: 100%; object-fit: cover; }
+.camera-box video { transform: scaleX(-1); }
+.camera-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: rgba(255,255,255,.5); font-size: .9rem;
+}
+.camera-placeholder i { font-size: 3rem; margin-bottom: .5rem; }
+
+/* ===== PIN Input ===== */
+.pin-input {
+  text-align: center; font-size: 2rem; letter-spacing: .8rem;
+  border-radius: 14px; border: 2px solid var(--p-purple);
+  max-width: 200px; padding: 10px 10px 10px 20px;
+  font-weight: 700; background: rgba(255,255,255,.7);
+  transition: border-color .3s, box-shadow .3s;
+}
+.pin-input:focus { border-color: var(--purple); box-shadow: 0 0 0 .25rem rgba(139,92,246,.18); outline: none; }
+
+/* ===== Clock ===== */
+.clock-text { font-size: 3.6rem; font-weight: 800; color: var(--purple); line-height: 1; }
+@media (max-width:576px) { .clock-text { font-size: 2.6rem; } }
+
+/* ===== Table ===== */
+.table-modern { border-collapse: separate; border-spacing: 0; }
+.table-modern thead th {
+  background: linear-gradient(135deg,#EDE9FE,#DBEAFE);
+  border: none; padding: 14px 12px; font-weight: 700;
+  color: #4C1D95; font-size: .88rem; text-transform: uppercase; letter-spacing: .04em;
+}
+.table-modern thead th:first-child { border-radius: 14px 0 0 0; }
+.table-modern thead th:last-child  { border-radius: 0 14px 0 0; }
+.table-modern tbody td {
+  padding: 12px; vertical-align: middle;
+  border-bottom: 1px solid #F3F4F6; background: #fff;
+}
+.table-modern tbody tr:hover td { background: #F5F3FF; }
+.table-modern tbody tr:last-child td:first-child { border-radius: 0 0 0 14px; }
+.table-modern tbody tr:last-child td:last-child  { border-radius: 0 0 14px 0; }
+
+.avatar-sm {
+  width: 44px; height: 44px; border-radius: 12px;
+  object-fit: cover; border: 2px solid var(--p-purple);
+  background: #EDE9FE;
+}
+
+.badge-active   { background: var(--p-green); color: #065F46; font-weight: 700; border-radius: 8px; padding: 5px 12px; }
+.badge-inactive { background: #FEE2E2;       color: #991B1B; font-weight: 700; border-radius: 8px; padding: 5px 12px; }
+
+/* ===== Page transition ===== */
+.page { animation: fadeUp .35s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===== Misc ===== */
+.form-control:focus, .form-select:focus { border-color: var(--purple); box-shadow: 0 0 0 .2rem rgba(139,92,246,.15); }
+.form-control, .form-select { border-radius: 12px; padding: 10px 14px; border: 1.5px solid #E5E7EB; }
+.text-purple { color: var(--purple) !important; }
+.preview-img { width: 180px; height: 180px; border-radius: 16px; object-fit: cover; border: 3px solid var(--p-purple); }
+.gps-badge { display: inline-flex; align-items: center; gap: 6px; background: #F5F3FF; border-radius: 10px; padding: 6px 14px; font-size: .9rem; }
+
+/* ===== SweetAlert theme ===== */
+.swal2-popup { border-radius: 20px !important; font-family: 'Sarabun', sans-serif !important; }
+.swal2-confirm { border-radius: 12px !important; }
+.swal2-cancel  { border-radius: 12px !important; }
+
+/* ===== Status dot ===== */
+.status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.status-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.offline { background: var(--red); }
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--p-purple); border-radius: 3px; }
+
+/* ===== Modal ===== */
+.modal-content { border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+.modal-header { border-bottom: 1px solid #F3F4F6; padding: 1.2rem 1.5rem; }
+.modal-footer { border-top: 1px solid #F3F4F6; }
+</style>
+</head>
+
+<body>
+
+<!-- ╔══════════════════════════════════════╗ -->
+<!-- ║            NAVBAR                   ║ -->
+<!-- ╚══════════════════════════════════════╝ -->
+<nav class="navbar navbar-expand-lg fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="#" onclick="navigateTo(APP.apiUrl?'home':'setup')">
+      <i class="bi bi-person-bounding-box"></i> Face Scan &amp; GPS Tracker
+    </a>
+    <div class="d-flex align-items-center gap-2 d-lg-none">
+      <span class="status-dot" id="status-dot-m"></span>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    </div>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+        <li class="nav-item"><a class="nav-link" data-page="home" href="#" onclick="navigateTo('home')"><i class="bi bi-house-heart-fill"></i> หน้าหลัก</a></li>
+        <li class="nav-item"><a class="nav-link" data-page="register" href="#" onclick="navigateTo('register')"><i class="bi bi-person-plus-fill"></i> ลงทะเบียน</a></li>
+        <li class="nav-item"><a class="nav-link" data-page="manage" href="#" onclick="navigateTo('manage')"><i class="bi bi-people-fill"></i> จัดการผู้ใช้</a></li>
+        <li class="nav-item"><a class="nav-link" data-page="setup" href="#" onclick="navigateTo('setup')"><i class="bi bi-gear-fill"></i> ตั้งค่า</a></li>
+        <li class="nav-item d-none d-lg-block ms-2"><span class="status-dot" id="status-dot-d"></span></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ╔══════════════════════════════════════╗ -->
+<!-- ║       PAGE: SETUP / API URL         ║ -->
+<!-- ╚══════════════════════════════════════╝ -->
+<div id="page-setup" class="page d-none">
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="glass-card text-center">
+          <div class="mb-3">
+            <span style="font-size:4rem;">⚙️</span>
+          </div>
+          <h4 class="fw-bold mb-1">ตั้งค่าการเชื่อมต่อ API</h4>
+          <p class="text-muted small mb-4">วาง URL ของ Google Apps Script Web App ที่ Deploy แล้ว</p>
+
+          <div class="text-start mb-3">
+            <label class="form-label fw-600"><i class="bi bi-link-45deg"></i> API URL</label>
+            <input type="url" class="form-control" id="set-api-url"
+                   placeholder="https://script.google.com/macros/s/xxxx/exec">
+          </div>
+
+          <button class="btn btn-grad-blue w-100 mb-2" onclick="testAPI()">
+            <i class="bi bi-wifi"></i> ทดสอบการเชื่อมต่อ
+          </button>
+          <button class="btn btn-grad-green w-100" onclick="saveAPIUrl()">
+            <i class="bi bi-check-circle-fill"></i> บันทึกและเริ่มใช้งาน
+          </button>
+
+          <div id="api-test-result" class="mt-3"></div>
+
+          <hr class="my-4">
+          <div class="text-muted small text-start">
+            <p class="mb-1"><strong>วิธีใช้งาน:</strong></p>
+            <ol class="ps-3">
+              <li>เปิดโปรเจกต์ Apps Script แล้ววาง Code.gs</li>
+              <li>กดรันฟังก์ชัน <code>setupSheets()</code></li>
+              <li>Deploy → Web App (Execute as: Me, Access: Anyone)</li>
+              <li>คัดลอก URL มาวางด้านบน</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════╗ -->
+<!-- ║          PAGE: HOME                 ║ -->
+<!-- ╚══════════════════════════════════════╝ -->
+<div id="page-home" class="page d-none">
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-5 col-md-7">
+
+        <!-- Clock -->
+        <div class="glass-card text-center mb-3">
+          <div class="clock-text" id="clock">00:00:00</div>
+          <div class="text-muted mt-1" id="date-display" style="font-size:1.05rem;"></div>
+        </div>
+
+        <!-- Camera -->
+        <div class="glass-card text-center mb-3">
+          <h6 class="fw-bold mb-3"><i class="bi bi-camera-video-fill text-purple"></i> สแกนใบหน้า</h6>
+          <div class="camera-box mb-2" id="home-cam-box">
+            <video id="home-video" autoplay playsinline muted></video>
+            <div class="camera-placeholder" id="home-cam-ph">
+              <i class="bi bi-camera-video-off"></i>
+              <span>กล้องไม่พร้อมใช้งาน</span>
+            </div>
+          </div>
+          <div class="d-flex justify-content-center gap-2 mt-2">
+            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="toggleHomeCamera()">
+              <i class="bi bi-camera-video" id="home-cam-btn-icon"></i> <span id="home-cam-btn-text">เปิดกล้อง</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- PIN & GPS -->
+        <div class="glass-card text-center mb-3">
+          <h6 class="fw-bold mb-3"><i class="bi bi-shield-lock-fill text-purple"></i> รหัส PIN</h6>
+          <input type="password" class="form-control pin-input mx-auto mb-3"
+                 id="home-pin" maxlength="4" inputmode="numeric" placeholder="••••"
+                 onkeydown="if(event.key==='Enter') doCapture()">
+
+          <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <div class="gps-badge"><i class="bi bi-geo-alt-fill text-danger"></i> Lat: <strong id="lat-val">—</strong></div>
+            <div class="gps-badge"><i class="bi bi-geo-fill text-primary"></i> Lng: <strong id="lng-val">—</strong></div>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary rounded-pill mt-2" onclick="refreshGPS()">
+            <i class="bi bi-crosshair"></i> รีเฟรช GPS
+          </button>
+        </div>
+
+        <!-- Capture Button -->
+        <button class="btn btn-grad-purple btn-lg w-100 mb-3" id="btn-capture" onclick="doCapture()">
+          <i class="bi bi-camera-fill me-2"></i> บันทึกเวลา (Capture)
+        </button>
+
+        <!-- Quick Nav -->
+        <div class="d-flex gap-2">
+          <button class="btn btn-grad-pink flex-fill" onclick="navigateTo('register')">
+            <i class="bi bi-person-plus-fill me-1"></i> ลงทะเบียน
+          </button>
+          <button class="btn btn-grad-blue flex-fill" onclick="navigateTo('manage')">
+            <i class="bi bi-people-fill me-1"></i> จัดการผู้ใช้
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════╗ -->
+<!-- ║        PAGE: REGISTER               ║ -->
+<!-- ╚══════════════════════════════════════╝ -->
+<div id="page-register" class="page d-none">
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-6 col-md-8">
+        <div class="glass-card">
+          <div class="d-flex align-items-center gap-2 mb-4">
+            <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="navigateTo('home')" style="width:38px;height:38px;">
+              <i class="bi bi-arrow-left"></i>
+            </button>
+            <h5 class="fw-bold mb-0"><i class="bi bi-person-plus-fill text-purple"></i> ลงทะเบียนผู้ใช้ใหม่</h5>
+          </div>
+
+          <!-- Form -->
+          <div class="row g-3 mb-4">
+            <div class="col-12">
+              <label class="form-label fw-600"><i class="bi bi-person"></i> ชื่อ-นามสกุล <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="reg-name" placeholder="กรอกชื่อ-นามสกุล">
+            </div>
+            <div class="col-md-7">
+              <label class="form-label fw-600"><i class="bi bi-envelope"></i> อีเมล <span class="text-danger">*</span></label>
+              <input type="email" class="form-control" id="reg-email" placeholder="example@email.com">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-600"><i class="bi bi-lock"></i> PIN 4 หลัก <span class="text-danger">*</span></label>
+              <input type="password" class="form-control text-center" id="reg-pin" maxlength="4" inputmode="numeric" placeholder="••••" style="letter-spacing:.5rem;font-size:1.3rem;">
+            </div>
+          </div>
+
+          <!-- Camera -->
+          <h6 class="fw-bold mb-3"><i class="bi bi-camera-fill text-purple"></i> ถ่ายรูปใบหน้า <small class="text-muted fw-normal">(ไม่บังคับ)</small></h6>
+
+          <div id="reg-cam-area">
+            <div class="camera-box mb-2" id="reg-cam-box">
+              <video id="reg-video" autoplay playsinline muted></video>
+              <div class="camera-placeholder" id="reg-cam-ph">
+                <i class="bi bi-camera-video-off"></i>
+                <span>กล้องไม่พร้อมใช้งาน</span>
+              </div>
+            </div>
+            <div class="text-center mt-2">
+              <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="toggleRegCamera()">
+                <i class="bi bi-camera-video" id="reg-cam-btn-icon"></i> <span id="reg-cam-btn-text">เปิดกล้อง</span>
+              </button>
+              <button class="btn btn-sm btn-grad-purple rounded-pill ms-2 d-none" id="btn-reg-snap" onclick="snapRegPhoto()">
+                <i class="bi bi-camera"></i> ถ่ายรูป
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div id="reg-preview-area" class="text-center mt-3 d-none">
+            <img id="reg-preview-img" class="preview-img mb-2" src="" alt="preview">
+            <br>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="retakeRegPhoto()">
+              <i class="bi bi-arrow-repeat"></i> ถ่ายใหม่
+            </button>
+          </div>
+
+          <hr class="my-4">
+
+          <button class="btn btn-grad-green w-100 btn-lg" id="btn-register" onclick="doRegister()">
+            <i class="bi bi-check-circle-fill me-2"></i> ลงทะเบียน
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════╗ -->
+<!-- ║       PAGE: MANAGE USERS            ║ -->
+<!-- ╚══════════════════════════════════════╝ -->
+<div id="page-manage" class="page d-none">
+  <div class="container py-4">
+    <div class="glass-card">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="navigateTo('home')" style="width:38px;height:38px;">
+            <i class="bi bi-arrow-left"></i>
+          </button>
+          <h5 class="fw-bold mb-0"><i class="bi bi-people-fill text-purple"></i> จัดการผู้ลงทะเบียนใบหน้า</h5>
+        </div>
+        <div class="d-flex gap-2">
+          <div class="input-group" style="max-width:260px;">
+            <span class="input-group-text bg-white border-end-0" style="border-radius:12px 0 0 12px;"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0" id="user-search" placeholder="ค้นหา..." style="border-radius:0 12px 12px 0;" oninput="filterUsers()">
+          </div>
+          <button class="btn btn-outline-secondary rounded-pill" onclick="loadUsers()">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="users-loading" class="text-center py-5">
+        <div class="spinner-border text-purple" role="status"></div>
+        <p class="text-muted mt-2 mb-0">กำลังโหลดข้อมูล...</p>
+      </div>
+
+      <!-- No Data -->
+      <div id="users-empty" class="text-center py-5 d-none">
+        <i class="bi bi-people display-1 text-muted" style="opacity:.3;"></i>
+        <p class="text-muted mt-2 mb-0">ยังไม่มีผู้ใช้ลงทะเบียน</p>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive d-none" id="users-table-wrap">
+        <table class="table table-modern mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>รูป</th>
+              <th>ชื่อ-นามสกุล</th>
+              <th>อีเมล</th>
+              <th>PIN</th>
+              <th>สถานะ</th>
+              <th>วันที่ลงทะเบียน</th>
+              <th class="text-center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════╗ -->
+<!-- ║        MODAL: EDIT USER             ║ -->
+<!-- ╚══════════════════════════════════════╝ -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-purple"></i> แก้ไขข้อมูลผู้ใช้</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-uid">
+        <div class="mb-3">
+          <label class="form-label fw-600">ชื่อ-นามสกุล</label>
+          <input type="text" class="form-control" id="edit-name">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-600">อีเมล</label>
+          <input type="email" class="form-control" id="edit-email">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-600">PIN ใหม่ <small class="text-muted">(เว้นว่างหากไม่ต้องการเปลี่ยน)</small></label>
+          <input type="password" class="form-control text-center" id="edit-pin" maxlength="4" inputmode="numeric" style="letter-spacing:.5rem;font-size:1.3rem;max-width:180px;">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-600">อัพเดทรูปใบหน้า <small class="text-muted">(ไม่บังคับ)</small></label>
+          <div id="edit-cam-area">
+            <div class="camera-box mb-2" id="edit-cam-box" style="max-width:260px;">
+              <video id="edit-video" autoplay playsinline muted></video>
+              <div class="camera-placeholder" id="edit-cam-ph">
+                <i class="bi bi-camera-video-off"></i>
+                <span>กล้อง</span>
+              </div>
+            </div>
+            <div class="mt-2">
+              <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="toggleEditCamera()">
+                <i class="bi bi-camera-video"></i> เปิดกล้อง
+              </button>
+              <button class="btn btn-sm btn-grad-purple rounded-pill ms-1 d-none" id="btn-edit-snap" onclick="snapEditPhoto()">
+                <i class="bi bi-camera"></i> ถ่ายรูป
+              </button>
+            </div>
+          </div>
+          <div id="edit-preview-area" class="mt-2 d-none">
+            <img id="edit-preview-img" class="preview-img" style="width:120px;height:120px;" src="" alt="">
+            <br>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill mt-1" onclick="retakeEditPhoto()">
+              <i class="bi bi-arrow-repeat"></i> ถ่ายใหม่
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">ยกเลิก</button>
+        <button type="button" class="btn btn-grad-green" id="btn-save-edit" onclick="doUpdateUser()">
+          <i class="bi bi-check-circle"></i> บันทึก
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- ╔══════════════════════════════════════╗ -->
+<!-- ║          JAVASCRIPT                 ║ -->
+<!-- ╚══════════════════════════════════════╝ -->
+<script>
+/* ================================================
+   Global State
+   ================================================ */
+const APP = {
+  apiUrl: localStorage.getItem('TA_API_URL') || '',
+  homeStream: null,
+  regStream: null,
+  editStream: null,
+  regPhoto: null,
+  editPhoto: null,
+  gps: { lat: null, lng: null },
+  users: [],
+  clockTimer: null,
+  gpsWatcher: null
+};
+
+/* ================================================
+   Toast (SweetAlert2)
+   ================================================ */
+const Toast = Swal.mixin({
+  toast: true, position: 'top-end', showConfirmButton: false,
+  timer: 3500, timerProgressBar: true,
+  didOpen: t => { t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer); }
+});
+
+/* ================================================
+   API Wrapper
+   ================================================ */
+async function api(action, data = {}) {
+  if (!APP.apiUrl) {
+    Toast.fire({ icon: 'warning', title: 'กรุณาตั้งค่า API URL ก่อน' });
+    navigateTo('setup');
+    return { success: false, msg: 'No API URL' };
+  }
+  try {
+    const res = await fetch(APP.apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, ...data }),
+      redirect: 'follow'
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('API Error:', err);
+    Toast.fire({ icon: 'error', title: 'เชื่อมต่อ API ไม่สำเร็จ' });
+    return { success: false, msg: err.message };
+  }
+}
+
+/* ================================================
+   Navigation (SPA)
+   ================================================ */
+function navigateTo(page) {
+  // collapse mobile nav
+  const navCollapse = document.getElementById('navMenu');
+  if (navCollapse && navCollapse.classList.contains('show')) {
+    bootstrap.Collapse.getInstance(navCollapse)?.hide();
+  }
+
+  // stop all cameras
+  stopStream('home'); stopStream('reg'); stopStream('edit');
+
+  // hide all pages, show target
+  $('.page').addClass('d-none');
+  $('#page-' + page).removeClass('d-none');
+  $('.nav-link').removeClass('active');
+  $(`.nav-link[data-page="${page}"]`).addClass('active');
+
+  // page init
+  if (page === 'home')     initHome();
+  if (page === 'register') initRegister();
+  if (page === 'manage')   loadUsers();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ================================================
+   Camera Management
+   ================================================ */
+async function startStream(key, videoId, phId) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 360 }, height: { ideal: 270 } },
+      audio: false
+    });
+    APP[key + 'Stream'] = stream;
+    const video = document.getElementById(videoId);
+    video.srcObject = stream;
+    $('#' + phId).addClass('d-none');
+    return true;
+  } catch (err) {
+    console.warn('Camera error:', err);
+    $('#' + phId).removeClass('d-none');
+    Toast.fire({ icon: 'info', title: 'ไม่สามารถเข้าถึงกล้องได้', text: err.message });
+    return false;
+  }
+}
+
+function stopStream(key) {
+  const s = APP[key + 'Stream'];
+  if (s) { s.getTracks().forEach(t => t.stop()); APP[key + 'Stream'] = null; }
+}
+
+function captureFrame(videoId, size, quality) {
+  const video = document.getElementById(videoId);
+  if (!video.srcObject) return null;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.translate(size, 0); ctx.scale(-1, 1); // mirror
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const m = Math.min(vw, vh), sx = (vw - m) / 2, sy = (vh - m) / 2;
+  ctx.drawImage(video, sx, sy, m, m, 0, 0, size, size);
+  return c.toDataURL('image/jpeg', quality || 0.75);
+}
+
+/* ── Home Camera ── */
+function toggleHomeCamera() {
+  if (APP.homeStream) {
+    stopStream('home');
+    $('#home-cam-ph').removeClass('d-none');
+    $('#home-cam-btn-icon').attr('class', 'bi bi-camera-video');
+    $('#home-cam-btn-text').text('เปิดกล้อง');
+  } else {
+    startStream('home', 'home-video', 'home-cam-ph').then(ok => {
+      if (ok) {
+        $('#home-cam-btn-icon').attr('class', 'bi bi-camera-video-off');
+        $('#home-cam-btn-text').text('ปิดกล้อง');
+      }
+    });
+  }
+}
+
+/* ── Register Camera ── */
+function toggleRegCamera() {
+  if (APP.regStream) {
+    stopStream('reg');
+    $('#reg-cam-ph').removeClass('d-none');
+    $('#btn-reg-snap').addClass('d-none');
+    $('#reg-cam-btn-icon').attr('class', 'bi bi-camera-video');
+    $('#reg-cam-btn-text').text('เปิดกล้อง');
+  } else {
+    startStream('reg', 'reg-video', 'reg-cam-ph').then(ok => {
+      if (ok) {
+        $('#btn-reg-snap').removeClass('d-none');
+        $('#reg-cam-btn-icon').attr('class', 'bi bi-camera-video-off');
+        $('#reg-cam-btn-text').text('ปิดกล้อง');
+      }
+    });
+  }
+}
+
+function snapRegPhoto() {
+  const img = captureFrame('reg-video', 300, 0.8);
+  if (!img) { Toast.fire({ icon: 'warning', title: 'กล้องยังไม่พร้อม' }); return; }
+  APP.regPhoto = img;
+  $('#reg-preview-img').attr('src', img);
+  $('#reg-preview-area').removeClass('d-none');
+  $('#reg-cam-area').addClass('d-none');
+  stopStream('reg');
+}
+
+function retakeRegPhoto() {
+  APP.regPhoto = null;
+  $('#reg-preview-area').addClass('d-none');
+  $('#reg-cam-area').removeClass('d-none');
+  toggleRegCamera();
+}
+
+/* ── Edit Camera ── */
+function toggleEditCamera() {
+  if (APP.editStream) {
+    stopStream('edit');
+    $('#edit-cam-ph').removeClass('d-none');
+    $('#btn-edit-snap').addClass('d-none');
+  } else {
+    startStream('edit', 'edit-video', 'edit-cam-ph').then(ok => {
+      if (ok) $('#btn-edit-snap').removeClass('d-none');
+    });
+  }
+}
+
+function snapEditPhoto() {
+  const img = captureFrame('edit-video', 300, 0.8);
+  if (!img) return;
+  APP.editPhoto = img;
+  $('#edit-preview-img').attr('src', img);
+  $('#edit-preview-area').removeClass('d-none');
+  $('#edit-cam-area').addClass('d-none');
+  stopStream('edit');
+}
+
+function retakeEditPhoto() {
+  APP.editPhoto = null;
+  $('#edit-preview-area').addClass('d-none');
+  $('#edit-cam-area').removeClass('d-none');
+  toggleEditCamera();
+}
+
+/* ================================================
+   GPS
+   ================================================ */
+function refreshGPS() {
+  if (!navigator.geolocation) {
+    Toast.fire({ icon: 'warning', title: 'อุปกรณ์ไม่รองรับ GPS' });
+    return;
+  }
+  $('#lat-val').text('...');
+  $('#lng-val').text('...');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      APP.gps.lat = pos.coords.latitude;
+      APP.gps.lng = pos.coords.longitude;
+      $('#lat-val').text(APP.gps.lat.toFixed(6));
+      $('#lng-val').text(APP.gps.lng.toFixed(6));
+    },
+    err => {
+      Toast.fire({ icon: 'warning', title: 'ไม่สามารถเข้าถึง GPS', text: err.message });
+      $('#lat-val').text('—');
+      $('#lng-val').text('—');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+  );
+}
+
+/* ================================================
+   Clock
+   ================================================ */
+function updateClock() {
+  const now = new Date();
+  $('#clock').text(now.toLocaleTimeString('th-TH', { hour12: false }));
+  $('#date-display').text(now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+}
+
+/* ================================================
+   Setup Page
+   ================================================ */
+async function testAPI() {
+  const url = $('#set-api-url').val().trim();
+  if (!url) { Toast.fire({ icon: 'warning', title: 'กรุณากรอก URL' }); return; }
+  $('#api-test-result').html('<div class="spinner-border spinner-border-sm text-purple"></div> กำลังทดสอบ...');
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'ping' }),
+      redirect: 'follow'
+    });
+    const data = await res.json();
+    if (data.success) {
+      $('#api-test-result').html('<div class="alert alert-success py-2 mb-0 rounded-pill"><i class="bi bi-check-circle-fill"></i> เชื่อมต่อสำเร็จ!</div>');
+      updateStatus(true);
+    } else {
+      $('#api-test-result').html('<div class="alert alert-danger py-2 mb-0 rounded-pill"><i class="bi bi-x-circle-fill"></i> ' + (data.msg || 'Error') + '</div>');
+    }
+  } catch (err) {
+    $('#api-test-result').html('<div class="alert alert-danger py-2 mb-0 rounded-pill"><i class="bi bi-x-circle-fill"></i> ไม่สามารถเชื่อมต่อได้: ' + err.message + '</div>');
+    updateStatus(false);
+  }
+}
+
+function saveAPIUrl() {
+  const url = $('#set-api-url').val().trim();
+  if (!url) { Toast.fire({ icon: 'warning', title: 'กรุณากรอก URL' }); return; }
+  APP.apiUrl = url;
+  localStorage.setItem('TA_API_URL', url);
+  Toast.fire({ icon: 'success', title: 'บันทึก URL สำเร็จ!' });
+  updateStatus(true);
+  navigateTo('home');
+}
+
+function updateStatus(online) {
+  const cls = online ? 'status-dot online' : 'status-dot offline';
+  $('#status-dot-m, #status-dot-d').attr('class', cls);
+}
+
+/* ================================================
+   Home Page — Attendance
+   ================================================ */
+function initHome() {
+  updateClock();
+  if (!APP.clockTimer) APP.clockTimer = setInterval(updateClock, 1000);
+  refreshGPS();
+}
+
+async function doCapture() {
+  const pin = $('#home-pin').val().trim();
+  if (!pin || pin.length !== 4) {
+    Swal.fire({ icon: 'warning', title: 'กรุณากรอก PIN 4 หลัก', confirmButtonColor: '#8B5CF6' });
+    return;
+  }
+
+  // Disable button
+  const $btn = $('#btn-capture');
+  $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...');
+
+  try {
+    // 1) Verify PIN
+    const verify = await api('verifyPin', { pin });
+    if (!verify.success) {
+      Swal.fire({ icon: 'error', title: 'PIN ไม่ถูกต้อง', text: verify.msg, confirmButtonColor: '#8B5CF6' });
+      return;
+    }
+
+    const user = verify.user;
+
+    // 2) Capture photo (optional)
+    const photo = APP.homeStream ? captureFrame('home-video', 200, 0.65) : null;
+
+    // 3) GPS
+    const lat = APP.gps.lat || '';
+    const lng = APP.gps.lng || '';
+
+    // 4) Record attendance
+    const result = await api('recordAttendance', {
+      userId: user.userId,
+      fullName: user.fullName,
+      faceImage: photo || '',
+      lat: lat,
+      lng: lng
+    });
+
+    if (result.success) {
+      const isIn = result.type === 'IN';
+      Swal.fire({
+        icon: 'success',
+        title: isIn ? '✅ เข้างาน (Clock In)' : '🏠 ออกงาน (Clock Out)',
+        html: `
+          <div style="font-size:1.1rem;">
+            <p class="mb-1"><strong>${result.fullName}</strong></p>
+            <p class="mb-1"><i class="bi bi-calendar3"></i> ${result.date}</p>
+            <p class="mb-1"><i class="bi bi-clock"></i> ${result.time}</p>
+            ${lat ? `<p class="mb-0 text-muted small"><i class="bi bi-geo-alt"></i> ${lat}, ${lng}</p>` : ''}
+          </div>
+        `,
+        confirmButtonColor: isIn ? '#10B981' : '#8B5CF6',
+        confirmButtonText: 'ตกลง'
+      });
+      $('#home-pin').val('');
+    } else {
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: result.msg, confirmButtonColor: '#8B5CF6' });
+    }
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, confirmButtonColor: '#8B5CF6' });
+  } finally {
+    $btn.prop('disabled', false).html('<i class="bi bi-camera-fill me-2"></i> บันทึกเวลา (Capture)');
+  }
+}
+
+/* ================================================
+   Register Page
+   ================================================ */
+function initRegister() {
+  $('#reg-name, #reg-email, #reg-pin').val('');
+  APP.regPhoto = null;
+  $('#reg-preview-area').addClass('d-none');
+  $('#reg-cam-area').removeClass('d-none');
+  $('#reg-cam-ph').removeClass('d-none');
+  $('#btn-reg-snap').addClass('d-none');
+  $('#reg-cam-btn-icon').attr('class', 'bi bi-camera-video');
+  $('#reg-cam-btn-text').text('เปิดกล้อง');
+}
+
+async function doRegister() {
+  const name  = $('#reg-name').val().trim();
+  const email = $('#reg-email').val().trim();
+  const pin   = $('#reg-pin').val().trim();
+
+  if (!name || !email || !pin) {
+    Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบ', text: 'ชื่อ, อีเมล และ PIN จำเป็นต้องกรอก', confirmButtonColor: '#8B5CF6' });
+    return;
+  }
+  if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    Swal.fire({ icon: 'warning', title: 'PIN ต้องเป็นตัวเลข 4 หลัก', confirmButtonColor: '#8B5CF6' });
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    Swal.fire({ icon: 'warning', title: 'รูปแบบอีเมลไม่ถูกต้อง', confirmButtonColor: '#8B5CF6' });
+    return;
+  }
+
+  const confirm = await Swal.fire({
+    icon: 'question',
+    title: 'ยืนยันการลงทะเบียน?',
+    html: `<b>${name}</b><br>${email}`,
+    showCancelButton: true,
+    confirmButtonText: 'ลงทะเบียน',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#10B981',
+    cancelButtonColor: '#6B7280'
+  });
+  if (!confirm.isConfirmed) return;
+
+  const $btn = $('#btn-register');
+  $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...');
+
+  try {
+    const result = await api('registerUser', {
+      fullName: name,
+      email: email,
+      pin: pin,
+      faceImage: APP.regPhoto || ''
+    });
+
+    if (result.success) {
+      Swal.fire({
+        icon: 'success', title: 'ลงทะเบียนสำเร็จ!',
+        text: result.msg,
+        confirmButtonColor: '#10B981'
+      }).then(() => navigateTo('manage'));
+    } else {
+      Swal.fire({ icon: 'error', title: 'ลงทะเบียนไม่สำเร็จ', text: result.msg, confirmButtonColor: '#8B5CF6' });
+    }
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, confirmButtonColor: '#8B5CF6' });
+  } finally {
+    $btn.prop('disabled', false).html('<i class="bi bi-check-circle-fill me-2"></i> ลงทะเบียน');
+  }
+}
+
+/* ================================================
+   Manage Users Page
+   ================================================ */
+async function loadUsers() {
+  $('#users-loading').removeClass('d-none');
+  $('#users-empty, #users-table-wrap').addClass('d-none');
+
+  const result = await api('getUsers');
+  $('#users-loading').addClass('d-none');
+
+  if (!result.success && result.msg === 'No API URL') return;
+
+  APP.users = result.users || [];
+
+  if (APP.users.length === 0) {
+    $('#users-empty').removeClass('d-none');
+    return;
+  }
+
+  renderUsersTable(APP.users);
+  $('#users-table-wrap').removeClass('d-none');
+}
+
+function renderUsersTable(users) {
+  let html = '';
+  users.forEach((u, idx) => {
+    const avatar = u.faceImage
+      ? `<img src="${u.faceImage}" class="avatar-sm" onerror="this.onerror=null;this.outerHTML='<div class=\\'avatar-sm d-flex align-items-center justify-content-center\\'><i class=\\'bi bi-person-fill text-muted\\'></i></div>'">`
+      : `<div class="avatar-sm d-flex align-items-center justify-content-center"><i class="bi bi-person-fill text-muted" style="font-size:1.3rem;"></i></div>`;
+
+    const badge = u.status === 'Active'
+      ? '<span class="badge-active"><i class="bi bi-check-circle-fill"></i> Active</span>'
+      : '<span class="badge-inactive"><i class="bi bi-x-circle-fill"></i> Inactive</span>';
+
+    const pin = u.pin ? ('•'.repeat(Math.max(0, u.pin.length - 1)) + u.pin.slice(-1)) : '—';
+
+    html += `<tr data-search="${(u.fullName + ' ' + u.email).toLowerCase()}">
+      <td class="fw-bold text-muted">${idx + 1}</td>
+      <td>${avatar}</td>
+      <td class="fw-600">${u.fullName}</td>
+      <td><small>${u.email}</small></td>
+      <td><code>${pin}</code></td>
+      <td>${badge}</td>
+      <td><small class="text-muted">${u.registerDate || '—'}</small></td>
+      <td class="text-center text-nowrap">
+        <button class="btn-action btn btn-outline-primary me-1" title="แก้ไข" onclick="openEditModal('${u.userId}')">
+          <i class="bi bi-pencil-fill"></i>
+        </button>
+        <button class="btn-action btn btn-outline-warning me-1" title="สลับสถานะ" onclick="doToggleStatus('${u.userId}','${u.fullName}','${u.status}')">
+          <i class="bi bi-toggle-${u.status === 'Active' ? 'on' : 'off'}"></i>
+        </button>
+        <button class="btn-action btn btn-outline-danger" title="ลบ" onclick="doDeleteUser('${u.userId}','${u.fullName}')">
+          <i class="bi bi-trash3-fill"></i>
+        </button>
+      </td>
+    </tr>`;
+  });
+  $('#users-tbody').html(html);
+}
+
+function filterUsers() {
+  const q = $('#user-search').val().toLowerCase();
+  if (!q) {
+    renderUsersTable(APP.users);
+  } else {
+    const filtered = APP.users.filter(u => (u.fullName + ' ' + u.email).toLowerCase().includes(q));
+    renderUsersTable(filtered);
+  }
+}
+
+/* ── Delete User ── */
+async function doDeleteUser(userId, name) {
+  const confirm = await Swal.fire({
+    icon: 'warning',
+    title: 'ยืนยันการลบ?',
+    html: `ต้องการลบผู้ใช้ <b>${name}</b> หรือไม่?<br><small class="text-danger">การดำเนินการนี้ไม่สามารถย้อนกลับได้</small>`,
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-trash3"></i> ลบ',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#EF4444',
+    cancelButtonColor: '#6B7280'
+  });
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  const result = await api('deleteUser', { userId });
+  if (result.success) {
+    Toast.fire({ icon: 'success', title: result.msg });
+    loadUsers();
+  } else {
+    Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: result.msg, confirmButtonColor: '#8B5CF6' });
+  }
+}
+
+/* ── Toggle Status ── */
+async function doToggleStatus(userId, name, currentStatus) {
+  const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+  const confirm = await Swal.fire({
+    icon: 'question',
+    title: 'เปลี่ยนสถานะ?',
+    html: `เปลี่ยนสถานะของ <b>${name}</b><br>จาก <b>${currentStatus}</b> → <b>${newStatus}</b>`,
+    showCancelButton: true,
+    confirmButtonText: 'ยืนยัน',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: newStatus === 'Active' ? '#10B981' : '#F59E0B',
+    cancelButtonColor: '#6B7280'
+  });
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  const result = await api('toggleStatus', { userId });
+  if (result.success) {
+    Toast.fire({ icon: 'success', title: result.msg });
+    loadUsers();
+  } else {
+    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: result.msg, confirmButtonColor: '#8B5CF6' });
+  }
+}
+
+/* ── Edit User Modal ── */
+function openEditModal(userId) {
+  const user = APP.users.find(u => u.userId === userId);
+  if (!user) return;
+
+  APP.editPhoto = null;
+  $('#edit-uid').val(user.userId);
+  $('#edit-name').val(user.fullName);
+  $('#edit-email').val(user.email);
+  $('#edit-pin').val('');
+  $('#edit-preview-area').addClass('d-none');
+  $('#edit-cam-area').removeClass('d-none');
+  $('#edit-cam-ph').removeClass('d-none');
+  $('#btn-edit-snap').addClass('d-none');
+  stopStream('edit');
+
+  const modal = new bootstrap.Modal(document.getElementById('editModal'));
+  modal.show();
+}
+
+async function doUpdateUser() {
+  const userId = $('#edit-uid').val();
+  const name   = $('#edit-name').val().trim();
+  const email  = $('#edit-email').val().trim();
+  const pin    = $('#edit-pin').val().trim();
+
+  if (!name || !email) {
+    Toast.fire({ icon: 'warning', title: 'กรุณากรอกชื่อและอีเมล' });
+    return;
+  }
+  if (pin && (pin.length !== 4 || !/^\d{4}$/.test(pin))) {
+    Toast.fire({ icon: 'warning', title: 'PIN ต้องเป็นตัวเลข 4 หลัก' });
+    return;
+  }
+
+  const $btn = $('#btn-save-edit');
+  $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...');
+
+  const payload = { userId, fullName: name, email };
+  if (pin) payload.pin = pin;
+  if (APP.editPhoto) payload.faceImage = APP.editPhoto;
+
+  const result = await api('updateUser', payload);
+
+  if (result.success) {
+    Toast.fire({ icon: 'success', title: result.msg });
+    bootstrap.Modal.getInstance(document.getElementById('editModal'))?.hide();
+    stopStream('edit');
+    loadUsers();
+  } else {
+    Swal.fire({ icon: 'error', title: 'อัพเดทไม่สำเร็จ', text: result.msg, confirmButtonColor: '#8B5CF6' });
+  }
+
+  $btn.prop('disabled', false).html('<i class="bi bi-check-circle"></i> บันทึก');
+}
+
+// Clean up camera when modal closes
+document.getElementById('editModal')?.addEventListener('hidden.bs.modal', () => {
+  stopStream('edit');
+});
+
+/* ================================================
+   Initialization
+   ================================================ */
+$(document).ready(function () {
+  APP.apiUrl = localStorage.getItem('TA_API_URL') || '';
+
+  if (APP.apiUrl) {
+    updateStatus(true);
+    $('#set-api-url').val(APP.apiUrl);
+    navigateTo('home');
+  } else {
+    updateStatus(false);
+    navigateTo('setup');
+  }
+});
+</script>
+</body>
+</html>
