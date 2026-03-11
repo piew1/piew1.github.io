@@ -45,6 +45,7 @@ body {
   animation: bgShift 25s ease infinite;
   color: #1F2937;
   padding-top: 68px;
+  padding-bottom: 50px;
 }
 
 @keyframes bgShift {
@@ -199,6 +200,17 @@ body {
 .status-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
 .status-dot.offline { background: var(--red); }
 
+/* ===== Footer ===== */
+.app-footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255,255,255,0.5);
+  padding: 8px 16px;
+  font-size: .78rem; color: #9CA3AF;
+  z-index: 999;
+}
+
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -208,6 +220,14 @@ body {
 .modal-content { border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
 .modal-header { border-bottom: 1px solid #F3F4F6; padding: 1.2rem 1.5rem; }
 .modal-footer { border-top: 1px solid #F3F4F6; }
+
+/* ===== Config Banner ===== */
+.config-banner {
+  background: linear-gradient(135deg,#FEF3C7,#FDE68A);
+  border: 2px dashed #F59E0B;
+  border-radius: 14px; padding: 14px 18px;
+  font-size: .9rem; color: #92400E;
+}
 </style>
 </head>
 
@@ -218,8 +238,8 @@ body {
 <!-- ╚══════════════════════════════════════╝ -->
 <nav class="navbar navbar-expand-lg fixed-top">
   <div class="container">
-    <a class="navbar-brand" href="#" onclick="navigateTo(APP.apiUrl?'home':'setup')">
-      <i class="bi bi-person-bounding-box"></i> Face Scan &amp; GPS Tracker
+    <a class="navbar-brand" href="#" onclick="navigateTo('home')">
+      <i class="bi bi-person-bounding-box"></i> Face Scan & GPS Tracker
     </a>
     <div class="d-flex align-items-center gap-2 d-lg-none">
       <span class="status-dot" id="status-dot-m"></span>
@@ -253,6 +273,15 @@ body {
           <h4 class="fw-bold mb-1">ตั้งค่าการเชื่อมต่อ API</h4>
           <p class="text-muted small mb-4">วาง URL ของ Google Apps Script Web App ที่ Deploy แล้ว</p>
 
+          <!-- Config Banner -->
+          <div class="config-banner mb-3 text-start" id="config-tip">
+            <i class="bi bi-lightbulb-fill"></i> <strong>เคล็ดลับ:</strong> หากไม่ต้องการตั้งค่าทุกครั้ง
+            ให้เปิดไฟล์ <code>index.html</code> แล้วแก้บรรทัด:<br>
+            <code class="d-block mt-1 p-2 bg-white rounded" style="font-size:.82rem; color:#92400E;">
+              const CONFIG_API_URL = '<span class="text-danger">วาง URL ตรงนี้</span>';
+            </code>
+          </div>
+
           <div class="text-start mb-3">
             <label class="form-label fw-600"><i class="bi bi-link-45deg"></i> API URL</label>
             <input type="url" class="form-control" id="set-api-url"
@@ -275,7 +304,7 @@ body {
               <li>เปิดโปรเจกต์ Apps Script แล้ววาง Code.gs</li>
               <li>กดรันฟังก์ชัน <code>setupSheets()</code></li>
               <li>Deploy → Web App (Execute as: Me, Access: Anyone)</li>
-              <li>คัดลอก URL มาวางด้านบน</li>
+              <li>คัดลอก URL มาวางด้านบน หรือฝังใน CONFIG</li>
             </ol>
           </div>
         </div>
@@ -404,17 +433,17 @@ body {
           </div>
 
           <!-- Preview -->
-          <div id="reg-preview-area" class="text-center mt-3 d-none">
+          <div id="reg-preview-area" class="text-center d-none mt-3">
             <img id="reg-preview-img" class="preview-img mb-2" src="" alt="preview">
             <br>
-            <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="retakeRegPhoto()">
-              <i class="bi bi-arrow-repeat"></i> ถ่ายใหม่
+            <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="retakeRegPhoto()">
+              <i class="bi bi-arrow-counterclockwise"></i> ถ่ายใหม่
             </button>
           </div>
 
           <hr class="my-4">
 
-          <button class="btn btn-grad-green w-100 btn-lg" id="btn-register" onclick="doRegister()">
+          <button class="btn btn-grad-green w-100" id="btn-register" onclick="doRegister()">
             <i class="bi bi-check-circle-fill me-2"></i> ลงทะเบียน
           </button>
         </div>
@@ -424,7 +453,7 @@ body {
 </div>
 
 <!-- ╔══════════════════════════════════════╗ -->
-<!-- ║       PAGE: MANAGE USERS            ║ -->
+<!-- ║      PAGE: MANAGE USERS             ║ -->
 <!-- ╚══════════════════════════════════════╝ -->
 <div id="page-manage" class="page d-none">
   <div class="container py-4">
@@ -436,32 +465,35 @@ body {
           </button>
           <h5 class="fw-bold mb-0"><i class="bi bi-people-fill text-purple"></i> จัดการผู้ลงทะเบียนใบหน้า</h5>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
           <div class="input-group" style="max-width:260px;">
-            <span class="input-group-text bg-white border-end-0" style="border-radius:12px 0 0 12px;"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" class="form-control border-start-0" id="user-search" placeholder="ค้นหา..." style="border-radius:0 12px 12px 0;" oninput="filterUsers()">
+            <span class="input-group-text bg-white border-end-0" style="border-radius:12px 0 0 12px;"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control border-start-0" id="user-search" placeholder="ค้นหาชื่อ หรือ อีเมล..." oninput="filterUsers()" style="border-radius:0 12px 12px 0;">
           </div>
-          <button class="btn btn-outline-secondary rounded-pill" onclick="loadUsers()">
+          <button class="btn btn-sm btn-grad-purple rounded-pill px-3" onclick="loadUsers()">
             <i class="bi bi-arrow-clockwise"></i>
           </button>
         </div>
       </div>
 
       <!-- Loading -->
-      <div id="users-loading" class="text-center py-5">
+      <div id="users-loading" class="text-center py-5 d-none">
         <div class="spinner-border text-purple" role="status"></div>
-        <p class="text-muted mt-2 mb-0">กำลังโหลดข้อมูล...</p>
+        <p class="mt-2 text-muted">กำลังโหลดข้อมูล...</p>
       </div>
 
-      <!-- No Data -->
+      <!-- Empty -->
       <div id="users-empty" class="text-center py-5 d-none">
-        <i class="bi bi-people display-1 text-muted" style="opacity:.3;"></i>
-        <p class="text-muted mt-2 mb-0">ยังไม่มีผู้ใช้ลงทะเบียน</p>
+        <i class="bi bi-inbox text-muted" style="font-size:4rem;"></i>
+        <p class="mt-2 text-muted">ยังไม่มีผู้ใช้ลงทะเบียน</p>
+        <button class="btn btn-grad-pink" onclick="navigateTo('register')">
+          <i class="bi bi-person-plus-fill me-1"></i> ลงทะเบียนผู้ใช้ใหม่
+        </button>
       </div>
 
       <!-- Table -->
-      <div class="table-responsive d-none" id="users-table-wrap">
-        <table class="table table-modern mb-0">
+      <div id="users-table-wrap" class="d-none table-responsive">
+        <table class="table table-modern w-100">
           <thead>
             <tr>
               <th>#</th>
@@ -471,7 +503,7 @@ body {
               <th>PIN</th>
               <th>สถานะ</th>
               <th>วันที่ลงทะเบียน</th>
-              <th class="text-center">จัดการ</th>
+              <th class="text-center">การจัดการ</th>
             </tr>
           </thead>
           <tbody id="users-tbody"></tbody>
@@ -482,10 +514,10 @@ body {
 </div>
 
 <!-- ╔══════════════════════════════════════╗ -->
-<!-- ║        MODAL: EDIT USER             ║ -->
+<!-- ║        EDIT USER MODAL              ║ -->
 <!-- ╚══════════════════════════════════════╝ -->
 <div class="modal fade" id="editModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-purple"></i> แก้ไขข้อมูลผู้ใช้</h5>
@@ -493,49 +525,49 @@ body {
       </div>
       <div class="modal-body">
         <input type="hidden" id="edit-uid">
-        <div class="mb-3">
-          <label class="form-label fw-600">ชื่อ-นามสกุล</label>
-          <input type="text" class="form-control" id="edit-name">
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-600">อีเมล</label>
-          <input type="email" class="form-control" id="edit-email">
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-600">PIN ใหม่ <small class="text-muted">(เว้นว่างหากไม่ต้องการเปลี่ยน)</small></label>
-          <input type="password" class="form-control text-center" id="edit-pin" maxlength="4" inputmode="numeric" style="letter-spacing:.5rem;font-size:1.3rem;max-width:180px;">
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-600">อัพเดทรูปใบหน้า <small class="text-muted">(ไม่บังคับ)</small></label>
-          <div id="edit-cam-area">
-            <div class="camera-box mb-2" id="edit-cam-box" style="max-width:260px;">
-              <video id="edit-video" autoplay playsinline muted></video>
-              <div class="camera-placeholder" id="edit-cam-ph">
-                <i class="bi bi-camera-video-off"></i>
-                <span>กล้อง</span>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label fw-600"><i class="bi bi-person"></i> ชื่อ-นามสกุล</label>
+            <input type="text" class="form-control" id="edit-name">
+          </div>
+          <div class="col-md-7">
+            <label class="form-label fw-600"><i class="bi bi-envelope"></i> อีเมล</label>
+            <input type="email" class="form-control" id="edit-email">
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-600"><i class="bi bi-lock"></i> PIN ใหม่ <small class="text-muted">(เว้นว่าง = ไม่เปลี่ยน)</small></label>
+            <input type="password" class="form-control text-center" id="edit-pin" maxlength="4" inputmode="numeric" placeholder="••••" style="letter-spacing:.5rem;font-size:1.3rem;">
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-600"><i class="bi bi-camera"></i> เปลี่ยนรูปใบหน้า <small class="text-muted">(ไม่บังคับ)</small></label>
+            <div id="edit-cam-area">
+              <div class="camera-box mb-2" style="max-width:260px;">
+                <video id="edit-video" autoplay playsinline muted></video>
+                <div class="camera-placeholder" id="edit-cam-ph">
+                  <i class="bi bi-camera-video-off"></i>
+                  <span>กล้องปิดอยู่</span>
+                </div>
               </div>
-            </div>
-            <div class="mt-2">
               <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="toggleEditCamera()">
                 <i class="bi bi-camera-video"></i> เปิดกล้อง
               </button>
-              <button class="btn btn-sm btn-grad-purple rounded-pill ms-1 d-none" id="btn-edit-snap" onclick="snapEditPhoto()">
+              <button class="btn btn-sm btn-grad-purple rounded-pill ms-2 d-none" id="btn-edit-snap" onclick="snapEditPhoto()">
                 <i class="bi bi-camera"></i> ถ่ายรูป
               </button>
             </div>
-          </div>
-          <div id="edit-preview-area" class="mt-2 d-none">
-            <img id="edit-preview-img" class="preview-img" style="width:120px;height:120px;" src="" alt="">
-            <br>
-            <button class="btn btn-sm btn-outline-secondary rounded-pill mt-1" onclick="retakeEditPhoto()">
-              <i class="bi bi-arrow-repeat"></i> ถ่ายใหม่
-            </button>
+            <div id="edit-preview-area" class="d-none mt-2">
+              <img id="edit-preview-img" class="preview-img mb-2" src="" alt="preview" style="width:120px;height:120px;">
+              <br>
+              <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="retakeEditPhoto()">
+                <i class="bi bi-arrow-counterclockwise"></i> ถ่ายใหม่
+              </button>
+            </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">ยกเลิก</button>
-        <button type="button" class="btn btn-grad-green" id="btn-save-edit" onclick="doUpdateUser()">
+        <button class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">ยกเลิก</button>
+        <button class="btn btn-grad-green rounded-pill" id="btn-save-edit" onclick="doUpdateUser()">
           <i class="bi bi-check-circle"></i> บันทึก
         </button>
       </div>
@@ -543,58 +575,78 @@ body {
   </div>
 </div>
 
-<!-- Bootstrap JS -->
+<!-- ╔══════════════════════════════════════╗ -->
+<!-- ║          FOOTER                     ║ -->
+<!-- ╚══════════════════════════════════════╝ -->
+<footer class="app-footer d-flex align-items-center justify-content-between flex-wrap">
+  <div>
+    <span class="status-dot" id="status-dot-f"></span>
+    <span class="ms-1" id="footer-api-label">ไม่ได้เชื่อมต่อ</span>
+  </div>
+  <div>
+    Face Scan & GPS Tracker &copy; 2025
+  </div>
+</footer>
+
+<!-- Bootstrap 5.3 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- ╔══════════════════════════════════════╗ -->
-<!-- ║          JAVASCRIPT                 ║ -->
-<!-- ╚══════════════════════════════════════╝ -->
 <script>
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  ★★★  ตั้งค่า API URL ตรงนี้ — วางแล้วไม่ต้องตั้งค่าอีก  ★★★  ║
+   ╠══════════════════════════════════════════════════════════════╣
+   ║  วิธีใช้: วาง URL ของ Web App (Deploy) ระหว่างเครื่องหมาย ''   ║
+   ║  ตัวอย่าง:                                                     ║
+   ║  const CONFIG_API_URL = 'https://script.google.com/.../exec';  ║
+   ║                                                                ║
+   ║  ถ้าเว้นว่าง '' = ระบบจะใช้ค่าจาก localStorage แทน            ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+const CONFIG_API_URL = 'https://script.google.com/macros/s/AKfycbwV3FeYVH5BzYKSE_7myfXovBCw96DrAPOr2djB79DhMB2d_CTzR0_1SNSBu5GnH23wrA/exec';
+
+
 /* ================================================
    Global State
    ================================================ */
 const APP = {
-  apiUrl: localStorage.getItem('TA_API_URL') || '',
+  apiUrl: '',
+  gps: { lat: null, lng: null },
+  users: [],
   homeStream: null,
   regStream: null,
   editStream: null,
   regPhoto: null,
   editPhoto: null,
-  gps: { lat: null, lng: null },
-  users: [],
-  clockTimer: null,
-  gpsWatcher: null
+  clockTimer: null
 };
 
-/* ================================================
-   Toast (SweetAlert2)
-   ================================================ */
 const Toast = Swal.mixin({
-  toast: true, position: 'top-end', showConfirmButton: false,
-  timer: 3500, timerProgressBar: true,
-  didOpen: t => { t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer); }
+  toast: true, position: 'top-end',
+  showConfirmButton: false, timer: 3000,
+  timerProgressBar: true,
+  didOpen: (t) => { t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer); }
 });
 
 /* ================================================
-   API Wrapper
+   API Communication (fetch → /exec)
    ================================================ */
-async function api(action, data = {}) {
-  if (!APP.apiUrl) {
-    Toast.fire({ icon: 'warning', title: 'กรุณาตั้งค่า API URL ก่อน' });
-    navigateTo('setup');
+async function api(action, payload) {
+  const url = APP.apiUrl;
+  if (!url) {
+    Toast.fire({ icon: 'warning', title: 'ยังไม่ได้ตั้งค่า API URL' });
     return { success: false, msg: 'No API URL' };
   }
   try {
-    const res = await fetch(APP.apiUrl, {
+    const body = Object.assign({ action: action }, payload || {});
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, ...data }),
+      body: JSON.stringify(body),
       redirect: 'follow'
     });
     return await res.json();
   } catch (err) {
-    console.error('API Error:', err);
-    Toast.fire({ icon: 'error', title: 'เชื่อมต่อ API ไม่สำเร็จ' });
+    console.error('API error:', err);
+    updateStatus(false);
     return { success: false, msg: err.message };
   }
 }
@@ -603,36 +655,52 @@ async function api(action, data = {}) {
    Navigation (SPA)
    ================================================ */
 function navigateTo(page) {
-  // collapse mobile nav
-  const navCollapse = document.getElementById('navMenu');
-  if (navCollapse && navCollapse.classList.contains('show')) {
-    bootstrap.Collapse.getInstance(navCollapse)?.hide();
+  // If no API url and trying to access non-setup pages
+  if (!APP.apiUrl && page !== 'setup') {
+    navigateTo('setup');
+    return;
   }
 
-  // stop all cameras
-  stopStream('home'); stopStream('reg'); stopStream('edit');
+  // Stop camera streams when leaving pages
+  if (page !== 'home') stopStream('home');
+  if (page !== 'register') stopStream('reg');
 
-  // hide all pages, show target
+  // Hide all pages then show target
   $('.page').addClass('d-none');
-  $('#page-' + page).removeClass('d-none');
+  $('#page-' + page).removeClass('d-none').addClass('page');
+
+  // Update nav active state
   $('.nav-link').removeClass('active');
   $(`.nav-link[data-page="${page}"]`).addClass('active');
 
-  // page init
-  if (page === 'home')     initHome();
-  if (page === 'register') initRegister();
-  if (page === 'manage')   loadUsers();
+  // Collapse mobile nav
+  const navMenu = document.getElementById('navMenu');
+  if (navMenu.classList.contains('show')) {
+    bootstrap.Collapse.getInstance(navMenu)?.hide();
+  }
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Page-specific init
+  if (page === 'home') initHome();
+  if (page === 'register') initRegister();
+  if (page === 'manage') loadUsers();
+  if (page === 'setup') {
+    $('#set-api-url').val(APP.apiUrl);
+    if (APP.apiUrl) {
+      $('#config-tip').html(
+        '<i class="bi bi-check-circle-fill text-success"></i> <strong>สถานะ:</strong> เชื่อมต่อ API อยู่แล้ว — URL ถูกบันทึกไว้เรียบร้อย' +
+        (getApiSource() === 'config' ? ' <span class="badge bg-success">จาก CONFIG</span>' : ' <span class="badge bg-primary">จาก localStorage</span>')
+      );
+    }
+  }
 }
 
 /* ================================================
-   Camera Management
+   Camera Utilities
    ================================================ */
 async function startStream(key, videoId, phId) {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 360 }, height: { ideal: 270 } },
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
       audio: false
     });
     APP[key + 'Stream'] = stream;
@@ -641,9 +709,11 @@ async function startStream(key, videoId, phId) {
     $('#' + phId).addClass('d-none');
     return true;
   } catch (err) {
-    console.warn('Camera error:', err);
-    $('#' + phId).removeClass('d-none');
-    Toast.fire({ icon: 'info', title: 'ไม่สามารถเข้าถึงกล้องได้', text: err.message });
+    Swal.fire({
+      icon: 'warning', title: 'ไม่สามารถเข้าถึงกล้อง',
+      text: 'กรุณาอนุญาตการเข้าถึงกล้อง หรือใช้ PIN แทน',
+      confirmButtonColor: '#8B5CF6'
+    });
     return false;
   }
 }
@@ -785,6 +855,29 @@ function updateClock() {
 }
 
 /* ================================================
+   API URL — Resolve Source
+   ================================================ */
+function getApiSource() {
+  if (CONFIG_API_URL && CONFIG_API_URL.trim()) return 'config';
+  if (localStorage.getItem('TA_API_URL')) return 'localStorage';
+  return 'none';
+}
+
+function resolveApiUrl() {
+  // Priority 1: CONFIG hardcoded in file
+  if (CONFIG_API_URL && CONFIG_API_URL.trim()) {
+    return CONFIG_API_URL.trim();
+  }
+  // Priority 2: localStorage (saved from setup page)
+  const saved = localStorage.getItem('TA_API_URL');
+  if (saved && saved.trim()) {
+    return saved.trim();
+  }
+  // No URL found
+  return '';
+}
+
+/* ================================================
    Setup Page
    ================================================ */
 async function testAPI() {
@@ -823,7 +916,16 @@ function saveAPIUrl() {
 
 function updateStatus(online) {
   const cls = online ? 'status-dot online' : 'status-dot offline';
-  $('#status-dot-m, #status-dot-d').attr('class', cls);
+  $('#status-dot-m, #status-dot-d, #status-dot-f').attr('class', cls);
+
+  if (online && APP.apiUrl) {
+    const src = getApiSource();
+    const srcLabel = src === 'config' ? '(CONFIG)' : '(localStorage)';
+    const shortUrl = APP.apiUrl.length > 50 ? APP.apiUrl.substring(0, 50) + '...' : APP.apiUrl;
+    $('#footer-api-label').html('เชื่อมต่อแล้ว <span class="text-muted">' + srcLabel + '</span>');
+  } else {
+    $('#footer-api-label').text('ไม่ได้เชื่อมต่อ');
+  }
 }
 
 /* ================================================
@@ -842,7 +944,6 @@ async function doCapture() {
     return;
   }
 
-  // Disable button
   const $btn = $('#btn-capture');
   $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...');
 
@@ -1156,13 +1257,28 @@ document.getElementById('editModal')?.addEventListener('hidden.bs.modal', () => 
    Initialization
    ================================================ */
 $(document).ready(function () {
-  APP.apiUrl = localStorage.getItem('TA_API_URL') || '';
+  // ★ Resolve API URL — CONFIG_API_URL first, then localStorage
+  APP.apiUrl = resolveApiUrl();
 
   if (APP.apiUrl) {
+    // Has URL — go straight to home, no setup needed!
     updateStatus(true);
     $('#set-api-url').val(APP.apiUrl);
     navigateTo('home');
+
+    // Also sync to localStorage for backup
+    localStorage.setItem('TA_API_URL', APP.apiUrl);
+
+    // Silent ping to verify connection
+    api('ping').then(res => {
+      if (res && res.success) {
+        updateStatus(true);
+      } else {
+        updateStatus(false);
+      }
+    });
   } else {
+    // No URL anywhere — show setup page
     updateStatus(false);
     navigateTo('setup');
   }
