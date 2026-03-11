@@ -1,1 +1,178 @@
 
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Scan and GPS Tracker</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+    h1 { color: #2c3e50; margin-bottom: 20px; }
+    #video-container { position: relative; width: 100%; max-width: 400px; margin: 0 auto 20px; border-radius: 8px; overflow: hidden; background: #000; }
+    video { width: 100%; height: auto; display: block; }
+    .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+    .btn-primary { background-color: #3498db; color: white; }
+    .btn-secondary { background-color: #2ecc71; color: white; }
+    .btn-admin { background-color: #95a5a6; color: white; }
+    .location-info { margin-top: 20px; font-size: 14px; color: #7f8c8d; text-align: left; background: #ecf0f1; padding: 10px; border-radius: 6px; }
+    #status { margin-top: 15px; font-weight: bold; color: #e74c3c; }
+    .pin-input { display: none; margin-top: 15px; }
+    input[type="password"], input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    .api-config { margin-bottom: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="api-config">
+      <label>API URL:</label>
+      <input type="text" id="api-url" placeholder="https://script.google.com/macros/s/xxxx/exec">
+    </div>
+
+    <h1>Face Scan and GPS Tracker</h1>
+    
+    <div id="video-container">
+      <video id="video" autoplay muted playsinline></video>
+    </div>
+
+    <button id="capture-btn" class="btn btn-primary">Capture (สแกนใบหน้า)</button>
+    <button id="register-btn" class="btn btn-secondary">ลงทะเบียน (Register)</button>
+    <button id="manage-btn" class="btn btn-admin">จัดการผู้ใช้ (Manage Users)</button>
+
+    <div id="pin-section" class="pin-input">
+      <p>กล้องไม่ทำงาน? กรอกรหัส 4 หลัก:</p>
+      <input type="password" id="pin" maxlength="4" placeholder="****">
+      <button id="pin-submit" class="btn btn-primary">ยืนยันรหัส</button>
+    </div>
+
+    <div class="location-info">
+      <div><strong>Latitude:</strong> <span id="lat">กำลังดึงข้อมูล...</span></div>
+      <div><strong>Longitude:</strong> <span id="lng">กำลังดึงข้อมูล...</span></div>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const status = document.getElementById('status');
+    const latText = document.getElementById('lat');
+    const lngText = document.getElementById('lng');
+    const apiUrlInput = document.getElementById('api-url');
+    let currentLat = null;
+    let currentLng = null;
+    let faceMatcher = null;
+
+    // Load API URL from localStorage
+    if (localStorage.getItem('api_url')) {
+      apiUrlInput.value = localStorage.getItem('api_url');
+    }
+
+    apiUrlInput.addEventListener('change', () => {
+      localStorage.setItem('api_url', apiUrlInput.value);
+      loadRegisteredFaces();
+    });
+
+    async function callApi(action, data = {}) {
+      const url = apiUrlInput.value;
+      if (!url) {
+        status.innerText = "กรุณาตั้งค่า API URL ก่อน";
+        return null;
+      }
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors', // Google Apps Script requires redirect handling which fetch 'no-cors' doesn't provide easily for JSON
+          body: JSON.stringify({ action, ...data })
+        });
+        // Note: Google Apps Script POST with no-cors won't return body. 
+        // For a real external host, we usually use a proxy or JSONP for GET, 
+        // but here we'll use GET for data retrieval and POST for actions.
+        // To get data back, we use GET:
+        const getUrl = `${url}?action=${action}&${new URLSearchParams(data).toString()}`;
+        const getRes = await fetch(getUrl);
+        return await getRes.json();
+      } catch (e) {
+        console.error(e);
+        status.innerText = "API Error: " + e.message;
+        return null;
+      }
+    }
+
+    async function loadModels() {
+      status.innerText = "กำลังโหลดระบบสแกนใบหน้า...";
+      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      ]);
+      status.innerText = "ระบบพร้อมใช้งาน";
+      startVideo();
+      loadRegisteredFaces();
+    }
+
+    function startVideo() {
+      navigator.mediaDevices.getUserMedia({ video: {} })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => {
+          status.innerText = "ไม่สามารถเข้าถึงกล้องได้";
+          document.getElementById('pin-section').style.display = 'block';
+        });
+    }
+
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(position => {
+          currentLat = position.coords.latitude;
+          currentLng = position.coords.longitude;
+          latText.innerText = currentLat.toFixed(6);
+          lngText.innerText = currentLng.toFixed(6);
+        }, err => { status.innerText = "ไม่สามารถเข้าถึงพิกัด GPS ได้"; });
+      }
+    }
+
+    async function loadRegisteredFaces() {
+      const res = await callApi('getUserFaceDescriptors');
+      if (res && res.success) {
+        const labeledDescriptors = [];
+        for (let email in res.data) {
+          const descriptors = [new Float32Array(res.data[email])];
+          labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(email, descriptors));
+        }
+        if (labeledDescriptors.length > 0) {
+          faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+        }
+      }
+    }
+
+    document.getElementById('capture-btn').addEventListener('click', async () => {
+      if (!currentLat || !currentLng) { status.innerText = "กรุณารอพิกัด GPS"; return; }
+      status.innerText = "กำลังสแกนใบหน้า...";
+      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+      if (detections && faceMatcher) {
+        const bestMatch = faceMatcher.findBestMatch(detections.descriptor);
+        if (bestMatch.label !== 'unknown') {
+          const res = await callApi('recordAttendance', { email: bestMatch.label, latitude: currentLat, longitude: currentLng });
+          if (res) { status.innerText = res.msg; status.style.color = "#2ecc71"; }
+        } else { status.innerText = "ไม่พบใบหน้าในระบบ"; }
+      } else { status.innerText = "ไม่พบใบหน้าหรือยังไม่ได้โหลดข้อมูล"; }
+    });
+
+    document.getElementById('pin-submit').addEventListener('click', async () => {
+      const pin = document.getElementById('pin').value;
+      const res = await callApi('getUserByPin', { pin });
+      if (res && res.success) {
+        const attRes = await callApi('recordAttendance', { email: res.data.email, latitude: currentLat, longitude: currentLng });
+        if (attRes) { status.innerText = attRes.msg; status.style.color = "#2ecc71"; }
+      } else { status.innerText = "รหัสไม่ถูกต้อง"; }
+    });
+
+    document.getElementById('register-btn').addEventListener('click', () => { location.href = "Register.html"; });
+    document.getElementById('manage-btn').addEventListener('click', () => { location.href = "Manage.html"; });
+
+    window.onload = () => { loadModels(); getLocation(); };
+  </script>
+</body>
+</html>
