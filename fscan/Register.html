@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ลงทะเบียน - Face Scan</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+    h1 { color: #2c3e50; margin-bottom: 20px; }
+    #video-container { position: relative; width: 100%; max-width: 400px; margin: 0 auto 20px; border-radius: 8px; overflow: hidden; background: #000; }
+    video { width: 100%; height: auto; display: block; }
+    .form-group { text-align: left; margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+    .btn-primary { background-color: #3498db; color: white; }
+    .btn-back { background-color: #95a5a6; color: white; }
+    #status { margin-top: 15px; font-weight: bold; color: #e74c3c; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ลงทะเบียนผู้ใช้ใหม่</h1>
+    
+    <div class="form-group">
+      <label>ชื่อ-นามสกุล (Full Name):</label>
+      <input type="text" id="fullName" placeholder="กรอกชื่อ-นามสกุล">
+    </div>
+    <div class="form-group">
+      <label>อีเมล (Email):</label>
+      <input type="email" id="email" placeholder="example@email.com">
+    </div>
+    <div class="form-group">
+      <label>รหัส PIN 4 หลัก (กรณีกล้องไม่ทำงาน):</label>
+      <input type="password" id="pin" maxlength="4" placeholder="****">
+    </div>
+
+    <div id="video-container">
+      <video id="video" autoplay muted playsinline></video>
+    </div>
+
+    <button id="register-btn" class="btn btn-primary">ลงทะเบียน (Register)</button>
+    <button id="back-btn" class="btn btn-back">กลับหน้าหลัก</button>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const status = document.getElementById('status');
+    const apiUrl = localStorage.getItem('api_url');
+
+    async function callApi(action, data = {}) {
+      if (!apiUrl) { status.innerText = "กรุณาตั้งค่า API URL ที่หน้าหลักก่อน"; return null; }
+      try {
+        const url = `${apiUrl}?action=${action}&${new URLSearchParams(data).toString()}`;
+        const res = await fetch(url);
+        return await res.json();
+      } catch (e) {
+        status.innerText = "API Error: " + e.message;
+        return null;
+      }
+    }
+
+    async function loadModels() {
+      status.innerText = "กำลังโหลดระบบสแกนใบหน้า...";
+      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      ]);
+      status.innerText = "ระบบพร้อมใช้งาน";
+      startVideo();
+    }
+
+    function startVideo() {
+      navigator.mediaDevices.getUserMedia({ video: {} })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => { status.innerText = "ไม่สามารถเข้าถึงกล้องได้"; });
+    }
+
+    document.getElementById('register-btn').addEventListener('click', async () => {
+      const fullName = document.getElementById('fullName').value;
+      const email = document.getElementById('email').value;
+      const pin = document.getElementById('pin').value;
+
+      if (!fullName || !email || !pin) { status.innerText = "กรุณากรอกข้อมูลให้ครบถ้วน"; return; }
+
+      status.innerText = "กำลังสแกนใบหน้าเพื่อบันทึกข้อมูล...";
+      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+
+      if (detections) {
+        const faceDescriptor = Array.from(detections.descriptor);
+        const res = await callApi('registerUser', { fullName, email, faceDescriptor: JSON.stringify(faceDescriptor), pin });
+        if (res && res.success) {
+          status.innerText = res.msg;
+          status.style.color = "#2ecc71";
+          setTimeout(() => { location.href = "Index.html"; }, 2000);
+        } else if (res) {
+          status.innerText = res.msg;
+        }
+      } else {
+        status.innerText = "ไม่พบใบหน้าในกล้อง กรุณาขยับใบหน้าให้ชัดเจน";
+      }
+    });
+
+    document.getElementById('back-btn').addEventListener('click', () => { location.href = "Index.html"; });
+    window.onload = loadModels;
+  </script>
+</body>
+</html>
