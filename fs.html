@@ -820,32 +820,57 @@ a{color:var(--primary);text-decoration:none}
 
 <script>
 // ================================================================
-// CONFIGURATION
+// CONFIGURATION — ใส่ Script ID ที่ได้จาก GAS Deploy ตรงนี้
 // ================================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwjvQgSU9ws4DKfeZOISVloNexxKTfUOcnYee6U5nKVRr7P_UqmJPxqD538flCnV-j1/exec';
-// If running inside GAS, google.script.run is available; otherwise we use fetch
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw_v-HCsLL55gSPnAKpYjOAWH5_fpz2t_-zGApAS6xzYlWwq8LntFdjPeJy2c7HNdxx/exec';
 
-const USE_GAS = (typeof google !== 'undefined' && google.script && google.script.run);
+// ── GAS JSONP bridge (แก้ปัญหา CORS ด้วย JSONP) ──────────────
+let _jsonpCallbackCounter = 0;
 
-// ── GAS bridge ──────────────────────────────────────────────────
 function gasCall(fnName, payload) {
   return new Promise((resolve, reject) => {
-    if (USE_GAS) {
+    // ถ้าอยู่ใน GAS WebApp ใช้ google.script.run โดยตรง
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
       google.script.run
         .withSuccessHandler(resolve)
-        .withFailureHandler(reject)
+        .withFailureHandler(e => reject(e))
         [fnName](payload);
-    } else {
-      // fallback fetch (when hosted on GitHub)
-      fetch(GAS_URL + '?fn=' + fnName, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      .then(r => r.json())
-      .then(resolve)
-      .catch(reject);
+      return;
     }
+
+    // GitHub-hosted → ใช้ JSONP (GET) เพื่อข้าม CORS
+    const cbName = '__gasCb_' + (++_jsonpCallbackCounter) + '_' + Date.now();
+    const timeoutMs = 30000;
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Request timeout: ' + fnName));
+    }, timeoutMs);
+
+    function cleanup() {
+      delete window[cbName];
+      const el = document.getElementById(cbName);
+      if (el) el.remove();
+    }
+
+    window[cbName] = function(data) {
+      clearTimeout(timer);
+      cleanup();
+      resolve(data);
+    };
+
+    const encoded = encodeURIComponent(JSON.stringify(payload || {}));
+    const url = `${GAS_URL}?fn=${encodeURIComponent(fnName)}&data=${encoded}&callback=${cbName}&_t=${Date.now()}`;
+
+    const script = document.createElement('script');
+    script.id  = cbName;
+    script.src = url;
+    script.onerror = function() {
+      clearTimeout(timer);
+      cleanup();
+      reject(new Error('ไม่สามารถเชื่อมต่อ Server ได้ — ตรวจสอบ GAS_URL และการ Deploy'));
+    };
+    document.head.appendChild(script);
   });
 }
 
@@ -945,11 +970,70 @@ let faceApiLoaded = false;
 $(document).ready(function() {
   const savedTheme = localStorage.getItem('theme') || 'day';
   currentThemeIdx = THEMES_LIST.indexOf(savedTheme);
+  if (currentThemeIdx < 0) currentThemeIdx = 0;
   document.documentElement.setAttribute('data-theme', savedTheme);
   document.getElementById('theme-icon').className = `bi ${THEME_ICONS[savedTheme]}`;
   startGeoWatch();
   loadFaceApiModels();
+  testServerConnection();
 });
+
+// ── ทดสอบการเชื่อมต่อ GAS Server ──────────────────────────────
+function testServerConnection() {
+  // แสดง indicator เล็กๆ ขณะทดสอบ
+  const indicator = $(`
+    <div id="server-indicator" style="position:fixed;top:12px;right:12px;z-index:9999;
+         background:rgba(0,0,0,.6);color:#fff;border-radius:20px;padding:6px 14px;font-size:.78rem;
+         display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px)">
+      <div class="spinner" style="width:12px;height:12px;border-width:2px"></div> กำลังเชื่อมต่อ Server...
+    </div>
+  `);
+  $('body').append(indicator);
+
+  gasCall('getLocations', {})
+    .then(data => {
+      $('#server-indicator').html('<i class="bi bi-circle-fill" style="color:#10b981;font-size:.6rem"></i> Server พร้อมใช้งาน')
+        .css('background','rgba(16,185,129,.15)').css('color','#10b981').css('border','1px solid rgba(16,185,129,.3)');
+      setTimeout(() => $('#server-indicator').fadeOut(400, () => $('#server-indicator').remove()), 2500);
+      // โหลด locations ล่วงหน้า
+      if (Array.isArray(data)) {
+        locationsData = data;
+        updateLocationSelects();
+      }
+    })
+    .catch(err => {
+      $('#server-indicator')
+        .html('<i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b"></i> Server ไม่พร้อม — คลิกเพื่อดูวิธีแก้ไข')
+        .css('background','rgba(239,68,68,.15)').css('color','#ef4444').css('border','1px solid rgba(239,68,68,.3)')
+        .css('cursor','pointer')
+        .on('click', showSetupGuide);
+    });
+}
+
+function showSetupGuide() {
+  Swal.fire({
+    icon: 'warning',
+    title: 'วิธีแก้ไขปัญหาเชื่อมต่อ Server',
+    html: `
+      <div style="text-align:left;font-size:.88rem;line-height:1.8">
+        <b style="color:#ef4444">ปัญหา CORS / เชื่อมต่อไม่ได้</b><br/><br/>
+        <b>วิธีแก้ไขใน Google Apps Script:</b><br/>
+        1. เปิด GAS → <b>Deploy → New Deployment</b><br/>
+        2. เลือก Type: <b>Web app</b><br/>
+        3. Execute as: <b>Me</b><br/>
+        4. Who has access: <b>Anyone</b> ✅<br/>
+        5. คัดลอก URL แล้วใส่ใน <code>GAS_URL</code> ใน fs.html<br/><br/>
+        <b>ตรวจสอบ GAS_URL ปัจจุบัน:</b><br/>
+        <code style="font-size:.75rem;word-break:break-all;background:#f1f5f9;padding:4px;border-radius:4px">${GAS_URL}</code>
+      </div>
+    `,
+    confirmButtonText: 'เข้าใจแล้ว',
+    confirmButtonColor: '#4f8ef7',
+    background: 'var(--card)',
+    color: 'var(--text)',
+    width: 520
+  });
+}
 
 // ================================================================
 // GEOLOCATION
@@ -1037,7 +1121,7 @@ function doLogin() {
   if (!username || !password) { showToast('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน', 'error'); return; }
 
   Swal.fire({
-    title: 'กำลังเข้าสู่ระบบ',
+    title: 'กำลังเข้าสู่ระบบ...',
     html: '<div class="spinner" style="border-color:#e5e7eb;border-top-color:#4f8ef7;width:36px;height:36px;margin:auto"></div>',
     showConfirmButton: false, allowOutsideClick: false, background: 'var(--card)', color: 'var(--text)'
   });
@@ -1046,34 +1130,46 @@ function doLogin() {
   gasCall('loginEmployee', { username, password, device })
     .then(res => {
       Swal.close();
-      if (res.success) {
+      if (res && res.success) {
         currentUser = res.employee;
         isAdmin = false;
         enterApp();
         if (location) loadLocations();
       } else {
-        Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: res.message, confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
+        Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: (res && res.message) || 'เกิดข้อผิดพลาด', confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
       }
     })
     .catch(err => {
-      Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถเชื่อมต่อ Server', confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
+      Swal.close();
+      Swal.fire({ icon: 'error', title: 'เชื่อมต่อ Server ไม่ได้', html: `<small style="color:#64748b">${err.message||'JSONP error'}</small><br/><br/>กรุณาตรวจสอบว่า GAS Deploy เป็น <b>"Anyone"</b> แล้ว`, confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
     });
 }
 
 function doAdminLogin() {
   const password = $('#admin-password').val().trim();
   if (!password) { showToast('กรุณากรอกรหัสผ่าน', 'error'); return; }
+
+  Swal.fire({
+    title: 'กำลังเข้าสู่ระบบ Admin...',
+    html: '<div class="spinner" style="border-color:#e5e7eb;border-top-color:#f59e0b;width:36px;height:36px;margin:auto"></div>',
+    showConfirmButton: false, allowOutsideClick: false, background: 'var(--card)', color: 'var(--text)'
+  });
+
   gasCall('adminLogin', { password, device: navigator.userAgent.slice(0,80) })
     .then(res => {
-      if (res.success) {
+      Swal.close();
+      if (res && res.success) {
         currentUser = { username: 'admin', full_name: 'ผู้ดูแลระบบ', department: 'Admin', position: 'Administrator' };
         isAdmin = true;
         enterApp();
       } else {
-        Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', text: res.message, confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
+        Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', text: (res && res.message) || 'รหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
       }
     })
-    .catch(() => showToast('ไม่สามารถเชื่อมต่อ Server', 'error'));
+    .catch(err => {
+      Swal.close();
+      Swal.fire({ icon: 'error', title: 'เชื่อมต่อ Server ไม่ได้', html: `<small style="color:#64748b">${err.message||'JSONP error'}</small><br/><br/>กรุณาตรวจสอบว่า GAS Deploy เป็น <b>"Anyone"</b> และ <b>Execute as: Me</b>`, confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
+    });
 }
 
 function doLogout() {
@@ -1115,22 +1211,28 @@ function doRegister() {
 
   Swal.fire({
     title: 'ยืนยันการลงทะเบียน?',
-    html: `<b>${data.full_name}</b><br/>แผนก: ${data.department||'-'}`,
+    html: `<b>${escHtml(data.full_name)}</b><br/>แผนก: ${escHtml(data.department||'-')}`,
     icon: 'question', showCancelButton: true,
     confirmButtonText: 'ลงทะเบียน', cancelButtonText: 'ยกเลิก',
     confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)'
   }).then(r => {
     if (!r.isConfirmed) return;
+    Swal.fire({
+      title: 'กำลังลงทะเบียน...',
+      html: '<div class="spinner" style="border-color:#e5e7eb;border-top-color:#4f8ef7;width:36px;height:36px;margin:auto"></div>',
+      showConfirmButton: false, allowOutsideClick: false, background: 'var(--card)', color: 'var(--text)'
+    });
     gasCall('registerEmployee', data)
       .then(res => {
-        if (res.success) {
+        Swal.close();
+        if (res && res.success) {
           Swal.fire({ icon: 'success', title: 'ลงทะเบียนสำเร็จ!', text: res.message, confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
           switchLoginTab('login');
         } else {
-          Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', text: res.message, confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
+          Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', text: (res && res.message) || 'เกิดข้อผิดพลาด', confirmButtonColor: '#4f8ef7', background: 'var(--card)', color: 'var(--text)' });
         }
       })
-      .catch(() => showToast('ไม่สามารถเชื่อมต่อ Server', 'error'));
+      .catch(err => { Swal.close(); showToast('Server error: ' + (err.message||''), 'error'); });
   });
 }
 
@@ -1686,11 +1788,17 @@ function deleteLocationConfirm(locId, name) {
     confirmButtonColor: '#ef4444', background: 'var(--card)', color: 'var(--text)'
   }).then(r => {
     if (r.isConfirmed) {
-      gasCall('deleteLocation', locId)
+      // ส่ง loc_id เป็น object เพื่อให้ JSONP รับได้ถูกต้อง
+      gasCall('deleteLocation', { loc_id: locId })
         .then(res => {
-          showToast(res.success ? res.message : res.message, res.success ? 'success' : 'error');
-          if (res.success) loadLocations();
-        });
+          if (res && res.success) {
+            showToast(res.message, 'success');
+            loadLocations();
+          } else {
+            showToast((res && res.message) || 'เกิดข้อผิดพลาด', 'error');
+          }
+        })
+        .catch(err => showToast('Server error: ' + (err.message||''), 'error'));
     }
   });
 }
@@ -1777,7 +1885,7 @@ function exportCSV() {
 // ================================================================
 function loadActivityLog() {
   $('#actlog-loading').show();
-  gasCall('getActivityLog', 100)
+  gasCall('getActivityLog', { limit: 100 })
     .then(data => {
       $('#actlog-loading').hide();
       const html = (data||[]).map(l => `
