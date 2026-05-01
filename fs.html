@@ -385,6 +385,22 @@
   </div>
 </div>
 
+<!-- ── GAS Setup Warning Banner (hidden once URL is set) ── -->
+<div id="setupBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;
+  background:linear-gradient(90deg,#e55353,#f7b731);color:#fff;
+  font-family:'Sarabun',sans-serif;font-size:0.9rem;font-weight:600;
+  padding:10px 20px;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,0.2);">
+  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+  ยังไม่ได้ตั้งค่า GAS_URL — กรุณาแทนค่า <code style="background:rgba(0,0,0,0.2);padding:2px 6px;border-radius:4px;">YOUR_DEPLOYMENT_ID</code>
+  ใน fs.html บรรทัด 1100 ด้วย Deployment ID จริงของคุณ
+  <a href="https://script.google.com" target="_blank"
+    style="color:#fff;font-weight:800;margin-left:10px;text-decoration:underline;">
+    เปิด Google Apps Script <i class="bi bi-box-arrow-up-right"></i></a>
+  <button onclick="document.getElementById('setupBanner').style.display='none'"
+    style="margin-left:16px;background:rgba(255,255,255,0.25);border:none;border-radius:6px;
+           color:#fff;padding:3px 10px;cursor:pointer;font-size:0.85rem;">✕</button>
+</div>
+
 <!-- Background Canvas -->
 <canvas id="bgCanvas"></canvas>
 
@@ -1097,8 +1113,10 @@
 // ============================================================
 // GAS ENDPOINT
 // ============================================================
-const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
-// NOTE: Replace YOUR_DEPLOYMENT_ID with your actual Google Apps Script deployment ID
+// ▼▼▼ แทนค่า Deployment ID ของคุณที่นี่ ▼▼▼
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwZwjcsu2HdSNKKe41pd-ddYm9NF-rx-bqhAelkmxl7QsqMmfgDX13KkyXO67peciUD/exec';
+// ▲▲▲ วิธีได้ค่านี้: GAS Editor → Deploy → New deployment → Web app
+//     Execute as: Me | Who has access: Anyone  → Copy the /exec URL
 
 // ============================================================
 // STATE
@@ -1240,22 +1258,57 @@ function callGAS(params) {
   });
 }
 
+// ============================================================
+// gasRun — JSONP bridge (bypasses CORS from GitHub Pages → GAS)
+// GAS doGet must echo: callback(JSON)  when ?callback= is present
+// ============================================================
+let _jsonpSeq = 0;
+
 function gasRun(fnName, data = {}) {
   return new Promise((resolve, reject) => {
+
+    /* ── Inside GAS WebApp (google.script.run available) ─────── */
     if (typeof google !== 'undefined' && google.script && google.script.run) {
       google.script.run
         .withSuccessHandler(resolve)
-        .withFailureHandler(reject)
+        .withFailureHandler(err => reject(new Error(err.message || String(err))))
         [fnName](data);
-    } else {
-      // Standalone HTML: call backend via fetch
-      fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: fnName, ...data })
-      }).then(r => r.json()).then(resolve).catch(reject);
+      return;
     }
+
+    /* ── External origin (GitHub Pages) → JSONP via <script> ─── */
+    const cbName = '__gasCb_' + (++_jsonpSeq) + '_' + Date.now();
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('GAS timeout — ตรวจสอบ Deployment ID และสิทธิ์ "Anyone"'));
+    }, 30000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      const old = document.getElementById(cbName);
+      if (old) old.remove();
+    }
+
+    window[cbName] = function(result) {
+      cleanup();
+      resolve(result);
+    };
+
+    // Encode payload into URL query so GAS doGet can read it
+    const payload = encodeURIComponent(JSON.stringify({ fn: fnName, data }));
+    const url = GAS_URL
+      + '?callback=' + cbName
+      + '&payload=' + payload;
+
+    const s = document.createElement('script');
+    s.id   = cbName;
+    s.src  = url;
+    s.onerror = () => {
+      cleanup();
+      reject(new Error('JSONP script load failed — ตรวจสอบ GAS_URL'));
+    };
+    document.head.appendChild(s);
   });
 }
 
@@ -2239,8 +2292,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setTheme(savedTheme);
 
   // Initialize
-  loadLocations();
-  initializeSheets_Frontend();
+  initializeSheets_Frontend();   // shows banner if URL not set
+  loadLocations();               // uses JSONP gasRun
 
   // Hide loader
   setTimeout(() => {
@@ -2250,11 +2303,34 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeSheets_Frontend() {
+  // Show setup banner if GAS_URL is not configured
+  if (GAS_URL.includes('YOUR_DEPLOYMENT_ID')) {
+    const banner = document.getElementById('setupBanner');
+    if (banner) banner.style.display = '';
+    console.warn('⚠️ GAS_URL ยังไม่ได้ตั้งค่า — แทนค่า YOUR_DEPLOYMENT_ID ด้วย Deployment ID จริง');
+    return;
+  }
   // Call backend to initialize sheets on first run
   gasRun('initializeSheets').then(result => {
-    console.log('Sheets initialized:', result);
+    console.log('✅ Sheets initialized:', result);
   }).catch(err => {
-    console.log('Initialize (standalone mode):', err.message);
+    console.warn('⚠️ initializeSheets error:', err.message);
+  });
+}
+
+// ── JSONP health-check (ใช้ test การเชื่อมต่อ) ──────────────
+function testGASConnection() {
+  if (GAS_URL.includes('YOUR_DEPLOYMENT_ID')) return;
+  gasRun('getLocations').then(locs => {
+    console.log('✅ GAS connection OK — locations:', locs && locs.length);
+  }).catch(err => {
+    console.warn('⚠️ GAS connection failed:', err.message);
+    const banner = document.getElementById('setupBanner');
+    if (banner) {
+      banner.style.background = 'linear-gradient(90deg,#7c3aed,#e55353)';
+      banner.querySelector('i').className = 'bi bi-wifi-off me-2';
+      banner.style.display = '';
+    }
   });
 }
 
