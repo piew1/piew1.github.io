@@ -821,7 +821,8 @@
    CONFIGURATION  ← แก้ไขค่าเหล่านี้ตามสภาพแวดล้อมจริง
 ═══════════════════════════════════════════════════════════════════ */
 const CONFIG = {
-  // URL ของ Google Apps Script Web App (วาง URL หลัง Deploy)
+  // ─── วาง Deployment URL ของ Google Apps Script ที่นี่ ───────────────
+  // ตัวอย่าง: 'https://script.google.com/macros/s/AKfy.../exec'
   GAS_URL: 'https://script.google.com/macros/s/AKfycbwmPovd3wRRQRfbu1jw_qfD-inpw07AkXkR_amiQzw9BYt6P8lI6yeBPm4ENokyPQ/exec',
 
   // ตำแหน่งศูนย์กลาง (สำนักงาน) — เปลี่ยนเป็นพิกัดจริง
@@ -832,7 +833,10 @@ const CONFIG = {
   // Admin password (ในโปรดักชัน ควรใช้ GAS ตรวจสอบแทน)
   ADMIN_PASS: 'admin123',
 
-  // Demo mode (true = ไม่เรียก GAS จริง, ใช้ข้อมูลจำลอง)
+  // ─── DEMO_MODE ────────────────────────────────────────────────────────
+  // true  = ทำงานแบบ Offline / จำลอง (ไม่เรียก GAS จริง)
+  // false = เรียก GAS จริง (ต้องตั้งค่า GAS_URL และ deploy GAS ก่อน)
+  // *** หมายเหตุ CORS: GAS ต้องถูก Deploy แบบ "Anyone" และใช้ JSONP ***
   DEMO_MODE: false
 };
 
@@ -859,8 +863,99 @@ $(document).ready(function () {
   initGPS();
   loadDemoData();
   renderCodeViewer();
+  checkConfigWarnings();
   // face-api.js models จะโหลดเมื่อเปิดกล้องครั้งแรก
 });
+
+/* ─── CONFIG WARNINGS ──────────────────────────────────────── */
+function checkConfigWarnings() {
+  // ถ้าอยู่ใน Demo Mode → แสดง banner แจ้ง
+  if (CONFIG.DEMO_MODE) {
+    showDemoBanner();
+  } else if (CONFIG.GAS_URL.includes('YOUR_DEPLOYMENT_ID')) {
+    // ยังไม่ได้ตั้งค่า URL
+    Swal.fire({
+      icon: 'warning',
+      title: '⚙️ ยังไม่ได้ตั้งค่า GAS URL',
+      html: `
+        <div style="font-size:.88rem;text-align:left;">
+          กรุณาแก้ไข <code>CONFIG.GAS_URL</code> ในไฟล์ index.html<br>
+          หรือเปิดใช้ <code>DEMO_MODE: true</code> เพื่อทดสอบแบบ Offline<br><br>
+          <b>วิธี Deploy GAS:</b><br>
+          Deploy → New Deployment → Web App → Anyone
+        </div>`,
+      confirmButtonText: 'ดูวิธีติดตั้ง',
+      showCancelButton: true,
+      cancelButtonText: 'ใช้ Demo Mode'
+    }).then(r => {
+      if (r.isConfirmed) showSetupGuide();
+      else { CONFIG.DEMO_MODE = true; loadDemoData(); showDemoBanner(); }
+    });
+  }
+}
+
+function showDemoBanner() {
+  const banner = $(`
+    <div id="demoBanner" style="
+      background: linear-gradient(90deg,#7c3aed,#4f46e5);
+      color:#fff; font-size:.8rem; text-align:center;
+      padding:.45rem 1rem; position:sticky; top:64px; z-index:1050;
+      display:flex; align-items:center; justify-content:center; gap:.75rem;
+    ">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span><b>Demo Mode</b> — ข้อมูลไม่ได้บันทึกจริง (ทำงานแบบ Offline)</span>
+      <button onclick="openGasUrlModal()" style="
+        background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.4);
+        color:#fff; border-radius:6px; padding:.2rem .65rem;
+        font-size:.75rem; cursor:pointer; font-family:Sarabun,sans-serif;
+      "><i class="bi bi-link-45deg me-1"></i>ตั้งค่า GAS URL</button>
+      <button onclick="$('#demoBanner').slideUp()" style="
+        background:none; border:none; color:rgba(255,255,255,.7);
+        cursor:pointer; font-size:1rem; padding:0;
+      "><i class="bi bi-x-lg"></i></button>
+    </div>
+  `);
+  $('nav.navbar-custom').after(banner);
+}
+
+/* ─── INLINE GAS URL SETTER ────────────────────────────────── */
+function openGasUrlModal() {
+  Swal.fire({
+    title: '<i class="bi bi-link-45deg me-2"></i>ตั้งค่า GAS URL',
+    html: `
+      <div style="font-size:.85rem;text-align:left;margin-bottom:.75rem;color:#64748b;">
+        วาง Deployment URL ของ Google Apps Script:<br>
+        <small>(Deploy → Web App → "Anyone" → Copy URL)</small>
+      </div>
+      <input id="swal-gasurl" class="swal2-input" placeholder="https://script.google.com/macros/s/.../exec"
+        value="${CONFIG.GAS_URL.includes('YOUR_DEPLOYMENT') ? '' : CONFIG.GAS_URL}"
+        style="font-size:.8rem;">
+      <div style="margin-top:.75rem;font-size:.78rem;background:#f0fdf4;border-radius:8px;padding:.6rem .9rem;text-align:left;">
+        <b style="color:#16a34a;">✅ หลังตั้งค่า:</b><br>
+        • DEMO_MODE จะถูกปิดอัตโนมัติ<br>
+        • ระบบจะส่งข้อมูลจริงไปยัง GAS<br>
+        • ตรวจสอบว่า doGet() ใน Code.gs รองรับ JSONP แล้ว
+      </div>`,
+    confirmButtonText: '<i class="bi bi-save me-1"></i>บันทึก',
+    showCancelButton: true,
+    cancelButtonText: 'ยกเลิก',
+    preConfirm: () => {
+      const val = document.getElementById('swal-gasurl').value.trim();
+      if (!val || !val.startsWith('https://script.google.com')) {
+        Swal.showValidationMessage('URL ไม่ถูกต้อง ต้องเริ่มต้นด้วย https://script.google.com');
+        return false;
+      }
+      return val;
+    }
+  }).then(r => {
+    if (r.isConfirmed && r.value) {
+      CONFIG.GAS_URL    = r.value;
+      CONFIG.DEMO_MODE  = false;
+      $('#demoBanner').remove();
+      showToast('บันทึก GAS URL สำเร็จ — ปิด Demo Mode แล้ว', 'success');
+    }
+  });
+}
 
 /* ─── CLOCK ────────────────────────────────────────────────── */
 function startClock() {
@@ -996,7 +1091,10 @@ function stopCamera(mode) {
   $(`#btnOpenCam-${mode}`).prop('disabled', false);
   // clear overlay
   const overlay = document.getElementById(`overlay-${mode}`);
-  if (overlay) overlay.getContext('2d').clearRect(0,0,overlay.width,overlay.height);
+  if (overlay) {
+    const octx = overlay.getContext('2d', { willReadFrequently: true });
+    octx.clearRect(0, 0, overlay.width, overlay.height);
+  }
 }
 
 /* Real-time face bounding box overlay */
@@ -1007,7 +1105,8 @@ async function startFaceOverlay(mode) {
   const overlay = document.getElementById(`overlay-${mode}`);
   overlay.width  = video.videoWidth  || 640;
   overlay.height = video.videoHeight || 480;
-  const ctx = overlay.getContext('2d');
+  // willReadFrequently=true เพื่อเพิ่มประสิทธิภาพ getImageData (face-api ใช้บ่อย)
+  const ctx = overlay.getContext('2d', { willReadFrequently: true });
 
   overlayTimers[mode] = setInterval(async () => {
     if (!STATE.streams[mode]) { clearInterval(overlayTimers[mode]); return; }
@@ -1056,7 +1155,9 @@ async function captureAndScan(mode) {
   const canvas = document.createElement('canvas');
   canvas.width  = video.videoWidth  || 640;
   canvas.height = video.videoHeight || 480;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  // willReadFrequently=true แก้ warning: "Multiple readback operations faster with willReadFrequently"
+  const snapCtx = canvas.getContext('2d', { willReadFrequently: true });
+  snapCtx.drawImage(video, 0, 0);
 
   let faceDescriptor = null;
   let faceFound = false;
@@ -1523,19 +1624,64 @@ function renderAdminAttLog() {
   $('#adminAttLog').html(html);
 }
 
-/* ─── GAS CALL ───────────────────────────────────────────── */
+/* ─── GAS CALL (JSONP — แก้ CORS สำหรับ External Web App) ──────────────
+   GAS Web App ไม่รองรับ CORS preflight (POST+JSON) จาก External Origin
+   แก้โดยใช้ JSONP (GET + callback param) แทน
+   ใน Code.gs: doGet(e) ต้องรองรับ e.parameter.data และ e.parameter.callback
+─────────────────────────────────────────────────────────────────────── */
 function callGAS(payload, callback) {
+  // เข้ารหัส payload เป็น Base64 เพื่อส่งผ่าน GET parameter
+  const encodedData = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(payload)))));
+  const url = CONFIG.GAS_URL + '?data=' + encodedData;
+
+  // ใช้ JSONP เพื่อหลีกเลี่ยง CORS
   $.ajax({
-    url: CONFIG.GAS_URL,
-    method: 'POST',
-    contentType: 'application/json',
-    data: JSON.stringify(payload),
-    success: res => callback(typeof res === 'string' ? JSON.parse(res) : res),
-    error: err => {
+    url: url,
+    type: 'GET',
+    dataType: 'jsonp',
+    jsonp: 'callback',
+    timeout: 20000,
+    success: function(res) {
+      try {
+        const result = (typeof res === 'string') ? JSON.parse(res) : res;
+        callback(result);
+      } catch(e) {
+        callback({ success: false, message: 'Parse error: ' + e.message });
+      }
+    },
+    error: function(xhr, status, err) {
       hideLoading();
-      Swal.fire({ icon:'error', title:'เชื่อมต่อ Server ไม่สำเร็จ', text: err.statusText });
+      const msg = status === 'timeout'
+        ? 'หมดเวลาเชื่อมต่อ (timeout) กรุณาตรวจสอบ Internet'
+        : 'เชื่อมต่อ GAS ไม่สำเร็จ: ' + (err || status) +
+          '<br><small style="color:#94a3b8;">ตรวจสอบว่า Deploy GAS แบบ "Anyone" และ URL ถูกต้อง</small>';
+      Swal.fire({
+        icon: 'error',
+        title: 'เชื่อมต่อ Server ไม่สำเร็จ',
+        html: msg + `
+          <div style="margin-top:1rem;padding:.75rem;background:#f1f5f9;border-radius:8px;font-size:.78rem;text-align:left;">
+            <b>💡 วิธีแก้:</b><br>
+            1. ตรวจสอบว่า GAS Deploy แบบ <b>"Anyone"</b><br>
+            2. ใน Code.gs ใช้ <b>doGet()</b> พร้อม JSONP support<br>
+            3. หรือเปิด <b>DEMO_MODE: true</b> เพื่อทดสอบแบบ Offline
+          </div>`,
+        confirmButtonText: 'เข้าใจแล้ว'
+      });
     }
   });
+}
+
+/* ─── GAS CALL (Fetch + no-cors fallback สำหรับ Same-Origin) ──────────
+   ใช้เมื่อ GAS อยู่ใน Google Sites หรือเปิดผ่าน GAS URL โดยตรง
+   (ไม่สามารถอ่าน response ใน no-cors mode ได้ — ใช้เฉพาะ fire-and-forget)
+─────────────────────────────────────────────────────────────────────── */
+function callGAS_noCors(payload) {
+  // Encode payload to URL params (ไม่ trigger preflight)
+  const params = new URLSearchParams({ data: JSON.stringify(payload) });
+  fetch(CONFIG.GAS_URL + '?' + params.toString(), {
+    method: 'GET',
+    mode: 'no-cors'
+  }).catch(e => console.warn('GAS no-cors call failed:', e));
 }
 
 /* ─── UTILITIES ──────────────────────────────────────────── */
@@ -1621,9 +1767,55 @@ const CACHE_TTL        = 300;          // Cache TTL วินาที (5 นา
 // ─── WEB APP ENTRY POINTS ─────────────────────────────────────
 
 /**
- * doGet — แสดงหน้า HTML (index.html)
+ * doGet — ⭐ Entry Point หลัก: รองรับทั้ง HTML Page และ JSONP API
+ *
+ * GAS Web App ที่ถูก Deploy จาก External Origin (GitHub Pages, etc.)
+ * มีปัญหา CORS เมื่อใช้ POST+JSON (preflight ถูก block)
+ * วิธีแก้: ใช้ JSONP ผ่าน GET parameter แทน
+ *
+ * Request รูปแบบ:
+ *   - แสดง HTML : GET /exec  (ไม่มี ?data=)
+ *   - JSONP API : GET /exec?data=BASE64_PAYLOAD&callback=JSONP_CB_NAME
  */
 function doGet(e) {
+  const params = e && e.parameter ? e.parameter : {};
+
+  // ─── JSONP API Mode: มี ?data= parameter ─────────────────────
+  if (params.data) {
+    try {
+      // ถอดรหัส Base64 payload ที่ส่งมาจาก Frontend
+      const decoded  = decodeURIComponent(escape(Utilities.base64Decode(params.data, Utilities.Charset.UTF_8).map(b => String.fromCharCode(b)).join('')));
+      const payload  = JSON.parse(decoded);
+      const cbName   = params.callback || 'callback'; // JSONP callback name
+      let   result;
+
+      switch (payload.action) {
+        case 'register':     result = handleRegister(payload);       break;
+        case 'login':        result = handleLogin(payload);          break;
+        case 'approve':      result = handleApprove(payload);        break;
+        case 'reject':       result = handleReject(payload);         break;
+        case 'delete':       result = handleDelete(payload);         break;
+        case 'getEmployees': result = handleGetEmployees();          break;
+        case 'getAttendance':result = handleGetAttendance(payload);  break;
+        default:
+          result = { success: false, message: 'Unknown action: ' + payload.action };
+      }
+
+      // ส่งกลับเป็น JSONP: callback({ ... })
+      const jsonpResponse = cbName + '(' + JSON.stringify(result) + ');';
+      return ContentService
+        .createTextOutput(jsonpResponse)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+
+    } catch (err) {
+      const cbName = (params.callback || 'callback');
+      return ContentService
+        .createTextOutput(cbName + '(' + JSON.stringify({ success: false, message: err.toString() }) + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+  }
+
+  // ─── HTML Page Mode: แสดงหน้า Web App ───────────────────────
   return HtmlService
     .createHtmlOutputFromFile('index')
     .setTitle('Face Scan & GPS Tracker')
@@ -1631,7 +1823,8 @@ function doGet(e) {
 }
 
 /**
- * doPost — รับ JSON จาก Frontend แล้วส่ง response กลับ
+ * doPost — รองรับ POST (เมื่อเรียกจาก Same-Origin / GAS Script ด้วยกัน)
+ * หมายเหตุ: Cross-Origin POST จะถูก CORS block — ใช้ doGet (JSONP) แทน
  */
 function doPost(e) {
   try {
@@ -1639,13 +1832,13 @@ function doPost(e) {
     let result;
 
     switch (payload.action) {
-      case 'register':  result = handleRegister(payload);  break;
-      case 'login':     result = handleLogin(payload);     break;
-      case 'approve':   result = handleApprove(payload);   break;
-      case 'reject':    result = handleReject(payload);    break;
-      case 'delete':    result = handleDelete(payload);    break;
-      case 'getEmployees':  result = handleGetEmployees();     break;
-      case 'getAttendance': result = handleGetAttendance(payload); break;
+      case 'register':     result = handleRegister(payload);       break;
+      case 'login':        result = handleLogin(payload);          break;
+      case 'approve':      result = handleApprove(payload);        break;
+      case 'reject':       result = handleReject(payload);         break;
+      case 'delete':       result = handleDelete(payload);         break;
+      case 'getEmployees': result = handleGetEmployees();          break;
+      case 'getAttendance':result = handleGetAttendance(payload);  break;
       default:
         result = { success: false, message: 'Unknown action: ' + payload.action };
     }
