@@ -659,32 +659,66 @@ const App = {
 };
 
 // ════════════════════════════════════════════════════════════
-// GAS BRIDGE  (ใน GAS Webapp ใช้ google.script.run)
-//             (ใน standalone host ให้เปลี่ยน API_URL)
+// GAS BRIDGE
+// ─ วิธีใช้: ใส่ URL Webapp ที่ Deploy แล้วใน GAS_URL
+// ─ ถ้าเว้นว่าง → Demo Mode (ข้อมูลอยู่ใน memory เท่านั้น)
+//
+// ─ ทำไมต้องใช้ JSONP แทน fetch()?
+//   GAS Webapp ไม่ส่ง CORS header กลับมาให้ external origin
+//   fetch() จึง fail ด้วย "Failed to fetch" เสมอ
+//   JSONP ใช้ <script> tag แทน ซึ่งไม่มีข้อจำกัด CORS
 // ════════════════════════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxiT8_r2AQu7Rr719WkFCHt4H9D4dPHU-vcysMlZjXEOYvYlkNg3AUcNA7MBfD8oqd1/exec'; // ← ใส่ URL ของ GAS Webapp ที่ deploy แล้ว
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbywauRHxFHABlbziNn7ip9wvcxh17Lb3QgF2ToIZf87FfOSqbeiyGZbrOYZh0BR7Wv1/exec'; // ← เช่น 'https://script.google.com/macros/s/XXXXXXXX/exec'
 
 function callGAS(fnName, params) {
   return new Promise((resolve, reject) => {
+
+    // ─── Case 1: รันใน GAS Webapp โดยตรง ───────────────────
     if (typeof google !== 'undefined' && google.script && google.script.run) {
-      // Running inside GAS Webapp
       google.script.run
         .withSuccessHandler(resolve)
-        .withFailureHandler(reject)
+        .withFailureHandler(err => reject(new Error(err.message || String(err))))
         [fnName](params);
-    } else {
-      // Standalone host → ส่ง JSONP/fetch ไปยัง GAS Webapp
-      if (!GAS_URL) {
-        // Demo mode: simulate responses
-        resolve(simulateGAS(fnName, params));
-        return;
-      }
-      const url = GAS_URL + '?fn=' + fnName + '&data=' + encodeURIComponent(JSON.stringify(params));
-      fetch(url)
-        .then(r => r.json())
-        .then(resolve)
-        .catch(reject);
+      return;
     }
+
+    // ─── Case 2: ไม่มี GAS_URL → Demo Mode ─────────────────
+    if (!GAS_URL) {
+      resolve(simulateGAS(fnName, params));
+      return;
+    }
+
+    // ─── Case 3: External Host (GitHub Pages ฯลฯ) → JSONP ──
+    // GAS ต้องตอบกลับด้วย callback(jsonString) ผ่าน doGet
+    const cbName = '_gasCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('GAS timeout — ตรวจสอบ GAS_URL และสิทธิ์ Webapp'));
+    }, 15000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      const el = document.getElementById(cbName);
+      if (el) el.remove();
+    }
+
+    // GAS จะเรียก window[cbName](data) เมื่อสำเร็จ
+    window[cbName] = function(data) { cleanup(); resolve(data); };
+
+    const qs = 'fn=' + encodeURIComponent(fnName)
+             + '&data=' + encodeURIComponent(JSON.stringify(params || {}))
+             + '&callback=' + cbName;
+
+    const s = document.createElement('script');
+    s.id = cbName;
+    s.src = GAS_URL + '?' + qs;
+    s.onerror = function() {
+      cleanup();
+      reject(new Error('ไม่สามารถเชื่อมต่อ GAS — ตรวจสอบ GAS_URL และตั้งค่า Access: Anyone'));
+    };
+    document.head.appendChild(s);
   });
 }
 
