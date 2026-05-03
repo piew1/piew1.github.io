@@ -1,1442 +1,2570 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบเข้า-ออก พนักงาน</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ระบบเข้า-ออก พนักงาน | Face Scan & GPS Tracker</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <!-- SweetAlert2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
+  <!-- Google Font: Sarabun -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
   <style>
     :root {
-      --brand: #12372a;
-      --brand-2: #2d6a4f;
-      --accent: #f4b942;
-      --ink: #17201b;
-      --muted: #6d776f;
-      --surface: #ffffff;
-      --line: rgba(18, 55, 42, 0.14);
-      --soft: #f6f3ec;
-      --danger: #bd3d3a;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #7c3aed;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --bg-gradient: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #7c3aed 100%);
+      --card-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      --glass: rgba(255,255,255,0.95);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
+      font-family: 'Sarabun', sans-serif;
+      background: var(--bg-gradient);
       min-height: 100vh;
-      margin: 0;
-      font-family: "Sarabun", sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at 15% 8%, rgba(244, 185, 66, 0.2), transparent 28rem),
-        linear-gradient(135deg, #fbfaf6 0%, #edf4ef 48%, #dbe9df 100%);
+      color: #1e293b;
     }
 
-    a {
-      color: var(--brand-2);
+    /* ===== PARTICLES BG ===== */
+    #particles-bg {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .particle {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
     }
 
-    .app-nav {
-      min-height: 74px;
-      backdrop-filter: blur(18px);
-      background: rgba(251, 250, 246, 0.8);
-      border-bottom: 1px solid var(--line);
-    }
+    /* ===== PAGES ===== */
+    .page { display: none; min-height: 100vh; position: relative; z-index: 1; }
+    .page.active { display: flex; flex-direction: column; }
 
-    .brand-mark {
-      display: inline-grid;
-      width: 42px;
-      height: 42px;
-      place-items: center;
-      color: #fff;
-      background: var(--brand);
-      border-radius: 14px;
-      box-shadow: 0 16px 35px rgba(18, 55, 42, 0.18);
-    }
-
-    .login-composition {
-      position: relative;
-      min-height: calc(100vh - 74px);
-      padding: 42px 0 54px;
-      overflow: hidden;
-    }
-
-    .login-composition::before {
-      content: "";
-      position: absolute;
-      right: -12vw;
-      top: 8vh;
-      width: min(54vw, 680px);
-      height: min(54vw, 680px);
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(45, 106, 79, 0.24), rgba(45, 106, 79, 0));
-      animation: breathe 7s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    .hero-title {
-      max-width: 760px;
-      font-size: clamp(2.3rem, 5.6vw, 5rem);
-      line-height: 0.98;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      color: var(--brand);
-    }
-
-    .hero-copy {
-      max-width: 640px;
-      color: #3b473f;
-      font-size: 1.1rem;
-    }
-
-    .panel {
-      position: relative;
-      background: rgba(255, 255, 255, 0.84);
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      box-shadow: 0 28px 80px rgba(18, 55, 42, 0.13);
-    }
-
-    .interaction-panel {
-      padding: 26px;
-    }
-
-    .video-frame {
-      position: relative;
-      width: 100%;
-      min-height: 320px;
-      overflow: hidden;
-      background: #101b15;
-      border-radius: 28px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .video-frame video {
-      width: 100%;
-      height: 100%;
-      min-height: 320px;
-      object-fit: cover;
-      transform: scaleX(-1);
-      opacity: 0.92;
-    }
-
-    .video-frame .placeholder {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      color: rgba(255, 255, 255, 0.72);
-      text-align: center;
-      padding: 24px;
-      pointer-events: none;
-    }
-
-    .scan-line {
-      position: absolute;
-      left: 8%;
-      right: 8%;
-      top: 14%;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(244, 185, 66, 0.95), transparent);
-      opacity: 0;
-      box-shadow: 0 0 24px rgba(244, 185, 66, 0.7);
-    }
-
-    .is-scanning .scan-line {
-      opacity: 1;
-      animation: scan 1.65s ease-in-out infinite;
-    }
-
-    .btn-brand {
-      --bs-btn-color: #fff;
-      --bs-btn-bg: var(--brand);
-      --bs-btn-border-color: var(--brand);
-      --bs-btn-hover-color: #fff;
-      --bs-btn-hover-bg: #0d2b20;
-      --bs-btn-hover-border-color: #0d2b20;
-      --bs-btn-active-bg: #0a231a;
-      --bs-btn-active-border-color: #0a231a;
-      border-radius: 999px;
-      padding: 0.78rem 1.2rem;
-      font-weight: 700;
-    }
-
-    .btn-soft {
-      --bs-btn-color: var(--brand);
-      --bs-btn-bg: rgba(45, 106, 79, 0.08);
-      --bs-btn-border-color: rgba(45, 106, 79, 0.16);
-      --bs-btn-hover-color: var(--brand);
-      --bs-btn-hover-bg: rgba(45, 106, 79, 0.14);
-      --bs-btn-hover-border-color: rgba(45, 106, 79, 0.24);
-      border-radius: 999px;
-      font-weight: 700;
-    }
-
-    .form-control,
-    .form-select {
-      border-radius: 16px;
-      border-color: rgba(18, 55, 42, 0.16);
-      padding: 0.78rem 0.95rem;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-      border-color: rgba(45, 106, 79, 0.62);
-      box-shadow: 0 0 0 0.2rem rgba(45, 106, 79, 0.12);
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      min-height: 38px;
-      padding: 0.48rem 0.82rem;
-      border-radius: 999px;
-      color: var(--brand);
-      background: rgba(45, 106, 79, 0.08);
-      border: 1px solid rgba(45, 106, 79, 0.12);
-      font-size: 0.92rem;
-    }
-
-    .admin-shell {
-      display: none;
-      min-height: 100vh;
-      background: #fbfaf6;
-    }
-
-    .admin-section {
-      padding: 28px 0;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .metric {
-      min-height: 118px;
-      padding: 20px;
+    /* ===== CARD ===== */
+    .main-card {
+      background: var(--glass);
       border-radius: 24px;
-      background: #ffffff;
-      border: 1px solid var(--line);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.3);
+      overflow: hidden;
     }
 
-    .metric strong {
-      display: block;
-      color: var(--brand);
-      font-size: clamp(1.8rem, 4vw, 3rem);
-      line-height: 1;
+    /* ===== LOGIN PAGE ===== */
+    #page-login {
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .login-card {
+      width: 100%; max-width: 440px;
+    }
+    .login-header {
+      background: var(--bg-gradient);
+      padding: 36px 32px 28px;
+      text-align: center; color: white;
+    }
+    .login-header .logo-icon {
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%; display: flex;
+      align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 32px; border: 2px solid rgba(255,255,255,0.4);
+    }
+    .login-header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+    .login-header p { font-size: 0.85rem; opacity: 0.85; }
+    .login-body { padding: 32px; }
+    .form-floating label { font-size: 0.9rem; color: #64748b; }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    .btn-login {
+      background: var(--bg-gradient); border: none; color: white;
+      padding: 12px; font-size: 1rem; font-weight: 600;
+      border-radius: 12px; width: 100%; transition: all 0.3s;
+    }
+    .btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(37,99,235,0.4); color: white; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+    .divider span { font-size: 0.8rem; color: #94a3b8; white-space: nowrap; }
+    .location-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 20px; font-size: 0.8rem;
+      background: rgba(37,99,235,0.08); color: var(--primary);
+      border: 1px solid rgba(37,99,235,0.2);
     }
 
+    /* ===== NAVBAR ===== */
+    .app-navbar {
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+      padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .navbar-brand-custom {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 1rem; color: var(--primary);
+    }
+    .navbar-brand-custom .brand-icon {
+      width: 40px; height: 40px; background: var(--bg-gradient);
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; color: white; font-size: 18px;
+    }
+    .nav-user-info {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bg-gradient); display: flex;
+      align-items: center; justify-content: center;
+      color: white; font-size: 14px; font-weight: 600;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: 260px; background: rgba(255,255,255,0.97);
+      min-height: calc(100vh - 64px); padding: 20px 12px;
+      box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+      position: fixed; top: 64px; left: -260px;
+      transition: left 0.3s ease; z-index: 99;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar-overlay {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.4);
+      z-index: 98;
+    }
+    .sidebar-overlay.show { display: block; }
+    .sidebar-section { margin-bottom: 24px; }
+    .sidebar-section-title {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: #94a3b8; padding: 0 12px;
+      margin-bottom: 8px;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      color: #475569; text-decoration: none; font-size: 0.9rem;
+      transition: all 0.2s; cursor: pointer; border: none;
+      background: transparent; width: 100%;
+    }
+    .sidebar-link:hover, .sidebar-link.active {
+      background: rgba(37,99,235,0.08); color: var(--primary);
+    }
+    .sidebar-link.active { font-weight: 600; }
+    .sidebar-link i { font-size: 1.1rem; min-width: 20px; }
+
+    /* ===== MAIN CONTENT ===== */
+    .content-area {
+      flex: 1; padding: 24px 20px;
+      margin-left: 0; transition: margin 0.3s;
+    }
+    @media (min-width: 992px) {
+      .sidebar { left: 0; position: fixed; }
+      .content-area { margin-left: 260px; }
+      #sidebar-toggle { display: none !important; }
+      .sidebar-overlay { display: none !important; }
+    }
+
+    /* ===== SECTION VIEWS ===== */
+    .section-view { display: none; }
+    .section-view.active { display: block; }
+
+    /* ===== STATS CARDS ===== */
+    .stat-card {
+      border-radius: 16px; padding: 20px;
+      color: white; position: relative; overflow: hidden;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .stat-card::before {
+      content: ''; position: absolute; right: -20px; top: -20px;
+      width: 100px; height: 100px; border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+    .stat-card .stat-icon {
+      font-size: 2rem; opacity: 0.9; margin-bottom: 8px;
+    }
+    .stat-card .stat-number { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .stat-card .stat-label { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
+    .stat-card .stat-change {
+      font-size: 0.75rem; margin-top: 8px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ===== CAMERA SECTION ===== */
+    .camera-container {
+      position: relative; border-radius: 16px;
+      overflow: hidden; background: #0f172a;
+      aspect-ratio: 4/3; max-width: 400px; margin: 0 auto;
+    }
+    #camera-preview, #camera-preview-register {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .camera-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .face-guide {
+      width: 200px; height: 240px; border: 3px solid rgba(255,255,255,0.8);
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      box-shadow: 0 0 0 1000px rgba(0,0,0,0.4);
+      animation: pulse-border 2s infinite;
+    }
+    .face-guide.scanning {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 1000px rgba(0,0,0,0.4), 0 0 30px rgba(34,197,94,0.5);
+    }
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(255,255,255,0.8); }
+      50% { border-color: rgba(37,99,235,0.9); box-shadow: 0 0 0 1000px rgba(0,0,0,0.4), 0 0 20px rgba(37,99,235,0.5); }
+    }
+    .scan-progress {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.7); color: white; padding: 6px 16px;
+      border-radius: 20px; font-size: 0.8rem; white-space: nowrap;
+    }
+    .camera-label {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(37,99,235,0.9); color: white; padding: 4px 14px;
+      border-radius: 20px; font-size: 0.78rem; white-space: nowrap;
+    }
+
+    /* ===== GPS BADGE ===== */
+    .gps-status {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-radius: 12px;
+      font-size: 0.85rem; font-weight: 500;
+    }
+    .gps-status.checking { background: rgba(251,191,36,0.15); color: #92400e; }
+    .gps-status.ok { background: rgba(22,163,74,0.12); color: #166534; }
+    .gps-status.error { background: rgba(220,38,38,0.12); color: #991b1b; }
+    .gps-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: currentColor; animation: blink 1.5s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+    /* ===== TABLE ===== */
+    .table-card { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     .table thead th {
-      color: var(--muted);
-      font-weight: 700;
-      border-bottom-color: rgba(18, 55, 42, 0.16);
-      white-space: nowrap;
+      background: linear-gradient(135deg, #1e3a5f, #2563eb);
+      color: white; font-weight: 600; border: none; padding: 14px 16px;
+      font-size: 0.85rem;
+    }
+    .table tbody tr:hover { background: rgba(37,99,235,0.04); }
+    .table td { padding: 12px 16px; vertical-align: middle; border-color: #f1f5f9; }
+
+    /* ===== BADGES ===== */
+    .badge-status {
+      padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-approved { background: rgba(22,163,74,0.12); color: #166534; }
+    .badge-pending { background: rgba(251,191,36,0.2); color: #92400e; }
+    .badge-rejected { background: rgba(220,38,38,0.12); color: #991b1b; }
+    .badge-checkin { background: rgba(37,99,235,0.12); color: #1d4ed8; }
+    .badge-checkout { background: rgba(124,58,237,0.12); color: #5b21b6; }
+
+    /* ===== CAPTURED PHOTO ===== */
+    .captured-photo {
+      width: 80px; height: 80px; border-radius: 50%;
+      object-fit: cover; border: 3px solid var(--primary);
+      cursor: pointer;
     }
 
-    .table td {
-      vertical-align: middle;
+    /* ===== ATTENDANCE CLOCK ===== */
+    .clock-display {
+      font-size: 3rem; font-weight: 700; color: var(--primary);
+      font-variant-numeric: tabular-nums; letter-spacing: 2px;
+    }
+    .date-display { font-size: 1rem; color: #64748b; }
+    .attendance-status-card {
+      border-radius: 16px; padding: 20px; text-align: center;
     }
 
-    .snapshot-thumb {
-      width: 52px;
-      height: 52px;
-      object-fit: cover;
-      border-radius: 16px;
-      background: #edf4ef;
-      border: 1px solid var(--line);
+    /* ===== SECTION HEADER ===== */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+    .section-title {
+      font-size: 1.3rem; font-weight: 700; color: #1e293b;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title i { color: var(--primary); }
+
+    /* ===== CHART PLACEHOLDER ===== */
+    .chart-wrapper { position: relative; height: 280px; }
+
+    /* ===== TOAST ===== */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+
+    /* ===== AVATAR UPLOAD ===== */
+    .avatar-upload-area {
+      border: 2px dashed #cbd5e1; border-radius: 16px; padding: 24px;
+      text-align: center; cursor: pointer; transition: all 0.2s;
+      background: rgba(37,99,235,0.02);
+    }
+    .avatar-upload-area:hover { border-color: var(--primary); background: rgba(37,99,235,0.04); }
+
+    /* ===== MAP PREVIEW ===== */
+    .map-preview {
+      height: 200px; border-radius: 12px; overflow: hidden;
+      background: #e2e8f0; position: relative;
+      display: flex; align-items: center; justify-content: center;
     }
 
-    .snapshot-empty {
-      display: inline-grid;
-      place-items: center;
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 576px) {
+      .login-body { padding: 24px 20px; }
+      .clock-display { font-size: 2.2rem; }
+      .content-area { padding: 16px 14px; }
     }
 
-    .empty-state {
-      padding: 28px;
-      color: var(--muted);
-      text-align: center;
-      border: 1px dashed rgba(18, 55, 42, 0.2);
-      border-radius: 24px;
-      background: rgba(255, 255, 255, 0.6);
-    }
+    /* ===== ANIMATIONS ===== */
+    .fade-in { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
 
-    .fade-in {
-      animation: fadeInUp 0.48s ease both;
+    .btn-grad {
+      background: var(--bg-gradient); border: none; color: white;
+      border-radius: 10px; font-weight: 500; transition: all 0.2s;
     }
+    .btn-grad:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.35); color: white; }
 
-    .success-orb {
-      width: 92px;
-      height: 92px;
-      display: grid;
-      place-items: center;
-      color: #fff;
-      background: var(--brand-2);
-      border-radius: 50%;
-      animation: successPulse 1.8s ease-in-out infinite;
-      box-shadow: 0 20px 48px rgba(45, 106, 79, 0.28);
+    /* ===== LOADING ===== */
+    .loading-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.85); z-index: 9998;
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
     }
-
-    .modal-content {
-      border: 0;
-      border-radius: 28px;
-      overflow: hidden;
+    .loading-overlay.show { display: flex; }
+    .spinner-lg {
+      width: 56px; height: 56px; border: 5px solid #e2e8f0;
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .small-muted {
-      color: var(--muted);
-      font-size: 0.92rem;
+    /* ===== PHOTO HISTORY ===== */
+    .photo-thumb {
+      width: 60px; height: 60px; border-radius: 8px;
+      object-fit: cover; border: 2px solid #e2e8f0;
+      cursor: pointer; transition: border-color 0.2s;
     }
+    .photo-thumb:hover { border-color: var(--primary); }
 
-    @keyframes breathe {
-      0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.72; }
-      50% { transform: translate3d(-2vw, 1vh, 0) scale(1.08); opacity: 1; }
-    }
+    /* ===== DEPT CHART BAR ===== */
+    .dept-bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .dept-bar-label { min-width: 90px; font-size: 0.82rem; font-weight: 500; }
+    .dept-bar-bg { flex: 1; height: 10px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+    .dept-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s ease; }
 
-    @keyframes scan {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(220px); }
-      100% { transform: translateY(0); }
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes successPulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.06); }
-    }
-
-    @media (max-width: 991px) {
-      .login-composition {
-        padding-top: 26px;
-      }
-
-      .video-frame,
-      .video-frame video {
-        min-height: 260px;
-      }
-    }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   </style>
 </head>
 <body>
-  <nav class="navbar app-nav sticky-top" id="publicNav">
-    <div class="container d-flex justify-content-between align-items-center">
-      <div class="d-flex align-items-center gap-3">
-        <span class="brand-mark"><i class="bi bi-person-bounding-box fs-4"></i></span>
-        <div>
-          <div class="fw-bold text-uppercase small text-success">Face Scan and GPS Tracker</div>
-          <div class="small text-muted">สำหรับพนักงาน</div>
+
+<!-- PARTICLES -->
+<div id="particles-bg"></div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner-lg"></div>
+  <p style="color:#475569;font-weight:500;">กำลังดำเนินการ...</p>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- DEMO MODE BANNER -->
+<div id="demo-banner" style="display:none;position:fixed;top:0;left:0;width:100%;z-index:10000;
+     background:linear-gradient(90deg,#d97706,#f59e0b);color:white;text-align:center;
+     padding:6px 16px;font-size:.8rem;font-weight:600;letter-spacing:.3px;">
+  ⚠️ DEMO MODE — UI Preview เท่านั้น | ตั้งค่า GAS_URL เพื่อใช้งานจริง
+  <button onclick="document.getElementById('demo-banner').style.display='none'"
+          style="background:rgba(255,255,255,0.3);border:none;color:white;border-radius:4px;
+                 padding:1px 8px;margin-left:10px;cursor:pointer;font-size:.75rem;">✕</button>
+</div>
+
+<!-- =========================================
+     PAGE: LOGIN
+     ========================================= -->
+<div class="page active" id="page-login">
+  <div class="d-flex align-items-center justify-content-center" style="min-height:100vh;padding:20px;">
+    <div class="login-card main-card fade-in" style="width:100%;max-width:440px;">
+      <!-- Header -->
+      <div class="login-header">
+        <div class="logo-icon"><i class="bi bi-person-bounding-box"></i></div>
+        <h1>ระบบเข้า-ออก พนักงาน</h1>
+        <p>Face Scan &amp; GPS Tracker</p>
+      </div>
+      <!-- Body -->
+      <div class="login-body">
+        <!-- Location Selector -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold" style="font-size:.85rem;color:#475569;">
+            <i class="bi bi-geo-alt-fill text-primary me-1"></i>เลือกสถานที่ทำงาน
+          </label>
+          <select class="form-select" id="location-select" style="border-radius:10px;font-size:.9rem;">
+            <option value="HQ">🏢 สำนักงานใหญ่ (HQ)</option>
+            <option value="BKK101">🏙️ สุขุมวิท 101</option>
+            <option value="CBI">🏭 ชลบุรี</option>
+          </select>
+        </div>
+
+        <!-- Username -->
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="login-username"
+                 placeholder="กรอกชื่อผู้ใช้" style="border-radius:10px;" autocomplete="username"/>
+          <label><i class="bi bi-person me-1"></i>ชื่อผู้ใช้</label>
+        </div>
+
+        <!-- Password -->
+        <div class="form-floating mb-3 position-relative">
+          <input type="password" class="form-control" id="login-password"
+                 placeholder="กรอกรหัสผ่าน" style="border-radius:10px;" autocomplete="current-password"/>
+          <label><i class="bi bi-lock me-1"></i>รหัสผ่าน</label>
+          <button class="btn btn-link position-absolute end-0 top-50 translate-middle-y pe-3"
+                  type="button" onclick="togglePassword('login-password')" style="z-index:10;color:#94a3b8;">
+            <i class="bi bi-eye" id="eye-login"></i>
+          </button>
+        </div>
+
+        <!-- Login Button -->
+        <button class="btn btn-login mb-3" onclick="handleLogin()">
+          <i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ
+        </button>
+
+        <!-- Divider -->
+        <div class="divider"><span>หรือ</span></div>
+
+        <!-- Secondary Actions -->
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary flex-fill" style="border-radius:10px;font-size:.88rem;"
+                  onclick="showPage('page-register')">
+            <i class="bi bi-person-plus me-1"></i>ลงทะเบียน
+          </button>
+          <button class="btn btn-outline-secondary flex-fill" style="border-radius:10px;font-size:.88rem;"
+                  onclick="handleForgotPassword()">
+            <i class="bi bi-key me-1"></i>ลืมรหัสผ่าน
+          </button>
+        </div>
+
+        <!-- Version -->
+        <div class="text-center mt-3">
+          <small class="text-muted">Face Scan GPS v2.0 &bull; Powered by GAS</small>
         </div>
       </div>
-      <button class="btn btn-soft btn-sm" id="openAdminLoginTop" type="button">
-        <i class="bi bi-shield-lock me-1"></i> ผู้ดูแลระบบ
+    </div>
+  </div>
+</div>
+
+<!-- =========================================
+     PAGE: REGISTER
+     ========================================= -->
+<div class="page" id="page-register">
+  <div class="d-flex align-items-center justify-content-center" style="min-height:100vh;padding:20px;">
+    <div class="main-card fade-in" style="width:100%;max-width:560px;">
+      <!-- Header -->
+      <div class="login-header">
+        <div class="logo-icon"><i class="bi bi-person-plus-fill"></i></div>
+        <h1>ลงทะเบียนพนักงาน</h1>
+        <p>กรุณากรอกข้อมูลและสแกนใบหน้า</p>
+      </div>
+      <div class="p-4">
+        <!-- Step indicator -->
+        <div class="d-flex justify-content-center mb-4">
+          <div class="d-flex align-items-center gap-2">
+            <div class="step-dot active" id="step1-dot" style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;">1</div>
+            <div style="width:40px;height:2px;background:#e2e8f0;" id="step-line1"></div>
+            <div class="step-dot" id="step2-dot" style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;">2</div>
+            <div style="width:40px;height:2px;background:#e2e8f0;" id="step-line2"></div>
+            <div class="step-dot" id="step3-dot" style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;">3</div>
+          </div>
+        </div>
+
+        <!-- Step 1: Basic Info -->
+        <div id="reg-step1">
+          <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-person-vcard me-2"></i>ข้อมูลส่วนตัว</h6>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="reg-empid" placeholder="รหัสพนักงาน" style="border-radius:10px;"/>
+                <label>รหัสพนักงาน *</label>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="reg-name" placeholder="ชื่อ-นามสกุล" style="border-radius:10px;"/>
+                <label>ชื่อ-นามสกุล *</label>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="email" class="form-control" id="reg-email" placeholder="อีเมล" style="border-radius:10px;"/>
+                <label>อีเมล</label>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="tel" class="form-control" id="reg-phone" placeholder="เบอร์โทร" style="border-radius:10px;"/>
+                <label>เบอร์โทรศัพท์</label>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-floating">
+                <select class="form-select" id="reg-dept" style="border-radius:10px;">
+                  <option value="">เลือกแผนก</option>
+                  <option>ฝ่ายไอที</option>
+                  <option>ฝ่ายบัญชี</option>
+                  <option>ฝ่ายการตลาด</option>
+                  <option>ฝ่ายทรัพยากรบุคคล</option>
+                  <option>ฝ่ายปฏิบัติการ</option>
+                  <option>ฝ่ายขาย</option>
+                </select>
+                <label>แผนก *</label>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-floating">
+                <select class="form-select" id="reg-location" style="border-radius:10px;">
+                  <option value="HQ">สำนักงานใหญ่</option>
+                  <option value="BKK101">สุขุมวิท 101</option>
+                  <option value="CBI">ชลบุรี</option>
+                </select>
+                <label>สถานที่ทำงาน *</label>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-4">
+            <button class="btn btn-outline-secondary" onclick="showPage('page-login')" style="border-radius:10px;">
+              <i class="bi bi-arrow-left me-1"></i>ยกเลิก
+            </button>
+            <button class="btn btn-grad flex-fill" onclick="goStep(2)" style="border-radius:10px;">
+              ถัดไป <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Face Scan / Password -->
+        <div id="reg-step2" style="display:none;">
+          <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-camera-fill me-2"></i>สแกนใบหน้า หรือ ตั้งรหัสผ่าน</h6>
+
+          <!-- Face Scan Section -->
+          <div id="reg-face-section">
+            <div class="camera-container mb-3">
+              <video id="camera-preview-register" autoplay muted playsinline></video>
+              <div class="camera-overlay">
+                <div class="face-guide" id="reg-face-guide"></div>
+              </div>
+              <div class="scan-progress" id="reg-scan-status">กดปุ่มเพื่อเริ่มกล้อง</div>
+              <div class="camera-label">สแกนใบหน้า</div>
+            </div>
+            <canvas id="reg-canvas" style="display:none;"></canvas>
+            <img id="reg-captured" class="captured-photo d-none mx-auto d-block mb-2"/>
+
+            <div class="d-flex gap-2 mb-3">
+              <button class="btn btn-outline-primary flex-fill" onclick="startCamera('register')" style="border-radius:10px;font-size:.85rem;">
+                <i class="bi bi-camera me-1"></i>เปิดกล้อง
+              </button>
+              <button class="btn btn-success flex-fill" onclick="capturePhoto('register')" id="reg-capture-btn" disabled style="border-radius:10px;font-size:.85rem;">
+                <i class="bi bi-camera-fill me-1"></i>ถ่ายรูป
+              </button>
+            </div>
+
+            <div class="divider"><span>หรือกรอกรหัสผ่านแทน</span></div>
+          </div>
+
+          <!-- Password fallback -->
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="form-floating position-relative">
+                <input type="password" class="form-control" id="reg-password" placeholder="รหัสผ่าน" style="border-radius:10px;"/>
+                <label>รหัสผ่าน (ทางเลือก)</label>
+                <button class="btn btn-link position-absolute end-0 top-50 translate-middle-y pe-3"
+                        type="button" onclick="togglePassword('reg-password')" style="z-index:10;color:#94a3b8;">
+                  <i class="bi bi-eye" id="eye-reg"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="form-floating">
+                <input type="password" class="form-control" id="reg-confirm-password" placeholder="ยืนยันรหัสผ่าน" style="border-radius:10px;"/>
+                <label>ยืนยันรหัสผ่าน</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button class="btn btn-outline-secondary" onclick="goStep(1)" style="border-radius:10px;">
+              <i class="bi bi-arrow-left me-1"></i>ย้อนกลับ
+            </button>
+            <button class="btn btn-grad flex-fill" onclick="goStep(3)" style="border-radius:10px;">
+              ถัดไป <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Confirm -->
+        <div id="reg-step3" style="display:none;">
+          <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-check-circle me-2"></i>ยืนยันการลงทะเบียน</h6>
+          <div class="main-card p-3 mb-3" style="background:#f8fafc;box-shadow:none;border:1px solid #e2e8f0;">
+            <div id="reg-summary"></div>
+          </div>
+          <div class="alert alert-warning d-flex align-items-center gap-2" style="border-radius:12px;font-size:.85rem;">
+            <i class="bi bi-info-circle-fill"></i>
+            <span>การลงทะเบียนจะต้องได้รับการอนุมัติจากผู้ดูแลระบบก่อนจึงจะสามารถเข้าสู่ระบบได้</span>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-outline-secondary" onclick="goStep(2)" style="border-radius:10px;">
+              <i class="bi bi-arrow-left me-1"></i>ย้อนกลับ
+            </button>
+            <button class="btn btn-grad flex-fill" onclick="submitRegistration()" style="border-radius:10px;">
+              <i class="bi bi-person-check me-1"></i>ส่งคำขอลงทะเบียน
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================
+     PAGE: MAIN APP (Employee + Admin)
+     ========================================= -->
+<div class="page" id="page-app">
+  <!-- Navbar -->
+  <nav class="app-navbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-sm btn-light" id="sidebar-toggle" onclick="toggleSidebar()" style="border-radius:8px;">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+      <div class="navbar-brand-custom">
+        <div class="brand-icon"><i class="bi bi-person-bounding-box"></i></div>
+        <div>
+          <div style="line-height:1.2;">Face GPS Tracker</div>
+          <div style="font-size:.65rem;font-weight:400;color:#94a3b8;" id="nav-location-label">สำนักงานใหญ่</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-user-info">
+      <div class="text-end d-none d-md-block">
+        <div style="font-size:.85rem;font-weight:600;color:#1e293b;" id="nav-user-name">-</div>
+        <div style="font-size:.75rem;color:#94a3b8;" id="nav-user-role">-</div>
+      </div>
+      <div class="user-avatar" id="nav-avatar">👤</div>
+      <button class="btn btn-sm btn-outline-danger" onclick="handleLogout()" style="border-radius:8px;font-size:.8rem;">
+        <i class="bi bi-box-arrow-right"></i>
       </button>
     </div>
   </nav>
 
-  <main id="loginView" class="login-composition">
-    <div class="container position-relative">
-      <div class="row g-4 align-items-center">
-        <div class="col-lg-7 fade-in">
-          <p class="text-uppercase fw-bold text-success mb-3">ระบบบันทึกเวลาแบบยืนยันตัวตน</p>
-          <h1 class="hero-title mb-4">ระบบเข้า-ออก พนักงาน</h1>
-          <p class="hero-copy mb-4">
-            สแกนใบหน้า ตรวจสอบ GPS ในรัศมี 200 เมตร และบันทึกเวลาเข้า-ออกงานลง Google Sheets โดยตรง
-          </p>
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-          <div class="panel interaction-panel">
-            <div class="row g-3 align-items-end mb-3">
-              <div class="col-md-7">
-                <label for="workplaceSelect" class="form-label fw-semibold">เลือกสถานที่ทำงาน</label>
-                <select id="workplaceSelect" class="form-select" required>
-                  <option value="สำนักงานใหญ่">สำนักงานใหญ่</option>
-                  <option value="สุขุมวิท101">สุขุมวิท101</option>
-                  <option value="ชลบุรี">ชลบุรี</option>
-                </select>
-              </div>
-              <div class="col-md-5">
-                <span class="status-pill w-100 justify-content-center" id="gpsStatus">
-                  <i class="bi bi-geo-alt"></i> รออ่านตำแหน่ง GPS
-                </span>
-              </div>
-            </div>
+  <div class="d-flex" style="min-height:calc(100vh - 64px);">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <!-- Employee Menu -->
+      <div class="sidebar-section" id="menu-employee">
+        <div class="sidebar-section-title">พนักงาน</div>
+        <button class="sidebar-link active" onclick="showSection('sec-attendance')">
+          <i class="bi bi-clock-history"></i> บันทึกเวลา
+        </button>
+        <button class="sidebar-link" onclick="showSection('sec-my-records')">
+          <i class="bi bi-calendar3"></i> ประวัติการเข้างาน
+        </button>
+        <button class="sidebar-link" onclick="showSection('sec-profile')">
+          <i class="bi bi-person-circle"></i> โปรไฟล์
+        </button>
+      </div>
 
-            <div class="video-frame mb-3" id="employeeVideoFrame">
-              <video id="employeeVideo" playsinline muted></video>
-              <div class="scan-line"></div>
-              <div class="placeholder" id="employeeVideoPlaceholder">
-                <div>
-                  <i class="bi bi-camera-video fs-1 d-block mb-2"></i>
-                  กดเปิดกล้องเพื่อสแกนใบหน้า
-                </div>
-              </div>
-            </div>
-            <canvas id="employeeCanvas" class="d-none"></canvas>
-
-            <div class="d-grid d-md-flex gap-2">
-              <button class="btn btn-soft" id="openEmployeeCamera" type="button">
-                <i class="bi bi-camera-video me-1"></i> เปิดกล้อง
-              </button>
-              <button class="btn btn-brand flex-grow-1" id="employeeLoginBtn" type="button">
-                <i class="bi bi-person-check me-1"></i> เข้าสู่ระบบ
-              </button>
-            </div>
-            <div class="small-muted mt-3">
-              พนักงานเข้าสู่ระบบด้วยใบหน้าเท่านั้น ระบบจะสลับเข้า/ออกงานอัตโนมัติจากรายการล่าสุดของวันเดียวกัน
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-5 fade-in" style="animation-delay: 0.08s;">
-          <div class="panel interaction-panel" id="adminLoginPanel">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <div>
-                <h2 class="h4 fw-bold mb-1">ผู้ดูแลระบบ</h2>
-                <p class="small-muted mb-0">เข้าสู่ Dashboard เพื่ออนุมัติพนักงานและดูรายงาน</p>
-              </div>
-              <i class="bi bi-shield-check fs-2 text-success"></i>
-            </div>
-
-            <form id="adminLoginForm" class="vstack gap-3">
-              <div>
-                <label for="adminUsername" class="form-label fw-semibold">Username</label>
-                <input type="text" id="adminUsername" class="form-control" placeholder="กรอกชื่อผู้ใช้" autocomplete="username" required>
-              </div>
-              <div>
-                <label for="adminPassword" class="form-label fw-semibold">Password</label>
-                <input type="password" id="adminPassword" class="form-control" placeholder="กรอกรหัสผ่าน" autocomplete="current-password" required>
-              </div>
-              <button class="btn btn-brand w-100" type="submit">
-                <i class="bi bi-box-arrow-in-right me-1"></i> เข้าสู่ระบบ
-              </button>
-            </form>
-
-            <hr class="my-4">
-
-            <div class="d-grid gap-2">
-              <button class="btn btn-soft" id="openRegisterModal" type="button">
-                <i class="bi bi-person-plus me-1"></i> ลงทะเบียน
-              </button>
-              <button class="btn btn-outline-secondary rounded-pill" id="forgotPasswordBtn" type="button">
-                <i class="bi bi-question-circle me-1"></i> ลืมรหัสผ่าน
-              </button>
-            </div>
-
-            <form id="approvalCheckForm" class="mt-4">
-              <label class="form-label fw-semibold">ตรวจสอบสถานะการอนุมัติ</label>
-              <div class="input-group">
-                <input type="text" id="approvalLookup" class="form-control" placeholder="Employee ID หรือ Email">
-                <button class="btn btn-outline-success" type="submit">ตรวจสอบ</button>
-              </div>
-            </form>
-          </div>
-        </div>
+      <!-- Admin Menu -->
+      <div class="sidebar-section d-none" id="menu-admin">
+        <div class="sidebar-section-title">ผู้ดูแลระบบ</div>
+        <button class="sidebar-link" onclick="showSection('sec-dashboard')">
+          <i class="bi bi-grid-1x2"></i> Dashboard
+        </button>
+        <button class="sidebar-link" onclick="showSection('sec-approvals')">
+          <i class="bi bi-person-check"></i> อนุมัติพนักงาน
+          <span class="badge bg-danger ms-auto" id="approval-badge" style="display:none;"></span>
+        </button>
+        <button class="sidebar-link" onclick="showSection('sec-employees')">
+          <i class="bi bi-people"></i> จัดการพนักงาน
+        </button>
+        <button class="sidebar-link" onclick="showSection('sec-reports')">
+          <i class="bi bi-bar-chart"></i> รายงาน
+        </button>
+        <button class="sidebar-link" onclick="showSection('sec-settings')">
+          <i class="bi bi-gear"></i> ตั้งค่า
+        </button>
       </div>
     </div>
-  </main>
 
-  <section id="employeeResultView" class="d-none min-vh-100 d-flex align-items-center py-5">
-    <div class="container">
-      <div class="panel interaction-panel text-center mx-auto fade-in" style="max-width: 760px;">
-        <div class="success-orb mx-auto mb-4"><i class="bi bi-check2 fs-1"></i></div>
-        <h2 class="fw-bold mb-2" id="resultTitle">บันทึกเวลาสำเร็จ</h2>
-        <p class="text-muted mb-4" id="resultSubtitle">ระบบบันทึกข้อมูลเรียบร้อย</p>
-        <div class="row g-3 text-start mb-4" id="resultDetails"></div>
-        <img id="resultSnapshot" class="snapshot-thumb mb-4 d-none" alt="ภาพสแกนใบหน้า" style="width: 120px; height: 120px;">
-        <div class="d-grid d-md-flex justify-content-center gap-2">
-          <button class="btn btn-brand" id="backToLogin" type="button">กลับหน้าสแกน</button>
-          <button class="btn btn-soft" id="resultOpenAdmin" type="button">ไปยังผู้ดูแลระบบ</button>
-        </div>
-      </div>
-    </div>
-  </section>
+    <!-- Content -->
+    <div class="content-area">
 
-  <section id="adminView" class="admin-shell">
-    <nav class="navbar app-nav sticky-top">
-      <div class="container-fluid px-lg-4">
-        <div class="d-flex align-items-center gap-3">
-          <span class="brand-mark"><i class="bi bi-speedometer2 fs-4"></i></span>
-          <div>
-            <div class="fw-bold">Dashboard ผู้ดูแลระบบ</div>
-            <div class="small text-muted" id="adminSessionLabel">Face Scan and GPS Tracker</div>
+      <!-- ===== SECTION: ATTENDANCE ===== -->
+      <div class="section-view active fade-in" id="sec-attendance">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-clock-history"></i>บันทึกเวลาเข้า-ออก</div>
+          <div class="gps-status checking" id="gps-badge">
+            <div class="gps-dot"></div><span id="gps-text">กำลังตรวจสอบ GPS...</span>
           </div>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-soft btn-sm" id="refreshDashboard" type="button">
-            <i class="bi bi-arrow-clockwise me-1"></i> รีเฟรช
-          </button>
-          <button class="btn btn-outline-danger btn-sm rounded-pill" id="adminLogoutBtn" type="button">
-            <i class="bi bi-box-arrow-right me-1"></i> ออกจากระบบ
-          </button>
-        </div>
-      </div>
-    </nav>
-
-    <div class="container-fluid px-lg-4">
-      <section class="admin-section">
-        <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
-          <div>
-            <h2 class="fw-bold mb-1">สถิติการมาทำงาน</h2>
-            <p class="text-muted mb-0">สรุปรายวันและแยกตามแผนกจากข้อมูลจริงใน Google Sheets</p>
-          </div>
-          <span class="status-pill" id="dashboardUpdated"><i class="bi bi-clock"></i> ยังไม่ได้โหลดข้อมูล</span>
-        </div>
-
-        <div class="row g-3 mb-4">
-          <div class="col-sm-6 col-xl-3"><div class="metric"><span class="text-muted">พนักงานทั้งหมด</span><strong id="statTotalEmployees">0</strong></div></div>
-          <div class="col-sm-6 col-xl-3"><div class="metric"><span class="text-muted">อนุมัติแล้ว</span><strong id="statApprovedEmployees">0</strong></div></div>
-          <div class="col-sm-6 col-xl-3"><div class="metric"><span class="text-muted">รออนุมัติ</span><strong id="statPendingEmployees">0</strong></div></div>
-          <div class="col-sm-6 col-xl-3"><div class="metric"><span class="text-muted">มาทำงานวันนี้</span><strong id="statTodayPresent">0</strong></div></div>
         </div>
 
         <div class="row g-4">
-          <div class="col-xl-6">
-            <h3 class="h5 fw-bold mb-3">รายวัน</h3>
-            <div class="table-responsive">
-              <table class="table align-middle">
-                <thead><tr><th>วันที่</th><th>เข้างาน</th><th>ออกงาน</th><th>จำนวนคน</th></tr></thead>
-                <tbody id="statsByDayBody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="col-xl-6">
-            <h3 class="h5 fw-bold mb-3">แผนก</h3>
-            <div class="table-responsive">
-              <table class="table align-middle">
-                <thead><tr><th>แผนก</th><th>เข้างาน</th><th>ออกงาน</th><th>จำนวนคน</th></tr></thead>
-                <tbody id="statsByDepartmentBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
+          <!-- Clock & Status -->
+          <div class="col-lg-4">
+            <div class="main-card p-4 text-center h-100">
+              <div class="clock-display" id="live-clock">00:00:00</div>
+              <div class="date-display mb-4" id="live-date">-</div>
 
-      <section class="admin-section">
-        <div class="d-flex justify-content-between align-items-end gap-3 mb-3">
-          <div>
-            <h2 class="fw-bold mb-1">คำขอลงทะเบียน</h2>
-            <p class="text-muted mb-0">อนุมัติหรือปฏิเสธพนักงานก่อนใช้งานจริง</p>
-          </div>
-        </div>
-        <div class="table-responsive">
-          <table class="table align-middle">
-            <thead><tr><th>รูป</th><th>Employee ID</th><th>ชื่อ</th><th>แผนก</th><th>สถานที่</th><th>สถานะ</th><th class="text-end">จัดการ</th></tr></thead>
-            <tbody id="pendingEmployeesBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="admin-section">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
-          <div>
-            <h2 class="fw-bold mb-1">จัดการพนักงาน</h2>
-            <p class="text-muted mb-0">ข้อมูลพนักงานทั้งหมดที่ลงทะเบียนไว้</p>
-          </div>
-          <input type="search" id="employeeSearch" class="form-control" style="max-width: 360px;" placeholder="ค้นหาชื่อ Employee ID หรือแผนก">
-        </div>
-        <div class="table-responsive">
-          <table class="table align-middle">
-            <thead><tr><th>รูป</th><th>Employee ID</th><th>ชื่อ</th><th>Email</th><th>แผนก</th><th>สถานที่</th><th>อนุมัติ</th><th>ล่าสุด</th><th class="text-end">จัดการ</th></tr></thead>
-            <tbody id="employeesBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="admin-section">
-        <div class="row g-4">
-          <div class="col-xl-8">
-            <h2 class="fw-bold mb-3">ประวัติการสแกนล่าสุด</h2>
-            <div class="table-responsive">
-              <table class="table align-middle">
-                <thead><tr><th>รูป</th><th>เวลา</th><th>ชื่อ</th><th>แผนก</th><th>สถานที่</th><th>เข้า/ออก</th><th>ระยะ</th><th>คะแนน</th></tr></thead>
-                <tbody id="attendanceBody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="col-xl-4">
-            <h2 class="fw-bold mb-3">ตั้งค่าสถานที่</h2>
-            <div id="officesBody" class="vstack gap-3"></div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </section>
-
-  <div class="modal fade" id="registrationModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div>
-            <h2 class="modal-title h4 fw-bold">ลงทะเบียนพนักงาน</h2>
-            <p class="small-muted mb-0">สแกนใบหน้าเพื่อรออนุมัติจากผู้ดูแลระบบ</p>
-          </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <form id="registrationForm">
-          <div class="modal-body">
-            <div class="row g-4">
-              <div class="col-lg-6">
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold" for="regEmployeeId">Employee ID</label>
-                    <input id="regEmployeeId" class="form-control" type="text" required placeholder="เช่น EMP001">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold" for="regName">ชื่อ-นามสกุล</label>
-                    <input id="regName" class="form-control" type="text" required placeholder="ชื่อพนักงาน">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold" for="regEmail">Email</label>
-                    <input id="regEmail" class="form-control" type="email" required placeholder="name@company.com">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold" for="regDepartment">แผนก</label>
-                    <input id="regDepartment" class="form-control" list="departmentOptions" required placeholder="กรอกแผนก">
-                    <datalist id="departmentOptions"></datalist>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold" for="regWorkplace">สถานที่ทำงาน</label>
-                    <select id="regWorkplace" class="form-select" required>
-                      <option value="สำนักงานใหญ่">สำนักงานใหญ่</option>
-                      <option value="สุขุมวิท101">สุขุมวิท101</option>
-                      <option value="ชลบุรี">ชลบุรี</option>
-                    </select>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold" for="regPassword">รหัสผ่านสำรอง</label>
-                    <input id="regPassword" class="form-control" type="password" placeholder="กรอกเมื่อกล้องใช้งานไม่ได้">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label fw-semibold" for="regConfirmPassword">ยืนยันรหัสผ่าน</label>
-                    <input id="regConfirmPassword" class="form-control" type="password" placeholder="ยืนยันรหัสผ่านสำรอง">
-                  </div>
+              <div class="attendance-status-card mb-3" id="att-status-card"
+                   style="background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.2);">
+                <div id="att-status-text" style="font-weight:600;color:var(--primary);">
+                  <i class="bi bi-circle me-2"></i>ยังไม่ได้ลงเวลา
                 </div>
-                <div class="alert alert-warning mt-3 mb-0">
-                  <i class="bi bi-exclamation-triangle me-1"></i>
-                  ถ้ากล้องใช้งานไม่ได้ สามารถลงทะเบียนด้วยรหัสผ่านสำรองได้ แต่การเข้า-ออกงานยังต้องใช้ใบหน้าหลังได้รับการบันทึกข้อมูลใบหน้า
-                </div>
+                <div id="att-checkin-time" class="text-muted" style="font-size:.82rem;margin-top:4px;"></div>
               </div>
-              <div class="col-lg-6">
-                <div class="video-frame mb-3" id="registerVideoFrame">
-                  <video id="registerVideo" playsinline muted></video>
-                  <div class="scan-line"></div>
-                  <div class="placeholder" id="registerVideoPlaceholder">
-                    <div>
-                      <i class="bi bi-person-square fs-1 d-block mb-2"></i>
-                      เปิดกล้องแล้วกดบันทึกภาพใบหน้า
-                    </div>
-                  </div>
+
+              <!-- GPS Info -->
+              <div class="p-2 rounded-3 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+                <div style="font-size:.78rem;color:#64748b;">
+                  <i class="bi bi-geo-alt-fill text-primary me-1"></i>
+                  <span id="gps-coords">กำลังระบุตำแหน่ง...</span>
                 </div>
-                <canvas id="registerCanvas" class="d-none"></canvas>
-                <div class="d-grid d-md-flex gap-2 mb-3">
-                  <button class="btn btn-soft" id="openRegisterCamera" type="button">
-                    <i class="bi bi-camera-video me-1"></i> เปิดกล้อง
-                  </button>
-                  <button class="btn btn-brand flex-grow-1" id="captureRegisterFace" type="button">
-                    <i class="bi bi-person-bounding-box me-1"></i> บันทึกภาพใบหน้า
-                  </button>
+                <div style="font-size:.78rem;color:#64748b;margin-top:2px;">
+                  <i class="bi bi-building text-primary me-1"></i>
+                  <span id="gps-location-name">-</span>
                 </div>
-                <div id="registerFaceStatus" class="status-pill">
-                  <i class="bi bi-info-circle"></i> ยังไม่ได้บันทึกใบหน้า
-                </div>
+                <div style="font-size:.78rem;" id="gps-distance-text"></div>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">ยกเลิก</button>
-            <button type="submit" class="btn btn-brand">
-              <i class="bi bi-send-check me-1"></i> ส่งคำขอลงทะเบียน
+
+          <!-- Camera -->
+          <div class="col-lg-8">
+            <div class="main-card p-4">
+              <h6 class="fw-bold mb-3" style="color:#475569;">
+                <i class="bi bi-camera-video text-primary me-2"></i>สแกนใบหน้าเพื่อบันทึกเวลา
+              </h6>
+
+              <div class="camera-container mb-3">
+                <video id="camera-preview" autoplay muted playsinline></video>
+                <div class="camera-overlay">
+                  <div class="face-guide" id="face-guide-att"></div>
+                </div>
+                <div class="scan-progress" id="att-scan-status">กดปุ่มเปิดกล้อง</div>
+                <div class="camera-label">สแกนใบหน้า</div>
+              </div>
+              <canvas id="att-canvas" style="display:none;"></canvas>
+              <img id="att-captured" class="captured-photo d-none mx-auto d-block mb-3" title="ดูรูปถ่าย"/>
+
+              <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-outline-secondary flex-fill" onclick="startCamera('attendance')" style="border-radius:10px;">
+                  <i class="bi bi-camera me-1"></i>เปิดกล้อง
+                </button>
+                <button class="btn btn-outline-primary flex-fill" onclick="capturePhoto('attendance')" id="att-capture-btn" disabled style="border-radius:10px;">
+                  <i class="bi bi-camera-fill me-1"></i>ถ่ายรูป
+                </button>
+              </div>
+
+              <div class="d-flex gap-3">
+                <button class="btn btn-success flex-fill py-3" id="btn-checkin" onclick="recordAttendance('checkin')" style="border-radius:12px;font-size:1.05rem;font-weight:600;">
+                  <i class="bi bi-box-arrow-in-right me-2"></i>เข้างาน (Check In)
+                </button>
+                <button class="btn btn-warning flex-fill py-3" id="btn-checkout" onclick="recordAttendance('checkout')" style="border-radius:12px;font-size:1.05rem;font-weight:600;color:white;" disabled>
+                  <i class="bi bi-box-arrow-right me-2"></i>ออกงาน (Check Out)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION: MY RECORDS ===== -->
+      <div class="section-view fade-in" id="sec-my-records">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-calendar3"></i>ประวัติการเข้างาน</div>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="month" class="form-control" id="records-month" style="border-radius:10px;max-width:160px;font-size:.85rem;"/>
+            <button class="btn btn-grad" onclick="loadMyRecords()" style="border-radius:10px;font-size:.85rem;">
+              <i class="bi bi-search me-1"></i>ค้นหา
             </button>
           </div>
-        </form>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4" id="my-summary-cards">
+          <div class="col-6 col-md-3">
+            <div class="stat-card" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">
+              <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+              <div class="stat-number" id="my-total-days">-</div>
+              <div class="stat-label">วันที่มาทำงาน</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card" style="background:linear-gradient(135deg,#16a34a,#22c55e);">
+              <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+              <div class="stat-number" id="my-total-hours">-</div>
+              <div class="stat-label">ชั่วโมงรวม</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card" style="background:linear-gradient(135deg,#d97706,#f59e0b);">
+              <div class="stat-icon"><i class="bi bi-alarm"></i></div>
+              <div class="stat-number" id="my-late-count">-</div>
+              <div class="stat-label">มาสาย</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);">
+              <div class="stat-icon"><i class="bi bi-calendar-x"></i></div>
+              <div class="stat-number" id="my-absent-count">-</div>
+              <div class="stat-label">ขาดงาน</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="main-card table-card">
+          <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+            <span class="fw-semibold" style="font-size:.9rem;">บันทึกการเข้า-ออกงาน</span>
+            <button class="btn btn-sm btn-outline-success" onclick="exportMyRecords()" style="border-radius:8px;font-size:.8rem;">
+              <i class="bi bi-download me-1"></i>Export
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>วันที่</th><th>เข้างาน</th><th>ออกงาน</th>
+                  <th>ชั่วโมง</th><th>สถานะ</th><th>รูปถ่าย</th>
+                </tr>
+              </thead>
+              <tbody id="my-records-tbody">
+                <tr><td colspan="6" class="text-center text-muted py-4">
+                  <i class="bi bi-search me-2"></i>กรุณาเลือกเดือนแล้วกดค้นหา
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION: PROFILE ===== -->
+      <div class="section-view fade-in" id="sec-profile">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-person-circle"></i>โปรไฟล์ของฉัน</div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="main-card p-4 text-center">
+              <div class="mb-3">
+                <div style="width:100px;height:100px;border-radius:50%;background:var(--bg-gradient);display:flex;align-items:center;justify-content:center;color:white;font-size:2.5rem;margin:0 auto;" id="profile-avatar-display">👤</div>
+              </div>
+              <h5 class="fw-bold" id="profile-name-display">-</h5>
+              <div class="text-muted mb-2" id="profile-empid-display">-</div>
+              <div class="location-badge mb-3"><i class="bi bi-building"></i><span id="profile-dept-display">-</span></div>
+              <div class="location-badge"><i class="bi bi-geo-alt"></i><span id="profile-loc-display">-</span></div>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <div class="main-card p-4">
+              <h6 class="fw-bold mb-4 text-primary"><i class="bi bi-info-circle me-2"></i>ข้อมูลพนักงาน</h6>
+              <div class="row g-3" id="profile-details">
+                <!-- Filled by JS -->
+              </div>
+              <hr/>
+              <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-shield-lock me-2"></i>เปลี่ยนรหัสผ่าน</h6>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="form-floating">
+                    <input type="password" class="form-control" id="new-password" placeholder="รหัสผ่านใหม่" style="border-radius:10px;"/>
+                    <label>รหัสผ่านใหม่</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-floating">
+                    <input type="password" class="form-control" id="confirm-new-password" placeholder="ยืนยันรหัสผ่าน" style="border-radius:10px;"/>
+                    <label>ยืนยันรหัสผ่านใหม่</label>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <button class="btn btn-grad" onclick="changePassword()" style="border-radius:10px;">
+                    <i class="bi bi-save me-1"></i>บันทึกรหัสผ่าน
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION: DASHBOARD (ADMIN) ===== -->
+      <div class="section-view fade-in" id="sec-dashboard">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-grid-1x2"></i>Dashboard ภาพรวม</div>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="date" class="form-control" id="dash-date" style="border-radius:10px;font-size:.85rem;max-width:160px;"/>
+            <button class="btn btn-grad" onclick="loadDashboard()" style="border-radius:10px;font-size:.85rem;">
+              <i class="bi bi-arrow-clockwise me-1"></i>รีเฟรช
+            </button>
+          </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-xl-3">
+            <div class="stat-card" style="background:linear-gradient(135deg,#2563eb,#60a5fa);">
+              <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+              <div class="stat-number" id="dash-total-emp">-</div>
+              <div class="stat-label">พนักงานทั้งหมด</div>
+            </div>
+          </div>
+          <div class="col-6 col-xl-3">
+            <div class="stat-card" style="background:linear-gradient(135deg,#16a34a,#4ade80);">
+              <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
+              <div class="stat-number" id="dash-present">-</div>
+              <div class="stat-label">มาทำงานวันนี้</div>
+            </div>
+          </div>
+          <div class="col-6 col-xl-3">
+            <div class="stat-card" style="background:linear-gradient(135deg,#d97706,#fbbf24);">
+              <div class="stat-icon"><i class="bi bi-alarm-fill"></i></div>
+              <div class="stat-number" id="dash-late">-</div>
+              <div class="stat-label">มาสายวันนี้</div>
+            </div>
+          </div>
+          <div class="col-6 col-xl-3">
+            <div class="stat-card" style="background:linear-gradient(135deg,#dc2626,#f87171);">
+              <div class="stat-icon"><i class="bi bi-person-x-fill"></i></div>
+              <div class="stat-number" id="dash-absent">-</div>
+              <div class="stat-label">ขาดงานวันนี้</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Dept Stats -->
+          <div class="col-lg-6">
+            <div class="main-card p-4 h-100">
+              <h6 class="fw-bold mb-4 text-primary">
+                <i class="bi bi-bar-chart me-2"></i>สถิติตามแผนก (วันนี้)
+              </h6>
+              <div id="dept-chart-bars">
+                <div class="text-center text-muted py-4"><i class="bi bi-arrow-clockwise me-2"></i>กำลังโหลด...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Location Stats -->
+          <div class="col-lg-6">
+            <div class="main-card p-4 h-100">
+              <h6 class="fw-bold mb-4 text-primary">
+                <i class="bi bi-geo-alt me-2"></i>สถิติตามสถานที่
+              </h6>
+              <div id="location-stats">
+                <div class="text-center text-muted py-4"><i class="bi bi-arrow-clockwise me-2"></i>กำลังโหลด...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Today Attendance List -->
+          <div class="col-12">
+            <div class="main-card table-card">
+              <div class="p-3 border-bottom fw-semibold" style="font-size:.9rem;">
+                <i class="bi bi-list-check me-2 text-primary"></i>รายชื่อพนักงานวันนี้
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead><tr><th>#</th><th>รหัส</th><th>ชื่อ</th><th>แผนก</th><th>เข้างาน</th><th>ออกงาน</th><th>สถานะ</th></tr></thead>
+                  <tbody id="today-att-tbody">
+                    <tr><td colspan="7" class="text-center text-muted py-4">กำลังโหลด...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION: APPROVALS (ADMIN) ===== -->
+      <div class="section-view fade-in" id="sec-approvals">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-person-check"></i>อนุมัติการลงทะเบียน</div>
+          <button class="btn btn-grad" onclick="loadPendingApprovals()" style="border-radius:10px;font-size:.85rem;">
+            <i class="bi bi-arrow-clockwise me-1"></i>รีเฟรช
+          </button>
+        </div>
+        <div class="main-card table-card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr><th>#</th><th>รหัส</th><th>ชื่อ</th><th>แผนก</th><th>สถานที่</th><th>วันที่สมัคร</th><th>ใบหน้า</th><th>การดำเนินการ</th></tr>
+              </thead>
+              <tbody id="approvals-tbody">
+                <tr><td colspan="8" class="text-center text-muted py-4">กำลังโหลด...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION: EMPLOYEES (ADMIN) ===== -->
+      <div class="section-view fade-in" id="sec-employees">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-people"></i>จัดการพนักงาน</div>
+          <div class="d-flex gap-2">
+            <input type="text" class="form-control" id="emp-search" placeholder="ค้นหาพนักงาน..."
+                   style="border-radius:10px;font-size:.85rem;max-width:200px;" oninput="filterEmployees()"/>
+            <button class="btn btn-grad" onclick="loadEmployees()" style="border-radius:10px;font-size:.85rem;">
+              <i class="bi bi-arrow-clockwise me-1"></i>รีเฟรช
+            </button>
+          </div>
+        </div>
+        <div class="main-card table-card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr><th>#</th><th>รหัส</th><th>ชื่อ</th><th>แผนก</th><th>สถานที่</th><th>อีเมล</th><th>สถานะ</th><th>การดำเนินการ</th></tr>
+              </thead>
+              <tbody id="employees-tbody">
+                <tr><td colspan="8" class="text-center text-muted py-4">กำลังโหลด...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION: REPORTS (ADMIN) ===== -->
+      <div class="section-view fade-in" id="sec-reports">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-bar-chart"></i>รายงานสถิติ</div>
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <select class="form-select" id="report-dept" style="border-radius:10px;font-size:.85rem;max-width:160px;">
+              <option value="">ทุกแผนก</option>
+              <option>ฝ่ายไอที</option><option>ฝ่ายบัญชี</option><option>ฝ่ายการตลาด</option>
+              <option>ฝ่ายทรัพยากรบุคคล</option><option>ฝ่ายปฏิบัติการ</option><option>ฝ่ายขาย</option>
+            </select>
+            <input type="month" class="form-control" id="report-month" style="border-radius:10px;font-size:.85rem;max-width:160px;"/>
+            <button class="btn btn-grad" onclick="loadReports()" style="border-radius:10px;font-size:.85rem;">
+              <i class="bi bi-search me-1"></i>ดูรายงาน
+            </button>
+            <button class="btn btn-outline-success" onclick="exportReport()" style="border-radius:10px;font-size:.85rem;">
+              <i class="bi bi-file-earmark-excel me-1"></i>Export CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Report Stats -->
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="main-card p-3 text-center">
+              <div style="font-size:1.8rem;font-weight:700;color:var(--primary);" id="rep-total-records">-</div>
+              <div style="font-size:.8rem;color:#64748b;">บันทึกทั้งหมด</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="main-card p-3 text-center">
+              <div style="font-size:1.8rem;font-weight:700;color:#16a34a;" id="rep-on-time">-</div>
+              <div style="font-size:.8rem;color:#64748b;">ตรงเวลา</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="main-card p-3 text-center">
+              <div style="font-size:1.8rem;font-weight:700;color:#d97706;" id="rep-late">-</div>
+              <div style="font-size:.8rem;color:#64748b;">มาสาย</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="main-card p-3 text-center">
+              <div style="font-size:1.8rem;font-weight:700;color:#7c3aed;" id="rep-avg-hours">-</div>
+              <div style="font-size:.8rem;color:#64748b;">ชม.เฉลี่ย/วัน</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="main-card table-card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr><th>#</th><th>รหัส</th><th>ชื่อ</th><th>แผนก</th><th>วันที่</th><th>เข้างาน</th><th>ออกงาน</th><th>ชั่วโมง</th><th>สถานะ</th></tr>
+              </thead>
+              <tbody id="reports-tbody">
+                <tr><td colspan="9" class="text-center text-muted py-4">กรุณาเลือกเดือนแล้วกดดูรายงาน</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION: SETTINGS (ADMIN) ===== -->
+      <div class="section-view fade-in" id="sec-settings">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-gear"></i>ตั้งค่าระบบ</div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="main-card p-4">
+              <h6 class="fw-bold mb-4 text-primary"><i class="bi bi-geo-alt me-2"></i>ตั้งค่าตำแหน่ง GPS</h6>
+              <div class="mb-3">
+                <label class="form-label fw-semibold" style="font-size:.85rem;">สถานที่ทำงาน</label>
+                <select class="form-select mb-3" id="settings-location" style="border-radius:10px;" onchange="loadLocationSettings()">
+                  <option value="HQ">สำนักงานใหญ่ (HQ)</option>
+                  <option value="BKK101">สุขุมวิท 101</option>
+                  <option value="CBI">ชลบุรี</option>
+                </select>
+              </div>
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="settings-lat" placeholder="Latitude" step="any" style="border-radius:10px;"/>
+                    <label>Latitude</label>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="settings-lng" placeholder="Longitude" step="any" style="border-radius:10px;"/>
+                    <label>Longitude</label>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="settings-radius" placeholder="รัศมี" style="border-radius:10px;"/>
+                    <label>รัศมีสูงสุด (เมตร)</label>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-grad mt-3" onclick="saveLocationSettings()" style="border-radius:10px;">
+                <i class="bi bi-save me-1"></i>บันทึกตั้งค่า GPS
+              </button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="main-card p-4">
+              <h6 class="fw-bold mb-4 text-primary"><i class="bi bi-clock me-2"></i>ตั้งค่าเวลาทำงาน</h6>
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="form-floating">
+                    <input type="time" class="form-control" id="settings-start-time" value="08:30" style="border-radius:10px;"/>
+                    <label>เวลาเข้างาน</label>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-floating">
+                    <input type="time" class="form-control" id="settings-end-time" value="17:30" style="border-radius:10px;"/>
+                    <label>เวลาออกงาน</label>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-floating">
+                    <input type="time" class="form-control" id="settings-late-time" value="09:00" style="border-radius:10px;"/>
+                    <label>เวลามาสาย</label>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="settings-min-hours" value="8" style="border-radius:10px;"/>
+                    <label>ชั่วโมงงานขั้นต่ำ</label>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-grad mt-3" onclick="saveWorkSettings()" style="border-radius:10px;">
+                <i class="bi bi-save me-1"></i>บันทึกตั้งค่าเวลา
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /d-flex -->
+</div><!-- /page-app -->
+
+<!-- Modal: View Photo -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;overflow:hidden;border:none;">
+      <div class="modal-header" style="background:var(--bg-gradient);color:white;border:none;">
+        <h6 class="modal-title fw-bold"><i class="bi bi-image me-2"></i>รูปถ่ายบันทึกเวลา</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center p-3">
+        <img id="modal-photo" src="" alt="Photo" style="max-width:100%;border-radius:12px;"/>
+        <div class="mt-2 text-muted" id="modal-photo-info" style="font-size:.82rem;"></div>
       </div>
     </div>
   </div>
+</div>
 
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script>
-    const App = {
-      webAppUrl: '<?= webAppUrl ?>',
-      maxSnapshotChars: 45000,
-      offices: [],
-      departments: [],
-      registrationFace: null,
-      adminToken: sessionStorage.getItem('adminToken') || '',
-      adminUser: sessionStorage.getItem('adminUser') || '',
-      employees: [],
-      streams: {}
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+// ============================================================
+//  CONFIGURATION
+// ============================================================
+// ⚠️ ใส่ URL ของ GAS Webapp ของคุณที่นี่
+// หลังจาก Deploy GAS แล้ว นำ URL มาวางแทนที่ด้านล่าง
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxaNjVtfv8ToZcT4pBCMogL4eGJGaqkE9zp1MQhBwZLA4bOR4PwRqV4h247AHBlONDV/exec';
+
+// Demo Mode: true = ใช้ข้อมูลจำลอง (สำหรับทดสอบ UI), false = เชื่อม GAS จริง
+const DEMO_MODE = GAS_URL === 'YOUR_GAS_WEBAPP_URL_HERE';
+
+// สถานที่ทำงาน (ค่าเริ่มต้น - admin ปรับได้)
+const LOCATIONS = {
+  HQ:     { name: 'สำนักงานใหญ่',  lat: 13.66730,  lng: 100.63500, radius: 200 },
+  BKK101: { name: 'สุขุมวิท 101',   lat: 13.7200,  lng: 100.6010, radius: 200 },
+  CBI:    { name: 'ชลบุรี',         lat: 13.3611,  lng: 100.9847, radius: 200 }
+};
+
+// Work time settings
+const WORK_SETTINGS = {
+  startTime: '08:30',
+  endTime:   '17:30',
+  lateTime:  '09:00',
+  minHours:  8
+};
+
+// ============================================================
+//  STATE
+// ============================================================
+let currentUser = null;
+let isAdmin = false;
+let currentLocation = 'HQ';
+let gpsData = { lat: null, lng: null, accuracy: null };
+let gpsOk = false;
+let cameraStream = { attendance: null, register: null };
+let capturedImage = { attendance: null, register: null };
+let clockInterval = null;
+let employeesCache = [];
+let todayCheckin = null;
+let watchId = null;
+let locationSettings = JSON.parse(localStorage.getItem('locationSettings') || 'null') || LOCATIONS;
+
+// ============================================================
+//  PARTICLES
+// ============================================================
+function initParticles() {
+  const bg = document.getElementById('particles-bg');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 60 + 20;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;
+      animation-duration:${Math.random()*20+15}s;animation-delay:${Math.random()*10}s;`;
+    bg.appendChild(p);
+  }
+}
+
+// ============================================================
+//  PAGE NAVIGATION
+// ============================================================
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  stopAllCameras();
+}
+
+function showSection(sectionId) {
+  document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+
+  const el = document.getElementById(sectionId);
+  if (el) el.classList.add('active');
+
+  // Highlight sidebar
+  document.querySelectorAll('.sidebar-link').forEach(l => {
+    if (l.getAttribute('onclick') && l.getAttribute('onclick').includes(sectionId)) {
+      l.classList.add('active');
+    }
+  });
+
+  closeSidebar();
+
+  // Load data
+  if (sectionId === 'sec-dashboard') loadDashboard();
+  else if (sectionId === 'sec-approvals') loadPendingApprovals();
+  else if (sectionId === 'sec-employees') loadEmployees();
+  else if (sectionId === 'sec-attendance') initAttendanceSection();
+  else if (sectionId === 'sec-profile') loadProfile();
+  else if (sectionId === 'sec-my-records') {
+    document.getElementById('records-month').value = getCurrentMonth();
+  }
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+// ============================================================
+//  CLOCK
+// ============================================================
+function startClock() {
+  if (clockInterval) clearInterval(clockInterval);
+  updateClock();
+  clockInterval = setInterval(updateClock, 1000);
+}
+function updateClock() {
+  const now = new Date();
+  $('#live-clock').text(now.toLocaleTimeString('th-TH', { hour12: false }));
+  $('#live-date').text(now.toLocaleDateString('th-TH', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  }));
+}
+function getCurrentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+}
+
+// ============================================================
+//  GPS
+// ============================================================
+function startGPS() {
+  if (!navigator.geolocation) {
+    setGPSStatus('error', 'อุปกรณ์ไม่รองรับ GPS');
+    return;
+  }
+  setGPSStatus('checking', 'กำลังระบุตำแหน่ง...');
+
+  watchId = navigator.geolocation.watchPosition(
+    pos => {
+      gpsData = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+      checkGPSDistance();
+    },
+    err => {
+      console.warn('GPS error:', err);
+      setGPSStatus('error', 'ไม่สามารถระบุตำแหน่งได้ (' + err.message + ')');
+      gpsOk = false;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+  );
+}
+
+function checkGPSDistance() {
+  if (!gpsData.lat || !currentLocation) return;
+  const loc = locationSettings[currentLocation] || LOCATIONS[currentLocation];
+  if (!loc) return;
+
+  const dist = calcDistance(gpsData.lat, gpsData.lng, loc.lat, loc.lng);
+  const radius = loc.radius || 200;
+  gpsOk = dist <= radius;
+
+  const coordText = `${gpsData.lat.toFixed(5)}, ${gpsData.lng.toFixed(5)}`;
+  $('#gps-coords').text(coordText);
+  $('#gps-location-name').text(loc.name);
+
+  if (gpsOk) {
+    setGPSStatus('ok', `อยู่ในพื้นที่ (${Math.round(dist)} ม.)`);
+    $('#gps-distance-text').html(`<span style="color:#16a34a;font-size:.78rem;"><i class="bi bi-check-circle me-1"></i>ห่าง ${Math.round(dist)} เมตร</span>`);
+  } else {
+    setGPSStatus('error', `นอกพื้นที่ (${Math.round(dist)} ม.)`);
+    $('#gps-distance-text').html(`<span style="color:#dc2626;font-size:.78rem;"><i class="bi bi-x-circle me-1"></i>ห่าง ${Math.round(dist)} เมตร (เกิน ${radius} ม.)</span>`);
+  }
+}
+
+function setGPSStatus(type, text) {
+  const badge = document.getElementById('gps-badge');
+  badge.className = `gps-status ${type}`;
+  document.getElementById('gps-text').textContent = text;
+}
+
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ============================================================
+//  CAMERA
+// ============================================================
+async function startCamera(mode) {
+  try {
+    const videoEl = mode === 'attendance' ? 'camera-preview' : 'camera-preview-register';
+    const statusEl = mode === 'attendance' ? 'att-scan-status' : 'reg-scan-status';
+    const captureBtn = mode === 'attendance' ? 'att-capture-btn' : 'reg-capture-btn';
+    const guideEl = mode === 'attendance' ? 'face-guide-att' : 'reg-face-guide';
+
+    if (cameraStream[mode]) {
+      cameraStream[mode].getTracks().forEach(t => t.stop());
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+
+    cameraStream[mode] = stream;
+    document.getElementById(videoEl).srcObject = stream;
+    document.getElementById(statusEl).textContent = 'กล้องพร้อมใช้งาน - วางหน้าในกรอบ';
+    document.getElementById(captureBtn).disabled = false;
+    document.getElementById(guideEl).classList.add('scanning');
+
+    showToast('success', 'เปิดกล้องสำเร็จ');
+  } catch (err) {
+    console.error('Camera error:', err);
+    showToast('error', 'ไม่สามารถเปิดกล้องได้: ' + err.message);
+  }
+}
+
+function capturePhoto(mode) {
+  const videoEl = mode === 'attendance' ? 'camera-preview' : 'camera-preview-register';
+  const canvasEl = mode === 'attendance' ? 'att-canvas' : 'reg-canvas';
+  const capturedEl = mode === 'attendance' ? 'att-captured' : 'reg-captured';
+  const statusEl = mode === 'attendance' ? 'att-scan-status' : 'reg-scan-status';
+
+  const video = document.getElementById(videoEl);
+  const canvas = document.getElementById(canvasEl);
+
+  if (!cameraStream[mode]) {
+    showToast('warning', 'กรุณาเปิดกล้องก่อน');
+    return;
+  }
+
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const dataURL = canvas.toDataURL('image/jpeg', 0.7);
+  capturedImage[mode] = dataURL;
+
+  const capturedEl2 = document.getElementById(capturedEl);
+  capturedEl2.src = dataURL;
+  capturedEl2.classList.remove('d-none');
+
+  document.getElementById(statusEl).textContent = '✅ ถ่ายรูปสำเร็จ';
+  showToast('success', 'ถ่ายรูปสำเร็จ');
+
+  // Stop camera after capture
+  if (cameraStream[mode]) {
+    cameraStream[mode].getTracks().forEach(t => t.stop());
+  }
+}
+
+function stopAllCameras() {
+  Object.keys(cameraStream).forEach(mode => {
+    if (cameraStream[mode]) {
+      cameraStream[mode].getTracks().forEach(t => t.stop());
+      cameraStream[mode] = null;
+    }
+  });
+}
+
+// ============================================================
+//  PASSWORD TOGGLE
+// ============================================================
+function togglePassword(inputId) {
+  const input = document.getElementById(inputId);
+  const eyeMap = { 'login-password': 'eye-login', 'reg-password': 'eye-reg' };
+  const eyeId = eyeMap[inputId] || null;
+  input.type = input.type === 'password' ? 'text' : 'password';
+  if (eyeId) {
+    const eyeEl = document.getElementById(eyeId);
+    eyeEl.className = input.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+  }
+}
+
+// ============================================================
+//  LOGIN
+// ============================================================
+async function handleLogin() {
+  const username = $('#login-username').val().trim();
+  const password = $('#login-password').val().trim();
+  const location = $('#location-select').val();
+
+  if (!username || !password) {
+    showToast('warning', 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+    return;
+  }
+
+  // Admin login
+  if (username === 'admin' && password === 'admin123') {
+    currentUser = { empId: 'ADMIN', name: 'ผู้ดูแลระบบ', role: 'admin', location: location, dept: 'IT' };
+    isAdmin = true;
+    currentLocation = location;
+    enterApp();
+    return;
+  }
+
+  showLoading(true);
+  try {
+    const resp = await gasRequest('login', { username, password, location });
+    if (resp.success) {
+      currentUser = resp.user;
+      isAdmin = false;
+      currentLocation = resp.user.location || location;
+      enterApp();
+    } else {
+      showToast('error', resp.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+    }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+    console.error(err);
+  } finally {
+    showLoading(false);
+  }
+}
+
+function enterApp() {
+  // Setup navbar
+  $('#nav-user-name').text(currentUser.name);
+  $('#nav-user-role').text(isAdmin ? 'ผู้ดูแลระบบ' : `${currentUser.dept || ''} | ${currentUser.empId || ''}`);
+  $('#nav-avatar').text(currentUser.name.charAt(0) || '👤');
+  $('#nav-location-label').text(LOCATIONS[currentLocation]?.name || currentLocation);
+
+  // Show/hide admin menu
+  if (isAdmin) {
+    $('#menu-admin').removeClass('d-none');
+  } else {
+    $('#menu-admin').addClass('d-none');
+  }
+
+  showPage('page-app');
+  showSection('sec-attendance');
+  startClock();
+  startGPS();
+  showToast('success', `ยินดีต้อนรับ ${currentUser.name}!`);
+}
+
+function handleForgotPassword() {
+  Swal.fire({
+    title: 'ลืมรหัสผ่าน',
+    html: `
+      <div class="text-start">
+        <label class="form-label">กรอกรหัสพนักงานหรืออีเมล</label>
+        <input type="text" id="swal-reset-id" class="swal2-input" placeholder="รหัสพนักงาน / อีเมล">
+      </div>`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-send me-1"></i>ส่งคำขอรีเซ็ต',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#2563eb',
+    preConfirm: () => {
+      const val = document.getElementById('swal-reset-id').value.trim();
+      if (!val) { Swal.showValidationMessage('กรุณากรอกข้อมูล'); return false; }
+      return val;
+    }
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({
+        icon: 'success',
+        title: 'ส่งคำขอสำเร็จ',
+        text: 'กรุณาติดต่อผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน',
+        confirmButtonColor: '#2563eb'
+      });
+    }
+  });
+}
+
+// ============================================================
+//  LOGOUT
+// ============================================================
+function handleLogout() {
+  Swal.fire({
+    title: 'ออกจากระบบ?',
+    text: 'ต้องการออกจากระบบหรือไม่',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'ออกจากระบบ',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#dc2626'
+  }).then(res => {
+    if (res.isConfirmed) {
+      stopAllCameras();
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (clockInterval) clearInterval(clockInterval);
+      currentUser = null; isAdmin = false; gpsOk = false;
+      capturedImage = { attendance: null, register: null };
+      $('#login-username').val(''); $('#login-password').val('');
+      showPage('page-login');
+    }
+  });
+}
+
+// ============================================================
+//  REGISTRATION STEPS
+// ============================================================
+let regStep = 1;
+function goStep(step) {
+  if (step === 2) {
+    const empId = $('#reg-empid').val().trim();
+    const name = $('#reg-name').val().trim();
+    const dept = $('#reg-dept').val();
+    if (!empId || !name || !dept) {
+      showToast('warning', 'กรุณากรอกข้อมูลให้ครบถ้วน (รหัส, ชื่อ, แผนก)');
+      return;
+    }
+  }
+  if (step === 3) {
+    if (!capturedImage.register && !$('#reg-password').val().trim()) {
+      showToast('warning', 'กรุณาสแกนใบหน้าหรือกรอกรหัสผ่าน');
+      return;
+    }
+    if ($('#reg-password').val() && $('#reg-password').val() !== $('#reg-confirm-password').val()) {
+      showToast('error', 'รหัสผ่านไม่ตรงกัน');
+      return;
+    }
+    buildRegSummary();
+  }
+
+  // Hide all steps
+  for (let i = 1; i <= 3; i++) {
+    $(`#reg-step${i}`).hide();
+    const dot = $(`#step${i}-dot`);
+    dot.css('background', i === step ? 'var(--primary)' : (i < step ? '#16a34a' : '#e2e8f0'));
+    dot.css('color', i <= step ? 'white' : '#94a3b8');
+  }
+  $(`#reg-step${step}`).show();
+  regStep = step;
+}
+
+function buildRegSummary() {
+  const hasFace = !!capturedImage.register;
+  const html = `
+    <div class="row g-2">
+      <div class="col-6"><small class="text-muted">รหัสพนักงาน</small><div class="fw-semibold">${$('#reg-empid').val()}</div></div>
+      <div class="col-6"><small class="text-muted">ชื่อ-นามสกุล</small><div class="fw-semibold">${$('#reg-name').val()}</div></div>
+      <div class="col-6"><small class="text-muted">แผนก</small><div class="fw-semibold">${$('#reg-dept').val()}</div></div>
+      <div class="col-6"><small class="text-muted">สถานที่ทำงาน</small><div class="fw-semibold">${LOCATIONS[$('#reg-location').val()]?.name || ''}</div></div>
+      <div class="col-6"><small class="text-muted">อีเมล</small><div class="fw-semibold">${$('#reg-email').val() || '-'}</div></div>
+      <div class="col-6"><small class="text-muted">เบอร์โทร</small><div class="fw-semibold">${$('#reg-phone').val() || '-'}</div></div>
+      <div class="col-12">
+        <small class="text-muted">การยืนยันตัวตน</small>
+        <div class="fw-semibold">
+          ${hasFace ? '<span class="text-success"><i class="bi bi-check-circle me-1"></i>สแกนใบหน้า</span>' : '<span class="text-warning"><i class="bi bi-key me-1"></i>รหัสผ่าน</span>'}
+        </div>
+      </div>
+      ${hasFace ? `<div class="col-12"><img src="${capturedImage.register}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);"/></div>` : ''}
+    </div>`;
+  $('#reg-summary').html(html);
+}
+
+async function submitRegistration() {
+  showLoading(true);
+  try {
+    const payload = {
+      action: 'register',
+      empId: $('#reg-empid').val().trim(),
+      name: $('#reg-name').val().trim(),
+      email: $('#reg-email').val().trim(),
+      phone: $('#reg-phone').val().trim(),
+      dept: $('#reg-dept').val(),
+      location: $('#reg-location').val(),
+      password: $('#reg-password').val(),
+      faceData: capturedImage.register || ''
     };
 
-    const Toast = Swal.mixin({
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2600,
-      timerProgressBar: true
+    const resp = await gasRequest('register', payload);
+    if (resp.success) {
+      await Swal.fire({
+        icon: 'success',
+        title: 'ส่งคำขอสำเร็จ!',
+        html: `<p>ขอบคุณ <strong>${payload.name}</strong></p><p class="text-muted" style="font-size:.88rem;">กรุณารอการอนุมัติจากผู้ดูแลระบบ</p>`,
+        confirmButtonColor: '#2563eb'
+      });
+      // Reset form
+      ['reg-empid','reg-name','reg-email','reg-phone','reg-password','reg-confirm-password'].forEach(id => $(`#${id}`).val(''));
+      capturedImage.register = null;
+      goStep(1);
+      showPage('page-login');
+    } else {
+      showToast('error', resp.message || 'เกิดข้อผิดพลาด');
+    }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+    console.error(err);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ============================================================
+//  ATTENDANCE
+// ============================================================
+function initAttendanceSection() {
+  checkTodayAttendance();
+}
+
+async function checkTodayAttendance() {
+  if (!currentUser || isAdmin) return;
+  try {
+    const resp = await gasRequest('getTodayAttendance', { empId: currentUser.empId });
+    if (resp.success && resp.data) {
+      todayCheckin = resp.data;
+      updateAttendanceUI(resp.data);
+    }
+  } catch (err) { console.warn('Could not load today attendance:', err); }
+}
+
+function updateAttendanceUI(data) {
+  if (data && data.checkin) {
+    $('#att-status-card').css({
+      'background': 'rgba(22,163,74,0.08)',
+      'border-color': 'rgba(22,163,74,0.3)'
     });
+    $('#att-status-text').html(`<i class="bi bi-check-circle-fill me-2" style="color:#16a34a;"></i>เข้างานแล้ว`);
+    $('#att-checkin-time').text(`เข้างาน: ${data.checkin}`);
+    $('#btn-checkin').prop('disabled', true);
+    $('#btn-checkout').prop('disabled', !!data.checkout);
+    if (data.checkout) {
+      $('#att-status-text').html(`<i class="bi bi-door-open-fill me-2" style="color:#7c3aed;"></i>ออกงานแล้ว`);
+      $('#att-checkin-time').text(`เข้า: ${data.checkin} | ออก: ${data.checkout}`);
+    }
+  }
+}
 
-    const registerModal = new bootstrap.Modal(document.getElementById('registrationModal'));
-
-    $(function () {
-      bindEvents();
-      loadPublicConfig();
-      if (App.adminToken) {
-        showAdminView();
-        loadAdminDashboard();
-      }
+async function recordAttendance(type) {
+  if (!capturedImage.attendance) {
+    Swal.fire({
+      icon: 'warning', title: 'ไม่พบรูปถ่าย',
+      text: 'กรุณาสแกนใบหน้าก่อนบันทึกเวลา',
+      confirmButtonColor: '#2563eb'
     });
+    return;
+  }
+  if (!gpsOk && !isAdmin) {
+    const res = await Swal.fire({
+      icon: 'warning', title: 'GPS นอกพื้นที่',
+      text: 'ตำแหน่งปัจจุบันไม่อยู่ในรัศมีที่กำหนด ต้องการบันทึกต่อไปหรือไม่?',
+      showCancelButton: true,
+      confirmButtonText: 'บันทึกต่อ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#d97706'
+    });
+    if (!res.isConfirmed) return;
+  }
 
-    function bindEvents() {
-      $('#openEmployeeCamera').on('click', function () {
-        startCamera('#employeeVideo', '#employeeVideoPlaceholder').catch(showError);
+  const typeText = type === 'checkin' ? 'เข้างาน' : 'ออกงาน';
+  const res = await Swal.fire({
+    title: `ยืนยันการ${typeText}?`,
+    html: `<div class="text-start">
+      <p>พนักงาน: <strong>${currentUser.name}</strong></p>
+      <p>เวลา: <strong>${new Date().toLocaleTimeString('th-TH')}</strong></p>
+      <p>ตำแหน่ง: <strong>${gpsData.lat ? `${gpsData.lat.toFixed(5)}, ${gpsData.lng.toFixed(5)}` : 'ไม่พบ GPS'}</strong></p>
+    </div>`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: `<i class="bi bi-check-lg me-1"></i>ยืนยัน${typeText}`,
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: type === 'checkin' ? '#16a34a' : '#7c3aed'
+  });
+
+  if (!res.isConfirmed) return;
+
+  showLoading(true);
+  try {
+    const payload = {
+      action: 'recordAttendance',
+      empId: currentUser.empId,
+      name: currentUser.name,
+      dept: currentUser.dept || '',
+      location: currentLocation,
+      type: type,
+      lat: gpsData.lat,
+      lng: gpsData.lng,
+      gpsOk: gpsOk,
+      faceData: capturedImage.attendance,
+      timestamp: new Date().toISOString()
+    };
+
+    const resp = await gasRequest('recordAttendance', payload);
+    if (resp.success) {
+      todayCheckin = resp.data || todayCheckin;
+      updateAttendanceUI(resp.data);
+      capturedImage.attendance = null;
+      $('#att-captured').addClass('d-none').attr('src','');
+      $('#att-scan-status').text('กดปุ่มเปิดกล้อง');
+
+      Swal.fire({
+        icon: 'success',
+        title: `บันทึก${typeText}สำเร็จ!`,
+        html: `<p>เวลา: <strong>${new Date().toLocaleTimeString('th-TH')}</strong></p>`,
+        timer: 3000, showConfirmButton: false,
+        timerProgressBar: true
       });
-
-      $('#employeeLoginBtn').on('click', handleEmployeeLogin);
-      $('#backToLogin').on('click', showLoginView);
-      $('#resultOpenAdmin, #openAdminLoginTop').on('click', function () {
-        showLoginView();
-        document.getElementById('adminLoginPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        $('#adminUsername').trigger('focus');
-      });
-
-      $('#openRegisterModal').on('click', function () {
-        App.registrationFace = null;
-        $('#registrationForm')[0].reset();
-        $('#registerFaceStatus').html('<i class="bi bi-info-circle"></i> ยังไม่ได้บันทึกใบหน้า');
-        registerModal.show();
-      });
-
-      $('#registrationModal').on('hidden.bs.modal', function () {
-        stopCamera('#registerVideo');
-      });
-
-      $('#openRegisterCamera').on('click', function () {
-        startCamera('#registerVideo', '#registerVideoPlaceholder').catch(showError);
-      });
-
-      $('#captureRegisterFace').on('click', async function () {
-        try {
-          setFrameScanning('#registerVideoFrame', true);
-          App.registrationFace = await captureFace('#registerVideo', '#registerCanvas', '#registerVideoPlaceholder');
-          $('#registerFaceStatus').html('<i class="bi bi-check-circle"></i> บันทึกใบหน้าแล้ว');
-          Toast.fire({ icon: 'success', title: 'บันทึกใบหน้าสำเร็จ' });
-        } catch (err) {
-          showError(err);
-        } finally {
-          setFrameScanning('#registerVideoFrame', false);
-        }
-      });
-
-      $('#registrationForm').on('submit', handleRegistration);
-      $('#approvalCheckForm').on('submit', handleApprovalCheck);
-      $('#forgotPasswordBtn').on('click', handleForgotPassword);
-      $('#adminLoginForm').on('submit', handleAdminLogin);
-      $('#refreshDashboard').on('click', loadAdminDashboard);
-      $('#adminLogoutBtn').on('click', handleAdminLogout);
-      $('#employeeSearch').on('input', function () { renderEmployees(App.employees); });
-
-      $(document).on('click', '.approve-employee', handleApproveEmployee);
-      $(document).on('click', '.reject-employee', handleRejectEmployee);
-      $(document).on('click', '.delete-employee', handleDeleteEmployee);
-      $(document).on('click', '.view-snapshot', handleViewSnapshot);
-      $(document).on('submit', '.office-form', handleOfficeUpdate);
+    } else {
+      showToast('error', resp.message || 'เกิดข้อผิดพลาด');
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถบันทึกข้อมูลได้');
+    console.error(err);
+  } finally {
+    showLoading(false);
+  }
+}
 
-    async function loadPublicConfig() {
-      try {
-        const res = await gasCall('getPublicConfig', {});
-        if (!res.ok) throw new Error(res.message || 'โหลดข้อมูลตั้งต้นไม่สำเร็จ');
-        App.offices = res.data.offices || [];
-        App.departments = res.data.departments || [];
-        App.maxSnapshotChars = res.data.maxSnapshotChars || App.maxSnapshotChars;
-        populateOfficeSelects(App.offices);
-        populateDepartments(App.departments);
-      } catch (err) {
-        Toast.fire({ icon: 'warning', title: 'ใช้รายการสถานที่เริ่มต้นชั่วคราว' });
-      }
+// ============================================================
+//  MY RECORDS
+// ============================================================
+async function loadMyRecords() {
+  const month = $('#records-month').val();
+  if (!month) { showToast('warning', 'กรุณาเลือกเดือน'); return; }
+
+  showLoading(true);
+  try {
+    const resp = await gasRequest('getMyRecords', { empId: currentUser.empId, month });
+    if (resp.success) {
+      renderMyRecords(resp.records || []);
+      updateMySummary(resp.summary || {});
+    } else {
+      showToast('error', resp.message || 'เกิดข้อผิดพลาด');
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถโหลดข้อมูลได้');
+  } finally {
+    showLoading(false);
+  }
+}
 
-    function populateOfficeSelects(offices) {
-      if (!offices || !offices.length) return;
-      const options = offices.map(function (office) {
-        return '<option value="' + escapeHtml(office.workplace) + '">' + escapeHtml(office.workplace) + '</option>';
-      }).join('');
-      $('#workplaceSelect, #regWorkplace').html(options);
+function renderMyRecords(records) {
+  if (!records.length) {
+    $('#my-records-tbody').html('<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>ไม่มีข้อมูล</td></tr>');
+    return;
+  }
+  let html = '';
+  records.forEach(r => {
+    const hours = r.hours ? `${r.hours}h` : '-';
+    const status = r.late ? '<span class="badge-status badge-pending">มาสาย</span>' : '<span class="badge-status badge-approved">ตรงเวลา</span>';
+    const photo = r.facePhoto ? `<img src="${r.facePhoto}" class="photo-thumb" onclick="viewPhoto('${r.facePhoto}','${r.date}')"/>` : '-';
+    html += `<tr>
+      <td>${r.date}</td>
+      <td><span class="badge-status badge-checkin">${r.checkin || '-'}</span></td>
+      <td><span class="badge-status badge-checkout">${r.checkout || '-'}</span></td>
+      <td>${hours}</td>
+      <td>${status}</td>
+      <td>${photo}</td>
+    </tr>`;
+  });
+  $('#my-records-tbody').html(html);
+}
+
+function updateMySummary(summary) {
+  $('#my-total-days').text(summary.totalDays || 0);
+  $('#my-total-hours').text(summary.totalHours || 0);
+  $('#my-late-count').text(summary.late || 0);
+  $('#my-absent-count').text(summary.absent || 0);
+}
+
+function exportMyRecords() {
+  showToast('info', 'กำลัง Export ข้อมูล...');
+  // Build CSV from table
+  const rows = [['วันที่','เข้างาน','ออกงาน','ชั่วโมง','สถานะ']];
+  $('#my-records-tbody tr').each(function() {
+    const cells = $(this).find('td');
+    if (cells.length > 1) {
+      rows.push([
+        cells.eq(0).text(), cells.eq(1).text(),
+        cells.eq(2).text(), cells.eq(3).text(), cells.eq(4).text()
+      ]);
     }
+  });
+  downloadCSV(rows, `attendance_${currentUser.empId}.csv`);
+}
 
-    function populateDepartments(departments) {
-      $('#departmentOptions').html((departments || []).map(function (department) {
-        return '<option value="' + escapeHtml(department) + '"></option>';
-      }).join(''));
+// ============================================================
+//  PROFILE
+// ============================================================
+function loadProfile() {
+  if (!currentUser) return;
+  const u = currentUser;
+  $('#profile-name-display').text(u.name);
+  $('#profile-empid-display').text(u.empId);
+  $('#profile-dept-display').text(u.dept || '-');
+  $('#profile-loc-display').text(LOCATIONS[u.location]?.name || u.location || '-');
+  $('#profile-avatar-display').text(u.name.charAt(0) || '👤');
+  $('#profile-details').html(`
+    <div class="col-md-6"><label class="text-muted" style="font-size:.78rem;">รหัสพนักงาน</label><div class="fw-semibold">${u.empId}</div></div>
+    <div class="col-md-6"><label class="text-muted" style="font-size:.78rem;">ชื่อ-นามสกุล</label><div class="fw-semibold">${u.name}</div></div>
+    <div class="col-md-6"><label class="text-muted" style="font-size:.78rem;">อีเมล</label><div class="fw-semibold">${u.email || '-'}</div></div>
+    <div class="col-md-6"><label class="text-muted" style="font-size:.78rem;">เบอร์โทร</label><div class="fw-semibold">${u.phone || '-'}</div></div>
+    <div class="col-md-6"><label class="text-muted" style="font-size:.78rem;">แผนก</label><div class="fw-semibold">${u.dept || '-'}</div></div>
+    <div class="col-md-6"><label class="text-muted" style="font-size:.78rem;">สถานที่</label><div class="fw-semibold">${LOCATIONS[u.location]?.name || '-'}</div></div>
+  `);
+}
+
+async function changePassword() {
+  const np = $('#new-password').val();
+  const cp = $('#confirm-new-password').val();
+  if (!np || !cp) { showToast('warning', 'กรุณากรอกรหัสผ่านให้ครบ'); return; }
+  if (np !== cp) { showToast('error', 'รหัสผ่านไม่ตรงกัน'); return; }
+  if (np.length < 6) { showToast('warning', 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return; }
+
+  showLoading(true);
+  try {
+    const resp = await gasRequest('changePassword', { empId: currentUser.empId, newPassword: np });
+    if (resp.success) {
+      showToast('success', 'เปลี่ยนรหัสผ่านสำเร็จ');
+      $('#new-password,#confirm-new-password').val('');
+    } else {
+      showToast('error', resp.message || 'เกิดข้อผิดพลาด');
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+  } finally {
+    showLoading(false);
+  }
+}
 
-    function gasCall(action, payload) {
-      if (window.google && google.script && google.script.run) {
-        return $.Deferred(function (defer) {
-          const runner = google.script.run
-            .withSuccessHandler(function (response) {
-              if (!response || response.ok === false) {
-                defer.reject(response || { message: 'ไม่พบผลลัพธ์จากเซิร์ฟเวอร์' });
-              } else {
-                defer.resolve(response);
-              }
-            })
-            .withFailureHandler(function (err) {
-              defer.reject({ message: err && err.message ? err.message : String(err) });
-            });
-          runner[action](payload || {});
-        }).promise();
-      }
+// ============================================================
+//  DASHBOARD (ADMIN)
+// ============================================================
+async function loadDashboard() {
+  if (!isAdmin) return;
+  const date = $('#dash-date').val() || new Date().toISOString().split('T')[0];
+  $('#dash-date').val(date);
 
-      return $.Deferred(function (defer) {
-        const url = App.webAppUrl && App.webAppUrl.indexOf('<?=') === -1 ? App.webAppUrl : 'https://script.google.com/macros/s/AKfycbxd93wlIb-PtQ8MT-0leJn6i8B4JmuN0TH-9remNnYr1_43pzMfcjMfEywj-fzVyvJs/exec';
-        if (!url) {
-          defer.reject({ message: 'ไม่พบ Web App URL กรุณาเปิดผ่าน Google Apps Script Web App' });
-          return;
-        }
-        fetch(url, {
-          method: 'POST',
-          mode: 'no-cors',
-          redirect: 'follow',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: action, payload: payload || {} })
-        }).then(function () {
-          defer.resolve({ ok: true, noCors: true, message: 'ส่งข้อมูลไปยัง Web App แล้ว' });
-        }).catch(function (err) {
-          defer.reject({ message: err && err.message ? err.message : String(err) });
-        });
-      }).promise();
+  showLoading(true);
+  try {
+    const resp = await gasRequest('getDashboard', { date });
+    if (resp.success) {
+      const d = resp.data;
+      $('#dash-total-emp').text(d.totalEmployees || 0);
+      $('#dash-present').text(d.present || 0);
+      $('#dash-late').text(d.late || 0);
+      $('#dash-absent').text(d.absent || 0);
+      renderDeptBars(d.deptStats || []);
+      renderLocationStats(d.locationStats || []);
+      renderTodayAtt(d.todayList || []);
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถโหลด Dashboard ได้');
+    // Show demo data structure
+    $('#dash-total-emp').text('0');
+    $('#dash-present').text('0');
+    $('#dash-late').text('0');
+    $('#dash-absent').text('0');
+  } finally {
+    showLoading(false);
+  }
+}
 
-    async function startCamera(videoSelector, placeholderSelector) {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('เบราว์เซอร์นี้ไม่รองรับการใช้งานกล้อง');
-      }
-      const video = $(videoSelector).get(0);
-      stopCamera(videoSelector);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: false
-      });
-      video.srcObject = stream;
-      await video.play();
-      App.streams[videoSelector] = stream;
-      $(placeholderSelector).addClass('d-none');
-      Toast.fire({ icon: 'success', title: 'เปิดกล้องแล้ว' });
-    }
+function renderDeptBars(deptStats) {
+  if (!deptStats.length) {
+    $('#dept-chart-bars').html('<p class="text-center text-muted">ไม่มีข้อมูล</p>');
+    return;
+  }
+  const max = Math.max(...deptStats.map(d => d.total), 1);
+  const colors = ['#2563eb','#16a34a','#d97706','#7c3aed','#dc2626','#0891b2'];
+  let html = '';
+  deptStats.forEach((d, i) => {
+    const pct = Math.round((d.present / max) * 100);
+    html += `
+      <div class="dept-bar-wrap">
+        <div class="dept-bar-label">${d.dept}</div>
+        <div class="dept-bar-bg">
+          <div class="dept-bar-fill" style="width:${pct}%;background:${colors[i%colors.length]};"></div>
+        </div>
+        <div style="font-size:.78rem;font-weight:600;min-width:50px;text-align:right;color:${colors[i%colors.length]};">
+          ${d.present}/${d.total}
+        </div>
+      </div>`;
+  });
+  $('#dept-chart-bars').html(html);
+}
 
-    function stopCamera(videoSelector) {
-      const stream = App.streams[videoSelector];
-      if (stream) stream.getTracks().forEach(function (track) { track.stop(); });
-      App.streams[videoSelector] = null;
-      const video = $(videoSelector).get(0);
-      if (video) video.srcObject = null;
-    }
+function renderLocationStats(locationStats) {
+  if (!locationStats.length) {
+    $('#location-stats').html('<p class="text-center text-muted">ไม่มีข้อมูล</p>');
+    return;
+  }
+  let html = '<div class="row g-3">';
+  const colors = ['#2563eb','#16a34a','#d97706'];
+  locationStats.forEach((l, i) => {
+    html += `
+      <div class="col-12">
+        <div class="p-3 rounded-3" style="background:rgba(${hexToRgb(colors[i%3])},0.08);border:1px solid rgba(${hexToRgb(colors[i%3])},0.2);">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold">${LOCATIONS[l.location]?.name || l.location}</div>
+              <div style="font-size:.78rem;color:#64748b;">มา ${l.present} / ทั้งหมด ${l.total} คน</div>
+            </div>
+            <div style="font-size:1.5rem;font-weight:700;color:${colors[i%3]};">${Math.round((l.present/Math.max(l.total,1))*100)}%</div>
+          </div>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  $('#location-stats').html(html);
+}
 
-    async function captureFace(videoSelector, canvasSelector, placeholderSelector) {
-      const video = $(videoSelector).get(0);
-      if (!video || !video.srcObject) {
-        await startCamera(videoSelector, placeholderSelector);
-      }
-      if (!video.videoWidth || !video.videoHeight) {
-        await waitForVideo(video);
-      }
-      const canvas = $(canvasSelector).get(0);
-      drawVideoToCanvas(video, canvas, 360);
-      await ensureFacePresent(canvas);
-      const faceHash = averageHash(canvas);
-      const faceSnapshot = compressCanvas(canvas, App.maxSnapshotChars);
-      if (faceSnapshot.length > App.maxSnapshotChars) {
-        throw new Error('รูปถ่ายมีขนาดใหญ่เกินไป กรุณาถ่ายใหม่ในที่แสงเพียงพอ');
-      }
-      return { hash: faceHash, snapshot: faceSnapshot };
-    }
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
 
-    function waitForVideo(video) {
-      return new Promise(function (resolve) {
-        const done = function () { resolve(); };
-        video.onloadedmetadata = done;
-        setTimeout(done, 800);
-      });
-    }
+function renderTodayAtt(list) {
+  if (!list.length) {
+    $('#today-att-tbody').html('<tr><td colspan="7" class="text-center text-muted py-4">ไม่มีข้อมูลการเข้างาน</td></tr>');
+    return;
+  }
+  let html = '';
+  list.forEach((r, i) => {
+    const status = r.checkout ? '<span class="badge-status badge-checkout">ออกงานแล้ว</span>'
+                 : r.checkin ? '<span class="badge-status badge-checkin">กำลังทำงาน</span>'
+                 : '<span class="badge-status badge-pending">ยังไม่มา</span>';
+    html += `<tr>
+      <td>${i+1}</td>
+      <td>${r.empId}</td>
+      <td>${r.name}</td>
+      <td>${r.dept || '-'}</td>
+      <td>${r.checkin || '-'}</td>
+      <td>${r.checkout || '-'}</td>
+      <td>${status}</td>
+    </tr>`;
+  });
+  $('#today-att-tbody').html(html);
+}
 
-    function drawVideoToCanvas(video, canvas, targetWidth) {
-      const width = targetWidth;
-      const height = Math.round(video.videoHeight * (width / video.videoWidth)) || targetWidth;
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(video, 0, 0, width, height);
-    }
-
-    async function ensureFacePresent(canvas) {
-      if (!('FaceDetector' in window)) return true;
-      try {
-        const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
-        const faces = await detector.detect(canvas);
-        if (!faces || !faces.length) throw new Error('ไม่พบใบหน้าในภาพ กรุณาหันหน้าตรงและถ่ายใหม่');
-      } catch (err) {
-        if (err && err.message && err.message.indexOf('ไม่พบใบหน้า') > -1) throw err;
-      }
-      return true;
-    }
-
-    function averageHash(sourceCanvas) {
-      const size = 8;
-      const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(sourceCanvas, 0, 0, size, size);
-      const data = ctx.getImageData(0, 0, size, size).data;
-      const grays = [];
-      for (let i = 0; i < data.length; i += 4) {
-        grays.push((data[i] * 0.299) + (data[i + 1] * 0.587) + (data[i + 2] * 0.114));
-      }
-      const avg = grays.reduce(function (sum, value) { return sum + value; }, 0) / grays.length;
-      return grays.map(function (value) { return value >= avg ? '1' : '0'; }).join('');
-    }
-
-    function compressCanvas(sourceCanvas, maxChars) {
-      const widths = [360, 320, 280, 240];
-      const qualities = [0.72, 0.62, 0.52, 0.44, 0.36, 0.3];
-      let last = '';
-      for (let w = 0; w < widths.length; w++) {
-        const canvas = document.createElement('canvas');
-        canvas.width = widths[w];
-        canvas.height = Math.round(sourceCanvas.height * (widths[w] / sourceCanvas.width));
-        canvas.getContext('2d').drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
-        for (let q = 0; q < qualities.length; q++) {
-          last = canvas.toDataURL('image/jpeg', qualities[q]);
-          if (last.length <= maxChars) return last;
-        }
-      }
-      return last;
-    }
-
-    function getGpsPosition() {
-      return new Promise(function (resolve, reject) {
-        if (!navigator.geolocation) {
-          reject(new Error('เบราว์เซอร์นี้ไม่รองรับ GPS'));
-          return;
-        }
-        $('#gpsStatus').html('<i class="bi bi-broadcast"></i> กำลังอ่านตำแหน่ง...');
-        navigator.geolocation.getCurrentPosition(function (pos) {
-          const coords = {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: Math.round(pos.coords.accuracy || 0)
-          };
-          $('#gpsStatus').html('<i class="bi bi-geo-alt-fill"></i> GPS พร้อมใช้งาน ' + coords.accuracy + ' ม.');
-          resolve(coords);
-        }, function (err) {
-          reject(new Error(err.message || 'ไม่สามารถอ่านตำแหน่ง GPS ได้'));
-        }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
-      });
-    }
-
-    async function handleEmployeeLogin() {
-      const workplace = $('#workplaceSelect').val();
-      const confirmation = await Swal.fire({
-        icon: 'question',
-        title: 'ยืนยันการเข้าสู่ระบบ',
-        text: 'ระบบจะใช้กล้องและ GPS เพื่อบันทึกเวลาเข้า-ออกงาน',
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยัน',
-        cancelButtonText: 'ยกเลิก'
-      });
-      if (!confirmation.isConfirmed) return;
-
-      const $button = $('#employeeLoginBtn');
-      setBusy($button, true, 'กำลังสแกน...');
-      setFrameScanning('#employeeVideoFrame', true);
-      try {
-        const face = await captureFace('#employeeVideo', '#employeeCanvas', '#employeeVideoPlaceholder');
-        const gps = await getGpsPosition();
-        const res = await gasCall('recordAttendance', {
-          workplace: workplace,
-          latitude: gps.latitude,
-          longitude: gps.longitude,
-          accuracy: gps.accuracy,
-          faceData: face.hash,
-          faceSnapshot: face.snapshot,
-          deviceInfo: navigator.userAgent
-        });
-        if (res.noCors) {
-          await Swal.fire('ส่งข้อมูลแล้ว', 'โหมด no-cors ไม่สามารถอ่านผลลัพธ์จากเซิร์ฟเวอร์ได้ กรุณาตรวจสอบใน Google Sheets', 'info');
-        } else {
-          showEmployeeResult(res.data);
-          Toast.fire({ icon: 'success', title: res.message });
-        }
-      } catch (err) {
-        showError(err);
-      } finally {
-        setBusy($button, false);
-        setFrameScanning('#employeeVideoFrame', false);
-      }
-    }
-
-    async function handleRegistration(event) {
-      event.preventDefault();
-      const password = $('#regPassword').val();
-      const confirmPassword = $('#regConfirmPassword').val();
-      if (password || confirmPassword) {
-        if (password !== confirmPassword) {
-          showError('รหัสผ่านสำรองและยืนยันรหัสผ่านไม่ตรงกัน');
-          return;
-        }
-      }
-      if (!App.registrationFace && !password) {
-        showError('กรุณาบันทึกใบหน้า หรือกรอกรหัสผ่านสำรองเมื่อกล้องใช้งานไม่ได้');
-        return;
-      }
-
-      const confirmation = await Swal.fire({
-        icon: 'question',
-        title: 'ส่งคำขอลงทะเบียน?',
-        text: 'ข้อมูลจะถูกบันทึกและรอผู้ดูแลระบบอนุมัติ',
-        showCancelButton: true,
-        confirmButtonText: 'ส่งคำขอ',
-        cancelButtonText: 'ยกเลิก'
-      });
-      if (!confirmation.isConfirmed) return;
-
-      let gps = { latitude: '', longitude: '' };
-      try {
-        gps = await getGpsPosition();
-      } catch (ignore) {}
-
-      const $button = $('#registrationForm button[type="submit"]');
-      setBusy($button, true, 'กำลังส่ง...');
-      try {
-        const res = await gasCall('registerEmployee', {
-          employeeId: $('#regEmployeeId').val(),
-          name: $('#regName').val(),
-          email: $('#regEmail').val(),
-          department: $('#regDepartment').val(),
-          workplace: $('#regWorkplace').val(),
-          password: password,
-          faceData: App.registrationFace ? App.registrationFace.hash : '',
-          faceSnapshot: App.registrationFace ? App.registrationFace.snapshot : '',
-          latitude: gps.latitude,
-          longitude: gps.longitude
-        });
-        registerModal.hide();
-        await Swal.fire('ส่งคำขอสำเร็จ', res.message, 'success');
-      } catch (err) {
-        showError(err);
-      } finally {
-        setBusy($button, false);
-      }
-    }
-
-    async function handleApprovalCheck(event) {
-      event.preventDefault();
-      const query = $('#approvalLookup').val().trim();
-      if (!query) return;
-      try {
-        const payload = query.indexOf('@') > -1 ? { email: query } : { employeeId: query };
-        const res = await gasCall('checkApproval', payload);
-        const data = res.data;
-        await Swal.fire({
-          icon: data.adminApproved === 'Yes' ? 'success' : 'info',
-          title: 'สถานะ: ' + data.status,
-          html: '<div class="text-start">' +
-            '<p><b>Employee ID:</b> ' + escapeHtml(data.employeeId) + '</p>' +
-            '<p><b>ชื่อ:</b> ' + escapeHtml(data.name) + '</p>' +
-            '<p><b>แผนก:</b> ' + escapeHtml(data.department) + '</p>' +
-            '<p><b>สถานที่:</b> ' + escapeHtml(data.workplace) + '</p>' +
-            '<p><b>มีข้อมูลใบหน้า:</b> ' + (data.hasFaceData ? 'มี' : 'ยังไม่มี') + '</p>' +
-          '</div>'
-        });
-      } catch (err) {
-        showError(err);
-      }
-    }
-
-    async function handleForgotPassword() {
-      const result = await Swal.fire({
-        title: 'ลืมรหัสผ่าน',
-        html:
-          '<input id="forgotEmployeeId" class="swal2-input" placeholder="Employee ID">' +
-          '<input id="forgotEmail" class="swal2-input" placeholder="Email">',
-        showCancelButton: true,
-        confirmButtonText: 'ส่งคำขอ',
-        cancelButtonText: 'ยกเลิก',
-        preConfirm: function () {
-          return {
-            employeeId: $('#forgotEmployeeId').val().trim(),
-            email: $('#forgotEmail').val().trim()
-          };
-        }
-      });
-      if (!result.isConfirmed) return;
-      try {
-        const res = await gasCall('requestPasswordReset', result.value);
-        await Swal.fire('ส่งคำขอแล้ว', res.message, 'success');
-      } catch (err) {
-        showError(err);
-      }
-    }
-
-    async function handleAdminLogin(event) {
-      event.preventDefault();
-      const $button = $('#adminLoginForm button[type="submit"]');
-      setBusy($button, true, 'กำลังเข้าสู่ระบบ...');
-      try {
-        const res = await gasCall('adminLogin', {
-          username: $('#adminUsername').val(),
-          password: $('#adminPassword').val()
-        });
-        App.adminToken = res.data.token;
-        App.adminUser = res.data.username;
-        sessionStorage.setItem('adminToken', App.adminToken);
-        sessionStorage.setItem('adminUser', App.adminUser);
-        showAdminView();
-        await loadAdminDashboard();
-      } catch (err) {
-        showError(err);
-      } finally {
-        setBusy($button, false);
-      }
-    }
-
-    async function handleAdminLogout() {
-      const confirmation = await Swal.fire({
-        icon: 'question',
-        title: 'ออกจากระบบ?',
-        showCancelButton: true,
-        confirmButtonText: 'ออกจากระบบ',
-        cancelButtonText: 'ยกเลิก'
-      });
-      if (!confirmation.isConfirmed) return;
-      try {
-        await gasCall('adminLogout', { token: App.adminToken });
-      } catch (ignore) {}
-      sessionStorage.removeItem('adminToken');
-      sessionStorage.removeItem('adminUser');
-      App.adminToken = '';
-      App.adminUser = '';
-      showLoginView();
-    }
-
-    async function loadAdminDashboard() {
-      if (!App.adminToken) return;
-      const $button = $('#refreshDashboard');
-      setBusy($button, true, 'โหลด...');
-      try {
-        const res = await gasCall('adminGetDashboard', { token: App.adminToken });
-        renderDashboard(res.data);
-        Toast.fire({ icon: 'success', title: 'โหลด Dashboard แล้ว' });
-      } catch (err) {
-        showError(err);
-        if (String(err.message || '').indexOf('Session') > -1) handleAdminLogout();
-      } finally {
-        setBusy($button, false);
-      }
-    }
-
-    function renderDashboard(data) {
-      App.employees = data.employees || [];
-      $('#adminSessionLabel').text('เข้าสู่ระบบโดย ' + (App.adminUser || (data.admin && data.admin.username) || 'admin'));
-      $('#dashboardUpdated').html('<i class="bi bi-clock"></i> อัปเดตล่าสุด ' + escapeHtml(new Date().toLocaleString('th-TH')));
-      $('#statTotalEmployees').text(data.stats.totalEmployees || 0);
-      $('#statApprovedEmployees').text(data.stats.approvedEmployees || 0);
-      $('#statPendingEmployees').text(data.stats.pendingEmployees || 0);
-      $('#statTodayPresent').text(data.stats.todayPresent || 0);
-      renderStatsTable('#statsByDayBody', data.stats.byDay || [], ['date', 'inCount', 'outCount', 'present']);
-      renderStatsTable('#statsByDepartmentBody', data.stats.byDepartment || [], ['department', 'inCount', 'outCount', 'present']);
-      renderPendingEmployees(App.employees);
-      renderEmployees(App.employees);
-      renderAttendance(data.attendance || []);
-      renderOffices(data.offices || []);
-    }
-
-    function renderStatsTable(selector, rows, fields) {
-      if (!rows.length) {
-        $(selector).html('<tr><td colspan="4"><div class="empty-state">ยังไม่มีข้อมูลสถิติ</div></td></tr>');
-        return;
-      }
-      $(selector).html(rows.map(function (row) {
-        return '<tr>' + fields.map(function (field) {
-          return '<td>' + escapeHtml(row[field] === undefined ? '' : row[field]) + '</td>';
-        }).join('') + '</tr>';
-      }).join(''));
-    }
-
-    function renderPendingEmployees(employees) {
-      const pending = employees.filter(function (emp) { return String(emp.status).toLowerCase() === 'pending'; });
-      if (!pending.length) {
-        $('#pendingEmployeesBody').html('<tr><td colspan="7"><div class="empty-state">ไม่มีคำขอรออนุมัติ</div></td></tr>');
-        return;
-      }
-      $('#pendingEmployeesBody').html(pending.map(employeeRowHtml).join(''));
-    }
-
-    function renderEmployees(employees) {
-      const keyword = $('#employeeSearch').val().toLowerCase().trim();
-      const filtered = employees.filter(function (emp) {
-        const text = [emp.employeeId, emp.name, emp.email, emp.department, emp.workplace, emp.status].join(' ').toLowerCase();
-        return !keyword || text.indexOf(keyword) > -1;
-      });
-      if (!filtered.length) {
-        $('#employeesBody').html('<tr><td colspan="9"><div class="empty-state">ไม่พบข้อมูลพนักงาน</div></td></tr>');
-        return;
-      }
-      $('#employeesBody').html(filtered.map(function (emp) {
-        const photo = snapshotButton(emp.hasSnapshot, 'employee', emp.employeeId, emp.name);
-        const approved = emp.adminApproved === 'Yes' ? '<span class="badge text-bg-success">Approved</span>' : '<span class="badge text-bg-warning">' + escapeHtml(emp.status) + '</span>';
-        return '<tr>' +
-          '<td>' + photo + '</td>' +
-          '<td class="fw-semibold">' + escapeHtml(emp.employeeId) + '</td>' +
-          '<td>' + escapeHtml(emp.name) + '</td>' +
-          '<td>' + escapeHtml(emp.email) + '</td>' +
-          '<td>' + escapeHtml(emp.department) + '</td>' +
-          '<td>' + escapeHtml(emp.workplace) + '</td>' +
-          '<td>' + approved + '</td>' +
-          '<td>' + escapeHtml(emp.lastLoginAt || '-') + '</td>' +
-          '<td class="text-end">' + actionButtons(emp) + '</td>' +
-        '</tr>';
-      }).join(''));
-    }
-
-    function employeeRowHtml(emp) {
-      return '<tr>' +
-        '<td>' + snapshotButton(emp.hasSnapshot, 'employee', emp.employeeId, emp.name) + '</td>' +
-        '<td class="fw-semibold">' + escapeHtml(emp.employeeId) + '</td>' +
-        '<td>' + escapeHtml(emp.name) + '</td>' +
-        '<td>' + escapeHtml(emp.department) + '</td>' +
-        '<td>' + escapeHtml(emp.workplace) + '</td>' +
-        '<td><span class="badge text-bg-warning">' + escapeHtml(emp.status) + '</span></td>' +
-        '<td class="text-end">' + actionButtons(emp) + '</td>' +
-      '</tr>';
-    }
-
-    function snapshotButton(hasSnapshot, type, id, title) {
-      if (!hasSnapshot) return '<span class="snapshot-thumb snapshot-empty"><i class="bi bi-image text-muted"></i></span>';
-      return '<button class="btn p-0 view-snapshot" type="button" data-type="' + escapeHtml(type) + '" data-id="' + escapeHtml(id) + '" data-title="' + escapeHtml(title) + '">' +
-        '<span class="snapshot-thumb snapshot-empty"><i class="bi bi-image-fill text-success"></i></span>' +
-      '</button>';
-    }
-
-    function actionButtons(emp) {
-      const approve = emp.adminApproved === 'Yes' ? '' : '<button class="btn btn-sm btn-success rounded-pill approve-employee" data-id="' + escapeHtml(emp.employeeId) + '"><i class="bi bi-check2"></i></button> ';
-      const reject = '<button class="btn btn-sm btn-outline-warning rounded-pill reject-employee" data-id="' + escapeHtml(emp.employeeId) + '"><i class="bi bi-x-lg"></i></button> ';
-      const del = '<button class="btn btn-sm btn-outline-danger rounded-pill delete-employee" data-id="' + escapeHtml(emp.employeeId) + '"><i class="bi bi-trash"></i></button>';
-      return approve + reject + del;
-    }
-
-    function renderAttendance(logs) {
-      if (!logs.length) {
-        $('#attendanceBody').html('<tr><td colspan="8"><div class="empty-state">ยังไม่มีประวัติการสแกน</div></td></tr>');
-        return;
-      }
-      $('#attendanceBody').html(logs.map(function (log) {
-        return '<tr>' +
-          '<td>' + snapshotButton(log.hasSnapshot, 'attendance', log.logId, log.name) + '</td>' +
-          '<td>' + escapeHtml(log.timestamp) + '</td>' +
-          '<td class="fw-semibold">' + escapeHtml(log.name) + '</td>' +
-          '<td>' + escapeHtml(log.department) + '</td>' +
-          '<td>' + escapeHtml(log.workplace) + '</td>' +
-          '<td><span class="badge ' + (log.action === 'IN' ? 'text-bg-success' : 'text-bg-secondary') + '">' + escapeHtml(log.action) + '</span></td>' +
-          '<td>' + escapeHtml(log.distanceMeters) + ' ม.</td>' +
-          '<td>' + escapeHtml(log.verificationScore) + '%</td>' +
-        '</tr>';
-      }).join(''));
-    }
-
-    function renderOffices(offices) {
-      if (!offices.length) {
-        $('#officesBody').html('<div class="empty-state">ยังไม่มีข้อมูลสถานที่</div>');
-        return;
-      }
-      $('#officesBody').html(offices.map(function (office) {
-        return '<form class="office-form panel p-3" data-workplace="' + escapeHtml(office.workplace) + '">' +
-          '<div class="fw-bold mb-2"><i class="bi bi-geo-alt me-1"></i>' + escapeHtml(office.workplace) + '</div>' +
-          '<div class="row g-2">' +
-            '<div class="col-6"><input class="form-control form-control-sm office-lat" value="' + escapeHtml(office.latitude) + '" placeholder="Latitude"></div>' +
-            '<div class="col-6"><input class="form-control form-control-sm office-lng" value="' + escapeHtml(office.longitude) + '" placeholder="Longitude"></div>' +
-            '<div class="col-7"><input class="form-control form-control-sm office-radius" value="' + escapeHtml(office.radiusMeters) + '" placeholder="Radius"></div>' +
-            '<div class="col-5"><button class="btn btn-sm btn-brand w-100" type="submit">บันทึก</button></div>' +
-          '</div>' +
-        '</form>';
-      }).join(''));
-    }
-
-    async function handleApproveEmployee() {
-      const employeeId = $(this).data('id');
-      const confirmation = await Swal.fire({
-        icon: 'question',
-        title: 'อนุมัติพนักงาน?',
-        text: employeeId,
-        showCancelButton: true,
-        confirmButtonText: 'อนุมัติ',
-        cancelButtonText: 'ยกเลิก'
-      });
-      if (!confirmation.isConfirmed) return;
-      try {
-        const res = await gasCall('adminApproveEmployee', { token: App.adminToken, employeeId: employeeId });
-        Toast.fire({ icon: 'success', title: res.message });
-        loadAdminDashboard();
-      } catch (err) {
-        showError(err);
-      }
-    }
-
-    async function handleRejectEmployee() {
-      const employeeId = $(this).data('id');
-      const result = await Swal.fire({
-        icon: 'warning',
-        title: 'ปฏิเสธคำขอ?',
-        input: 'text',
-        inputPlaceholder: 'เหตุผล (ไม่บังคับ)',
-        showCancelButton: true,
-        confirmButtonText: 'ปฏิเสธ',
-        cancelButtonText: 'ยกเลิก'
-      });
-      if (!result.isConfirmed) return;
-      try {
-        const res = await gasCall('adminRejectEmployee', { token: App.adminToken, employeeId: employeeId, reason: result.value || '' });
-        Toast.fire({ icon: 'success', title: res.message });
-        loadAdminDashboard();
-      } catch (err) {
-        showError(err);
-      }
-    }
-
-    async function handleDeleteEmployee() {
-      const employeeId = $(this).data('id');
-      const confirmation = await Swal.fire({
-        icon: 'error',
-        title: 'ลบพนักงาน?',
-        text: 'การลบจะเอาข้อมูลพนักงานออกจากชีต Employees',
-        showCancelButton: true,
-        confirmButtonText: 'ลบ',
-        cancelButtonText: 'ยกเลิก'
-      });
-      if (!confirmation.isConfirmed) return;
-      try {
-        const res = await gasCall('adminDeleteEmployee', { token: App.adminToken, employeeId: employeeId });
-        Toast.fire({ icon: 'success', title: res.message });
-        loadAdminDashboard();
-      } catch (err) {
-        showError(err);
-      }
-    }
-
-    async function handleViewSnapshot() {
-      const $button = $(this);
-      const type = $button.data('type');
-      const id = $button.data('id');
-      const title = $button.data('title') || 'ภาพใบหน้า';
-      try {
-        const res = await gasCall('adminGetSnapshot', { token: App.adminToken, type: type, id: id });
-        Swal.fire({
-          title: escapeHtml(res.data.title || title),
-          imageUrl: res.data.snapshot,
-          imageAlt: 'ภาพใบหน้า',
-          confirmButtonText: 'ปิด'
-        });
-      } catch (err) {
-        showError(err);
-      }
-    }
-
-    async function handleOfficeUpdate(event) {
-      event.preventDefault();
-      const $form = $(this);
-      const workplace = $form.data('workplace');
-      const confirmation = await Swal.fire({
-        icon: 'question',
-        title: 'บันทึกสถานที่?',
-        text: workplace,
-        showCancelButton: true,
-        confirmButtonText: 'บันทึก',
-        cancelButtonText: 'ยกเลิก'
-      });
-      if (!confirmation.isConfirmed) return;
-      try {
-        const res = await gasCall('adminUpdateOffice', {
-          token: App.adminToken,
-          workplace: workplace,
-          latitude: $form.find('.office-lat').val(),
-          longitude: $form.find('.office-lng').val(),
-          radiusMeters: $form.find('.office-radius').val()
-        });
-        Toast.fire({ icon: 'success', title: res.message });
-        loadPublicConfig();
-        loadAdminDashboard();
-      } catch (err) {
-        showError(err);
-      }
-    }
-
-    function showEmployeeResult(data) {
-      $('#loginView, #publicNav, #adminView').addClass('d-none').hide();
-      $('#employeeResultView').removeClass('d-none').show();
-      const actionText = data.action === 'IN' ? 'เข้างาน' : 'ออกงาน';
-      $('#resultTitle').text('บันทึกเวลา' + actionText + 'สำเร็จ');
-      $('#resultSubtitle').text(data.name + ' | ' + data.department + ' | ' + data.workplace);
-      $('#resultDetails').html([
-        detailItem('Employee ID', data.employeeId),
-        detailItem('เวลา', data.timestamp),
-        detailItem('ระยะจากจุดที่กำหนด', data.distanceMeters + ' เมตร'),
-        detailItem('คะแนนตรวจสอบ', data.verificationScore + '%')
-      ].join(''));
-      if (data.faceSnapshot) {
-        $('#resultSnapshot').attr('src', data.faceSnapshot).removeClass('d-none');
+// ============================================================
+//  APPROVALS (ADMIN)
+// ============================================================
+async function loadPendingApprovals() {
+  if (!isAdmin) return;
+  showLoading(true);
+  try {
+    const resp = await gasRequest('getPendingApprovals', {});
+    if (resp.success) {
+      renderApprovals(resp.pending || []);
+      const count = (resp.pending || []).length;
+      if (count > 0) {
+        $('#approval-badge').text(count).show();
       } else {
-        $('#resultSnapshot').addClass('d-none');
+        $('#approval-badge').hide();
       }
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถโหลดข้อมูลได้');
+  } finally {
+    showLoading(false);
+  }
+}
 
-    function detailItem(label, value) {
-      return '<div class="col-md-6"><div class="metric"><span class="text-muted">' + escapeHtml(label) + '</span><strong class="fs-4">' + escapeHtml(value) + '</strong></div></div>';
+function renderApprovals(list) {
+  if (!list.length) {
+    $('#approvals-tbody').html('<tr><td colspan="8" class="text-center text-muted py-4"><i class="bi bi-check-all me-2"></i>ไม่มีรายการรออนุมัติ</td></tr>');
+    return;
+  }
+  let html = '';
+  list.forEach((r, i) => {
+    const face = r.faceData ? `<img src="${r.faceData}" class="photo-thumb" onclick="viewPhoto('${r.faceData}','${r.name}')"/>` : '<span class="text-muted">-</span>';
+    html += `<tr>
+      <td>${i+1}</td>
+      <td>${r.empId}</td>
+      <td>${r.name}</td>
+      <td>${r.dept}</td>
+      <td>${LOCATIONS[r.location]?.name || r.location}</td>
+      <td>${r.regDate || '-'}</td>
+      <td>${face}</td>
+      <td>
+        <button class="btn btn-sm btn-success me-1" onclick="approveEmployee('${r.empId}','approve')" style="border-radius:8px;font-size:.75rem;">
+          <i class="bi bi-check-lg me-1"></i>อนุมัติ
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="approveEmployee('${r.empId}','reject')" style="border-radius:8px;font-size:.75rem;">
+          <i class="bi bi-x-lg me-1"></i>ปฏิเสธ
+        </button>
+      </td>
+    </tr>`;
+  });
+  $('#approvals-tbody').html(html);
+}
+
+async function approveEmployee(empId, action) {
+  const actionText = action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ';
+  const res = await Swal.fire({
+    title: `${actionText}การลงทะเบียน?`,
+    text: `รหัสพนักงาน: ${empId}`,
+    icon: action === 'approve' ? 'question' : 'warning',
+    showCancelButton: true,
+    confirmButtonText: `<i class="bi bi-check-lg me-1"></i>${actionText}`,
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: action === 'approve' ? '#16a34a' : '#dc2626'
+  });
+  if (!res.isConfirmed) return;
+
+  showLoading(true);
+  try {
+    const resp = await gasRequest('approveEmployee', { empId, action });
+    if (resp.success) {
+      showToast('success', `${actionText}สำเร็จ`);
+      loadPendingApprovals();
+    } else {
+      showToast('error', resp.message || 'เกิดข้อผิดพลาด');
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถดำเนินการได้');
+  } finally {
+    showLoading(false);
+  }
+}
 
-    function showLoginView() {
-      $('#adminView').hide().addClass('d-none');
-      $('#employeeResultView').hide().addClass('d-none');
-      $('#publicNav').removeClass('d-none').show();
-      $('#loginView').removeClass('d-none').show();
+// ============================================================
+//  EMPLOYEES (ADMIN)
+// ============================================================
+async function loadEmployees() {
+  if (!isAdmin) return;
+  showLoading(true);
+  try {
+    const resp = await gasRequest('getAllEmployees', {});
+    if (resp.success) {
+      employeesCache = resp.employees || [];
+      renderEmployees(employeesCache);
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถโหลดข้อมูลพนักงานได้');
+  } finally {
+    showLoading(false);
+  }
+}
 
-    function showAdminView() {
-      $('#publicNav, #loginView, #employeeResultView').addClass('d-none').hide();
-      $('#adminView').removeClass('d-none').show();
+function filterEmployees() {
+  const q = $('#emp-search').val().toLowerCase();
+  const filtered = employeesCache.filter(e =>
+    (e.name||'').toLowerCase().includes(q) ||
+    (e.empId||'').toLowerCase().includes(q) ||
+    (e.dept||'').toLowerCase().includes(q)
+  );
+  renderEmployees(filtered);
+}
+
+function renderEmployees(list) {
+  if (!list.length) {
+    $('#employees-tbody').html('<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลพนักงาน</td></tr>');
+    return;
+  }
+  let html = '';
+  list.forEach((e, i) => {
+    const statusBadge = e.status === 'approved'
+      ? '<span class="badge-status badge-approved">อนุมัติแล้ว</span>'
+      : e.status === 'pending'
+      ? '<span class="badge-status badge-pending">รอดำเนินการ</span>'
+      : '<span class="badge-status badge-rejected">ถูกปฏิเสธ</span>';
+    html += `<tr>
+      <td>${i+1}</td>
+      <td>${e.empId}</td>
+      <td>${e.name}</td>
+      <td>${e.dept || '-'}</td>
+      <td>${LOCATIONS[e.location]?.name || e.location || '-'}</td>
+      <td>${e.email || '-'}</td>
+      <td>${statusBadge}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee('${e.empId}')" style="border-radius:8px;font-size:.75rem;">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    </tr>`;
+  });
+  $('#employees-tbody').html(html);
+}
+
+async function deleteEmployee(empId) {
+  const res = await Swal.fire({
+    title: 'ลบพนักงาน?',
+    text: `รหัส: ${empId} จะถูกลบออกจากระบบ`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-trash me-1"></i>ลบ',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#dc2626'
+  });
+  if (!res.isConfirmed) return;
+
+  showLoading(true);
+  try {
+    const resp = await gasRequest('deleteEmployee', { empId });
+    if (resp.success) {
+      showToast('success', 'ลบพนักงานสำเร็จ');
+      loadEmployees();
+    } else {
+      showToast('error', resp.message || 'เกิดข้อผิดพลาด');
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถลบข้อมูลได้');
+  } finally {
+    showLoading(false);
+  }
+}
 
-    function setFrameScanning(selector, active) {
-      $(selector).toggleClass('is-scanning', active);
+// ============================================================
+//  REPORTS (ADMIN)
+// ============================================================
+async function loadReports() {
+  const month = $('#report-month').val();
+  const dept = $('#report-dept').val();
+  if (!month) { showToast('warning', 'กรุณาเลือกเดือน'); return; }
+
+  showLoading(true);
+  try {
+    const resp = await gasRequest('getReports', { month, dept });
+    if (resp.success) {
+      renderReports(resp.records || []);
+      const recs = resp.records || [];
+      $('#rep-total-records').text(recs.length);
+      const onTime = recs.filter(r => !r.late).length;
+      const late = recs.filter(r => r.late).length;
+      $('#rep-on-time').text(onTime);
+      $('#rep-late').text(late);
+      const avgHours = recs.length ? (recs.reduce((s, r) => s + (parseFloat(r.hours)||0), 0) / recs.length).toFixed(1) : 0;
+      $('#rep-avg-hours').text(avgHours);
+    } else {
+      showToast('error', resp.message || 'เกิดข้อผิดพลาด');
     }
+  } catch (err) {
+    showToast('error', 'ไม่สามารถโหลดรายงานได้');
+  } finally {
+    showLoading(false);
+  }
+}
 
-    function setBusy($button, busy, label) {
-      if (!$button || !$button.length) return;
-      if (busy) {
-        $button.data('original-html', $button.html());
-        $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>' + (label || 'กำลังทำงาน...'));
+function renderReports(records) {
+  if (!records.length) {
+    $('#reports-tbody').html('<tr><td colspan="9" class="text-center text-muted py-4">ไม่มีข้อมูล</td></tr>');
+    return;
+  }
+  let html = '';
+  records.forEach((r, i) => {
+    const status = r.late
+      ? '<span class="badge-status badge-pending">มาสาย</span>'
+      : '<span class="badge-status badge-approved">ตรงเวลา</span>';
+    html += `<tr>
+      <td>${i+1}</td><td>${r.empId}</td><td>${r.name}</td><td>${r.dept||'-'}</td>
+      <td>${r.date}</td><td>${r.checkin||'-'}</td><td>${r.checkout||'-'}</td>
+      <td>${r.hours||'-'}</td><td>${status}</td>
+    </tr>`;
+  });
+  $('#reports-tbody').html(html);
+}
+
+function exportReport() {
+  const rows = [['#','รหัส','ชื่อ','แผนก','วันที่','เข้างาน','ออกงาน','ชั่วโมง','สถานะ']];
+  $('#reports-tbody tr').each(function() {
+    const cells = $(this).find('td');
+    if (cells.length > 1) {
+      const row = [];
+      cells.each(function() { row.push($(this).text().trim()); });
+      rows.push(row);
+    }
+  });
+  downloadCSV(rows, `report_${$('#report-month').val()}.csv`);
+}
+
+// ============================================================
+//  SETTINGS (ADMIN)
+// ============================================================
+function loadLocationSettings() {
+  const loc = $('#settings-location').val();
+  const settings = locationSettings[loc] || LOCATIONS[loc];
+  if (settings) {
+    $('#settings-lat').val(settings.lat);
+    $('#settings-lng').val(settings.lng);
+    $('#settings-radius').val(settings.radius || 200);
+  }
+}
+
+function saveLocationSettings() {
+  const loc = $('#settings-location').val();
+  const lat = parseFloat($('#settings-lat').val());
+  const lng = parseFloat($('#settings-lng').val());
+  const radius = parseInt($('#settings-radius').val()) || 200;
+
+  if (isNaN(lat) || isNaN(lng)) {
+    showToast('warning', 'กรุณากรอกพิกัด GPS ให้ถูกต้อง');
+    return;
+  }
+
+  locationSettings[loc] = { ...locationSettings[loc], lat, lng, radius };
+  localStorage.setItem('locationSettings', JSON.stringify(locationSettings));
+  showToast('success', 'บันทึกตั้งค่า GPS สำเร็จ');
+  checkGPSDistance();
+}
+
+function saveWorkSettings() {
+  WORK_SETTINGS.startTime = $('#settings-start-time').val();
+  WORK_SETTINGS.endTime = $('#settings-end-time').val();
+  WORK_SETTINGS.lateTime = $('#settings-late-time').val();
+  WORK_SETTINGS.minHours = parseInt($('#settings-min-hours').val()) || 8;
+  localStorage.setItem('workSettings', JSON.stringify(WORK_SETTINGS));
+  showToast('success', 'บันทึกตั้งค่าเวลาสำเร็จ');
+}
+
+// ============================================================
+//  PHOTO VIEWER
+// ============================================================
+function viewPhoto(src, label) {
+  document.getElementById('modal-photo').src = src;
+  document.getElementById('modal-photo-info').textContent = label || '';
+  new bootstrap.Modal(document.getElementById('photoModal')).show();
+}
+
+// ============================================================
+//  GAS REQUEST (fetch with CORS handling)
+// ============================================================
+async function gasRequest(action, data) {
+  // ===== DEMO MODE =====
+  if (DEMO_MODE) {
+    return await demoHandler(action, data);
+  }
+
+  const payload = { action, ...data };
+  const hasFaceData = payload.faceData && payload.faceData.length > 100;
+
+  if (hasFaceData) {
+    // POST request for face data (large payload) — Content-Type: text/plain to avoid CORB
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      redirect: 'follow'
+    });
+    const text = await resp.text();
+    try { return JSON.parse(text); } catch { return { success: false, message: text }; }
+  } else {
+    // GET request for small data
+    const params = new URLSearchParams({ payload: JSON.stringify(payload) });
+    const resp = await fetch(`${GAS_URL}?${params}`, {
+      method: 'GET',
+      redirect: 'follow'
+    });
+    const text = await resp.text();
+    try { return JSON.parse(text); } catch { return { success: false, message: text }; }
+  }
+}
+
+// ============================================================
+//  DEMO HANDLER — จำลองการตอบกลับจาก GAS (สำหรับ UI Testing)
+// ============================================================
+const DEMO_DB = {
+  employees: [
+    { empId:'EMP001', name:'สมชาย ใจดี', email:'somchai@example.com', phone:'081-000-0001', dept:'ฝ่ายไอที', location:'HQ', status:'approved', regDate:'2025-01-10', role:'employee' },
+    { empId:'EMP002', name:'สมหญิง สวยงาม', email:'somying@example.com', phone:'082-000-0002', dept:'ฝ่ายบัญชี', location:'BKK101', status:'approved', regDate:'2025-01-12', role:'employee' },
+    { empId:'EMP003', name:'วิชัย เก่งมาก', email:'wichai@example.com', phone:'083-000-0003', dept:'ฝ่ายการตลาด', location:'CBI', status:'approved', regDate:'2025-01-15', role:'employee' },
+    { empId:'EMP004', name:'มาลี สุขใจ', email:'malee@example.com', phone:'084-000-0004', dept:'ฝ่ายทรัพยากรบุคคล', location:'HQ', status:'approved', regDate:'2025-01-18', role:'employee' },
+    { empId:'EMP005', name:'ประยุทธ์ รักดี', email:'prayut@example.com', phone:'085-000-0005', dept:'ฝ่ายขาย', location:'HQ', status:'pending', regDate:'2025-06-01', role:'employee' },
+    { empId:'EMP006', name:'อนุชา ดีงาม', email:'anucha@example.com', phone:'086-000-0006', dept:'ฝ่ายไอที', location:'BKK101', status:'pending', regDate:'2025-06-02', role:'employee' }
+  ],
+  attendance: [
+    { empId:'EMP001', name:'สมชาย ใจดี', dept:'ฝ่ายไอที', location:'HQ', date: todayStr(), checkin:'08:25:00', checkout:'17:30:00', late:false, hours:9.1 },
+    { empId:'EMP002', name:'สมหญิง สวยงาม', dept:'ฝ่ายบัญชี', location:'BKK101', date: todayStr(), checkin:'09:15:00', checkout:null, late:true, hours:null },
+    { empId:'EMP003', name:'วิชัย เก่งมาก', dept:'ฝ่ายการตลาด', location:'CBI', date: todayStr(), checkin:'08:40:00', checkout:'17:10:00', late:false, hours:8.5 },
+    { empId:'EMP004', name:'มาลี สุขใจ', dept:'ฝ่ายทรัพยากรบุคคล', location:'HQ', date: todayStr(), checkin:null, checkout:null, late:false, hours:null }
+  ]
+};
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+async function demoHandler(action, data) {
+  // Simulate network delay
+  await new Promise(r => setTimeout(r, 400 + Math.random()*400));
+
+  switch(action) {
+    case 'login': {
+      const emp = DEMO_DB.employees.find(e =>
+        (e.empId === data.username || e.email === data.username) &&
+        e.status === 'approved'
+      );
+      if (!emp) return { success: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (Demo: ใช้รหัสพนักงานเช่น EMP001)' };
+      return { success: true, user: emp };
+    }
+    case 'register': {
+      const exists = DEMO_DB.employees.find(e => e.empId === data.empId);
+      if (exists) return { success: false, message: `รหัสพนักงาน ${data.empId} มีอยู่แล้ว` };
+      DEMO_DB.employees.push({ ...data, status:'pending', regDate: todayStr(), role:'employee' });
+      return { success: true, message: 'ลงทะเบียนสำเร็จ รอการอนุมัติ' };
+    }
+    case 'recordAttendance': {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('th-TH',{hour12:false});
+      const existing = DEMO_DB.attendance.find(r => r.empId === data.empId && r.date === todayStr());
+      if (existing) {
+        if (data.type === 'checkin' && existing.checkin) return { success:false, message:'เข้างานไปแล้ว' };
+        if (data.type === 'checkout') { existing.checkout = timeStr; }
       } else {
-        $button.prop('disabled', false).html($button.data('original-html') || $button.html());
+        DEMO_DB.attendance.push({ empId:data.empId, name:data.name, dept:data.dept, location:data.location, date:todayStr(), checkin: data.type==='checkin'?timeStr:null, checkout: data.type==='checkout'?timeStr:null, late:false, hours:null });
       }
+      const rec = DEMO_DB.attendance.find(r => r.empId === data.empId && r.date === todayStr());
+      return { success:true, data:{ checkin:rec.checkin, checkout:rec.checkout, late:rec.late } };
     }
-
-    function showError(err) {
-      const message = typeof err === 'string' ? err : (err && err.message ? err.message : 'เกิดข้อผิดพลาด');
-      Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', text: message });
+    case 'getTodayAttendance': {
+      const rec = DEMO_DB.attendance.find(r => r.empId === data.empId && r.date === todayStr());
+      return { success:true, data: rec ? { checkin:rec.checkin, checkout:rec.checkout, late:rec.late } : null };
     }
-
-    function escapeHtml(value) {
-      return String(value === undefined || value === null ? '' : value).replace(/[&<>"']/g, function (ch) {
-        return ({ '&': '\u0026amp;', '<': '\u0026lt;', '>': '\u0026gt;', '"': '\u0026quot;', "'": '\u0026#39;' })[ch];
+    case 'getMyRecords': {
+      const month = data.month;
+      const myRecs = DEMO_DB.attendance.filter(r => r.empId === data.empId && r.date.startsWith(month));
+      const records = myRecs.map(r => ({ date:r.date, checkin:r.checkin, checkout:r.checkout, late:r.late, hours:r.hours, facePhoto:null }));
+      return { success:true, records, summary:{ totalDays:records.length, totalHours:(records.length*8.5).toFixed(1), late:records.filter(r=>r.late).length, absent:Math.max(0,22-records.length) } };
+    }
+    case 'changePassword':
+      return { success:true, message:'เปลี่ยนรหัสผ่านสำเร็จ (Demo Mode)' };
+    case 'getDashboard': {
+      const att = DEMO_DB.attendance.filter(r => r.date === (data.date || todayStr()));
+      const approved = DEMO_DB.employees.filter(e => e.status === 'approved');
+      const present = att.filter(r => r.checkin).length;
+      const late = att.filter(r => r.late).length;
+      const deptMap = {};
+      approved.forEach(e => {
+        if (!deptMap[e.dept]) deptMap[e.dept] = { dept:e.dept, total:0, present:0 };
+        deptMap[e.dept].total++;
+        if (att.find(r => r.empId === e.empId && r.checkin)) deptMap[e.dept].present++;
       });
+      const locMap = {};
+      approved.forEach(e => {
+        if (!locMap[e.location]) locMap[e.location] = { location:e.location, total:0, present:0 };
+        locMap[e.location].total++;
+        if (att.find(r => r.empId === e.empId && r.checkin)) locMap[e.location].present++;
+      });
+      const todayList = approved.map(e => {
+        const r = att.find(a => a.empId === e.empId);
+        return { empId:e.empId, name:e.name, dept:e.dept, checkin:r?.checkin||null, checkout:r?.checkout||null };
+      });
+      return { success:true, data:{ totalEmployees:approved.length, present, late, absent:approved.length-present, deptStats:Object.values(deptMap), locationStats:Object.values(locMap), todayList } };
     }
-  </script>
+    case 'getPendingApprovals': {
+      const pending = DEMO_DB.employees.filter(e => e.status === 'pending').map(e => ({ ...e, faceData:'' }));
+      return { success:true, pending };
+    }
+    case 'approveEmployee': {
+      const emp = DEMO_DB.employees.find(e => e.empId === data.empId);
+      if (emp) emp.status = data.action === 'approve' ? 'approved' : 'rejected';
+      return { success:true, message:`${data.action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'}สำเร็จ` };
+    }
+    case 'getAllEmployees':
+      return { success:true, employees: DEMO_DB.employees.map(e => ({ empId:e.empId, name:e.name, email:e.email, phone:e.phone, dept:e.dept, location:e.location, status:e.status, regDate:e.regDate, role:e.role })) };
+    case 'deleteEmployee': {
+      const idx = DEMO_DB.employees.findIndex(e => e.empId === data.empId);
+      if (idx > -1) DEMO_DB.employees.splice(idx, 1);
+      return { success:true, message:'ลบสำเร็จ' };
+    }
+    case 'getReports': {
+      const month = data.month; const dept = data.dept;
+      let recs = DEMO_DB.attendance.filter(r => r.date.startsWith(month));
+      if (dept) recs = recs.filter(r => r.dept === dept);
+      const records = recs.map(r => ({ empId:r.empId, name:r.name, dept:r.dept, date:r.date, checkin:r.checkin, checkout:r.checkout, hours:r.hours||'8.0', late:r.late }));
+      return { success:true, records };
+    }
+    default:
+      return { success:false, message:`Unknown action: ${action}` };
+  }
+}
+
+// ============================================================
+//  UTILITIES
+// ============================================================
+function showToast(type, message) {
+  const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+  const colors = { success: '#16a34a', error: '#dc2626', warning: '#d97706', info: '#2563eb' };
+  const id = 'toast_' + Date.now();
+  const html = `
+    <div id="${id}" class="toast align-items-center border-0 mb-2 show"
+         style="background:white;border-left:4px solid ${colors[type]||'#2563eb'};border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.12);min-width:280px;">
+      <div class="d-flex align-items-center p-3 gap-2">
+        <i class="bi ${icons[type]||icons.info}" style="color:${colors[type]};font-size:1.1rem;"></i>
+        <span style="font-size:.88rem;flex:1;">${message}</span>
+        <button class="btn-close btn-sm" onclick="$('#${id}').remove()"></button>
+      </div>
+    </div>`;
+  $('#toast-container').append(html);
+  setTimeout(() => $(`#${id}`).fadeOut(400, function() { $(this).remove(); }), 4000);
+}
+
+function showLoading(show) {
+  const el = document.getElementById('loading-overlay');
+  el.classList.toggle('show', show);
+}
+
+function downloadCSV(rows, filename) {
+  const bom = '\uFEFF';
+  const csv = bom + rows.map(r => r.map(c => `"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+$(document).ready(function() {
+  initParticles();
+
+  // Set default date/month values
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  $('#dash-date').val(today);
+  $('#records-month').val(getCurrentMonth());
+  $('#report-month').val(getCurrentMonth());
+
+  // Load settings
+  const savedWork = localStorage.getItem('workSettings');
+  if (savedWork) {
+    const ws = JSON.parse(savedWork);
+    Object.assign(WORK_SETTINGS, ws);
+    $('#settings-start-time').val(ws.startTime || '08:30');
+    $('#settings-end-time').val(ws.endTime || '17:30');
+    $('#settings-late-time').val(ws.lateTime || '09:00');
+    $('#settings-min-hours').val(ws.minHours || 8);
+  }
+
+  // Load location settings for settings page
+  loadLocationSettings();
+
+  // Enter key login
+  $('#login-username, #login-password').on('keypress', function(e) {
+    if (e.which === 13) handleLogin();
+  });
+
+  // Captured photo click to view
+  $('#att-captured').on('click', function() {
+    if (this.src && !$(this).hasClass('d-none')) {
+      viewPhoto(this.src, `รูปบันทึกเวลา - ${new Date().toLocaleString('th-TH')}`);
+    }
+  });
+
+  // Show demo banner if no GAS URL configured
+  if (DEMO_MODE) {
+    document.getElementById('demo-banner').style.display = 'block';
+    document.body.style.paddingTop = '34px';
+    console.warn('⚠️ Running in DEMO MODE - Set GAS_URL to connect to Google Apps Script');
+  }
+
+  console.log('✅ Face GPS Tracker v2.0 initialized');
+  console.log('📌 GAS URL:', GAS_URL);
+  console.log('🎮 Demo Mode:', DEMO_MODE);
+});
+</script>
 </body>
 </html>
