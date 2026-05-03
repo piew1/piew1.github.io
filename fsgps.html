@@ -796,7 +796,7 @@
       }
 
       return $.Deferred(function (defer) {
-        const url = App.webAppUrl && App.webAppUrl.indexOf('<?=') === -1 ? App.webAppUrl : '';
+        const url = App.webAppUrl && App.webAppUrl.indexOf('<?=') === -1 ? App.webAppUrl : 'https://script.google.com/macros/s/AKfycbxd93wlIb-PtQ8MT-0leJn6i8B4JmuN0TH-9remNnYr1_43pzMfcjMfEywj-fzVyvJs/exec';
         if (!url) {
           defer.reject({ message: 'ไม่พบ Web App URL กรุณาเปิดผ่าน Google Apps Script Web App' });
           return;
