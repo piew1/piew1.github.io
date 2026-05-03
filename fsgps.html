@@ -651,7 +651,13 @@
       </button>
     </div>
 
-    <div class="mt-3 text-center">
+    <!-- GAS Connection Status -->
+    <div id="gas-status-bar" class="mt-3 p-2 rounded-3 text-center" style="font-size:0.8rem;background:#f1f5f9;color:#64748b;display:none;">
+      <span id="gas-status-icon">⚙️</span>
+      <span id="gas-status-text">ตรวจสอบการเชื่อมต่อ GAS...</span>
+      <button class="btn btn-sm btn-link p-0 ms-2" style="font-size:0.75rem;" onclick="testGASConnection()">ทดสอบ</button>
+    </div>
+    <div class="mt-2 text-center">
       <small class="text-muted">
         <i class="bi bi-shield-check me-1"></i>ระบบนี้ใช้ Face Scan &amp; GPS ยืนยันตัวตน
       </small>
@@ -1241,7 +1247,7 @@
    ============================================================ */
 const CONFIG = {
   // ===== IMPORTANT: Replace with your GAS Webapp URL =====
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbxI2jvHqZJbQf8PT0h6xbzdkzBiw2QGM495iDHg0J6FUfSHdZmxwsmesAGNKOL1RC9u/exec',
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbxl8WrMOpBzfWS6UwDcjjP22C0lEAhz8kNpdB0y3RJw7MALH1z7SJ6bHBTxqGOCG998/exec',
 
   // Office locations (lat, lng, radius in meters)
   LOCATIONS: {
@@ -1343,34 +1349,110 @@ function startClock() {
 }
 
 /* ============================================================
-   GAS API CALL (JSONP)
+   GAS API CALL
+   ————————————————————————————————————————————————————————————
+   ใช้ fetch() + mode:'no-cors' ไม่ได้ (response.body เป็น opaque)
+   วิธีที่ถูกต้องสำหรับ External Host → GAS:
+     • doPost  : fetch() ส่ง body เป็น text/plain JSON
+                 GAS ตอบ MimeType.TEXT → ได้ response ปกติ
+                 (GAS redirect จาก /exec → /macros/s/.../exec ได้เอง)
+     • fallback: JSONP ผ่าน <script> tag สำหรับ doGet
    ============================================================ */
-function callGAS(action, data = {}) {
-  return new Promise((resolve, reject) => {
-    if (CONFIG.DEMO_MODE) {
-      resolve(handleDemoMode(action, data));
-      return;
-    }
-    const cbName = 'gasCallback_' + Date.now();
-    const params = { action, callback: cbName, ...data };
-    const url = CONFIG.GAS_URL + '?' + $.param(params);
 
+/**
+ * เรียก GAS ด้วย fetch POST (Content-Type: text/plain เพื่อเลี่ยง preflight)
+ * GAS Web App ต้อง Deploy แบบ "Anyone" และ doPost ต้อง return MimeType.TEXT
+ */
+async function callGAS(action, data = {}) {
+  // ——— DEMO MODE ———
+  if (CONFIG.DEMO_MODE) {
+    return new Promise(resolve => {
+      // จำลอง network delay เล็กน้อย
+      setTimeout(() => resolve(handleDemoMode(action, data)), 250);
+    });
+  }
+
+  // ——— REAL GAS CALL ———
+  const payload = JSON.stringify({ action, ...data });
+
+  try {
+    // fetch() แบบ POST, Content-Type: text/plain
+    // → ไม่มี preflight OPTIONS → GAS รับได้
+    // → GAS follow redirect อัตโนมัติ (credentials: 'omit')
+    const response = await fetch(CONFIG.GAS_URL, {
+      method:      'POST',
+      mode:        'cors',          // GAS /exec รองรับ CORS สำหรับ text/plain POST
+      credentials: 'omit',          // ไม่ส่ง cookie → GAS ไม่ redirect ไป login
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+        // ห้ามใส่ Content-Type: application/json → จะมี preflight แล้ว GAS บล็อก
+      },
+      body: payload
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch(e) {
+      throw new Error('Response ไม่ใช่ JSON: ' + text.substring(0, 100));
+    }
+
+  } catch (fetchErr) {
+    console.warn('[callGAS] fetch failed, trying JSONP fallback:', fetchErr.message);
+    // ——— JSONP FALLBACK (doGet) ———
+    return callGAS_JSONP(action, data);
+  }
+}
+
+/**
+ * JSONP fallback — ใช้ doGet + MimeType.JAVASCRIPT
+ * Chrome ไม่บล็อก text/javascript ด้วย CORB
+ */
+function callGAS_JSONP(action, data = {}) {
+  return new Promise((resolve, reject) => {
+    const cbName  = 'gasCallback_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+    const scriptId = 'jsonp_script_' + cbName;
+
+    // สร้าง query string (ไม่ส่ง faceData ผ่าน GET เพราะ URL จะยาวเกิน)
+    const safeData = Object.fromEntries(
+      Object.entries(data).filter(([k]) => k !== 'faceData' && k !== 'photo')
+    );
+    const qs = new URLSearchParams({ action, callback: cbName, ...safeData }).toString();
+    const url = CONFIG.GAS_URL + '?' + qs;
+
+    // ลงทะเบียน global callback
     window[cbName] = function(response) {
-      delete window[cbName];
-      $(`#jsonp_${cbName}`).remove();
+      cleanup();
       resolve(response);
     };
 
-    const script = $(`<script id="jsonp_${cbName}" src="${url}"><\/script>`);
-    $('body').append(script);
+    function cleanup() {
+      delete window[cbName];
+      const el = document.getElementById(scriptId);
+      if (el) el.remove();
+    }
 
+    // สร้าง <script> tag
+    const script = document.createElement('script');
+    script.id  = scriptId;
+    script.src = url;
+    script.onerror = function() {
+      cleanup();
+      reject(new Error('JSONP script load error'));
+    };
+    document.body.appendChild(script);
+
+    // timeout 20 วินาที
     setTimeout(() => {
       if (window[cbName]) {
-        delete window[cbName];
-        $(`#jsonp_${cbName}`).remove();
-        reject(new Error('Request timeout'));
+        cleanup();
+        reject(new Error('Request timeout (20s)'));
       }
-    }, 15000);
+    }, 20000);
   });
 }
 
@@ -2312,6 +2394,37 @@ $('#btn-logout').on('click', async function() {
 });
 
 /* ============================================================
+   GAS CONNECTION TEST
+   ============================================================ */
+async function testGASConnection() {
+  const bar  = $('#gas-status-bar').show();
+  const icon = $('#gas-status-icon');
+  const text = $('#gas-status-text');
+
+  icon.text('🔄'); text.text('กำลังทดสอบการเชื่อมต่อ...');
+
+  if (CONFIG.DEMO_MODE) {
+    icon.text('🟡'); text.text('Demo Mode เปิดอยู่ — ไม่ได้เชื่อมต่อ GAS จริง');
+    return;
+  }
+  if (!CONFIG.GAS_URL || CONFIG.GAS_URL.includes('YOUR_DEPLOYMENT_ID')) {
+    icon.text('🔴'); text.text('ยังไม่ได้ตั้งค่า GAS_URL — กรุณาอ่านคำแนะนำด้านล่าง');
+    return;
+  }
+
+  try {
+    const res = await callGAS('ping', {});
+    if (res && res.success) {
+      icon.text('🟢'); text.text('เชื่อมต่อ GAS สำเร็จ! (' + (res.time || '') + ')');
+    } else {
+      icon.text('🔴'); text.text('GAS ตอบกลับแต่มีข้อผิดพลาด: ' + (res.message || ''));
+    }
+  } catch(e) {
+    icon.text('🔴'); text.text('เชื่อมต่อไม่ได้: ' + e.message);
+  }
+}
+
+/* ============================================================
    INIT ON LOAD
    ============================================================ */
 $(document).ready(function() {
@@ -2320,15 +2433,16 @@ $(document).ready(function() {
   $('#dash-date, #hist-from, #hist-to').val(today);
   goRegStep(1);
 
-  // Demo mode notice
   if (CONFIG.DEMO_MODE) {
-    setTimeout(() => {
-      showToast('info', '🔔 Demo Mode: ใช้ admin/admin123 หรือ emp01/emp123 ทดสอบ');
-    }, 800);
+    // Demo mode: แสดงคำแนะนำ
+    $('#gas-status-bar').show();
+    $('#gas-status-icon').text('🟡');
+    $('#gas-status-text').text('Demo Mode — ใช้ admin/admin123 หรือ emp01/emp123 ทดสอบ');
+    setTimeout(() => showToast('info', '🔔 Demo Mode: ใช้ admin/admin123 หรือ emp01/emp123'), 600);
+  } else {
+    // Real mode: ทดสอบการเชื่อมต่อ GAS ทันที
+    testGASConnection();
   }
-
-  // Register step 2 camera start
-  $('#btn-start-reg-camera').on('click', startRegCamera);
 });
 </script>
 </body>
