@@ -1384,7 +1384,7 @@ async function callGAS(action, data = {}) {
       mode:        'cors',          // GAS /exec รองรับ CORS สำหรับ text/plain POST
       credentials: 'omit',          // ไม่ส่ง cookie → GAS ไม่ redirect ไป login
       headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
+        'Content-Type': 'text/plain;charset=utf-8;application/json'
         // ห้ามใส่ Content-Type: application/json → จะมี preflight แล้ว GAS บล็อก
       },
       body: payload
