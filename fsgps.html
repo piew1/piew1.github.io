@@ -1338,13 +1338,13 @@
    CONFIG - ปรับค่าเริ่มต้นที่นี่
    ========================================================= */
 const CONFIG = {
-  GAS_URL: localStorage.getItem('gas_url') || '', // ใส่ URL GAS Web App ของคุณ
-  SHEET_ID: localStorage.getItem('sheet_id') || '',
+  GAS_URL: localStorage.getItem('gas_url') || 'https://script.google.com/macros/s/AKfycbz-EOpHXM0mZk5XHbn0_cPHegn228FhfWNmM12WeLVcXQ5KUUFUo3JEO8o9xkMJIZ_C/exec', // ใส่ URL GAS Web App ของคุณ
+  SHEET_ID: localStorage.getItem('sheet_id') || '1V1-ClEcV1062cVT7VSHef6r5xQuBw-LAHXDqMec6mLI',
   WORK_START: '08:30',
   WORK_END: '17:30',
   LATE_MINUTES: 15,
   LOCATIONS: {
-    HQ:     { name: 'สำนักงานใหญ่', lat: 13.7563, lng: 100.5018, radius: 200 },
+    HQ:     { name: 'สำนักงานใหญ่', lat: 13.66730, lng: 100.63500, radius: 200 },
     SUK101: { name: 'สุขุมวิท 101',   lat: 13.7308, lng: 100.6009, radius: 200 },
     CHB:    { name: 'ชลบุรี',         lat: 13.3611, lng: 100.9847, radius: 200 }
   }
