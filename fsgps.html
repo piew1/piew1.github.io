@@ -1256,11 +1256,11 @@ const CONFIG = {
   ADMIN_USER: 'admin',
   ADMIN_PASS: 'admin123',
   GPS_RADIUS: 200, // meters
-  WORK_START: '08:30',
-  WORK_END: '17:30',
+  WORK_START: '08:00',
+  WORK_END: '17:00',
   LATE_MINUTES: 15,
   LOCATIONS: {
-    headquarter: { name: 'สำนักงานใหญ่', lat: 13.7563, lng: 100.5018 },
+    headquarter: { name: 'สำนักงานใหญ่', lat: 13.66730, lng: 100.63500 },
     sukhumvit101: { name: 'สุขุมวิท 101',  lat: 13.7220, lng: 100.6097 },
     chonburi:     { name: 'ชลบุรี',         lat: 13.3611, lng: 100.9847 }
   }
@@ -1280,7 +1280,7 @@ const STATE = {
   charts: {},
   gasUrl: localStorage.getItem('gasUrl') || '',
   workSettings: JSON.parse(localStorage.getItem('workSettings') || 'null') || {
-    start: '08:30', end: '17:30', lateMin: 15
+    start: '08:00', end: '17:00', lateMin: 15
   },
   gpsSettings: JSON.parse(localStorage.getItem('gpsSettings') || 'null') || null,
 };
