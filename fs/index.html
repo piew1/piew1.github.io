@@ -1031,56 +1031,78 @@ function toggleSidebar() {
 // ══════════════════════════════════════════════════════════════
 //  GAS COMMUNICATION
 // ══════════════════════════════════════════════════════════════
-function gasGet(params, callback) {
-  var url = GAS_URL;
-  if (!url) { showToast('กรุณาตั้งค่า GAS URL ในหน้าตั้งค่าก่อน', 'error'); return; }
-  if (params) url += '?' + $.param(params);
+// ── Unified GAS caller — works both inside GAS (google.script.run)
+//    and as External Host (fetch POST to doPost)
+// ─────────────────────────────────────────────────────────────
+// Map: action → google.script.run function name + args builder
+var GAS_FN_MAP = {
+  registerEmployee:    function(d){ return ['registerEmployee', d]; },
+  loginEmployee:       function(d){ return ['loginEmployee',    d]; },
+  verifyFace:          function(d){ return ['verifyFaceData'      ]; },
+  adminLogin:          function(d){ return ['adminLogin', d.username, d.password]; },
+  getDashboardData:    function(d){ return ['getDashboardData'    ]; },
+  getEmployeesList:    function(d){ return ['getEmployeesList'    ]; },
+  approveEmployee:     function(d){ return ['approveEmployee', d.empId, d.approveAction, d.note]; },
+  getAttendanceRecords:function(d){ return ['getAttendanceRecords', d.filterDate, d.filterDept, d.filterLoc]; },
+  sendReport:          function(d){ return ['sendReport', d.type, d.email, d.period]; },
+  setupTriggers:       function(d){ return ['setupTriggersAction'  ]; },
+  forgotPassword:      function(d){ return ['forgotPassword', d.username, d.email]; }
+};
 
-  // Try google.script.run first (if inside GAS), else fetch
+function gasCall(data, callback) {
+  // ── Path A: Running inside GAS iframe → use google.script.run
   if (typeof google !== 'undefined' && google.script && google.script.run) {
-    // Inside GAS: use google.script.run
-    callback({ note: 'use google.script.run' });
-  } else {
-    fetch(url, { method: 'GET', redirect: 'follow' })
-      .then(function(r) { return r.json(); })
-      .then(callback)
-      .catch(function(e) { callback({ error: e.message }); });
+    var action  = data.action;
+    var mapping = GAS_FN_MAP[action];
+    if (!mapping) {
+      callback({ success: false, message: 'No google.script.run mapping for: ' + action });
+      return;
+    }
+    var args    = mapping(data);
+    var fnName  = args[0];
+    var fnArgs  = args.slice(1);
+    var runner  = google.script.run
+      .withSuccessHandler(function(res) {
+        // Normalise: some functions return plain arrays/objects
+        callback(res && typeof res === 'object' ? res : { success: true, data: res });
+      })
+      .withFailureHandler(function(e) {
+        callback({ success: false, message: e.message || String(e) });
+      });
+    runner[fnName].apply(runner, fnArgs);
+    return;
   }
-}
 
-function gasPost(data, callback) {
+  // ── Path B: External Host → fetch POST to GAS doPost
   var url = GAS_URL;
-  if (!url) { showToast('กรุณาตั้งค่า GAS URL', 'error'); return; }
+  if (!url) {
+    showToast('กรุณาตั้งค่า GAS Web App URL ก่อน (⚙️ ตั้งค่า)', 'error');
+    callback({ success: false, message: 'GAS URL not configured' });
+    return;
+  }
 
   fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(data),
+    method:   'POST',
+    headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
+    body:     JSON.stringify(data),
     redirect: 'follow'
   })
   .then(function(r) { return r.text(); })
   .then(function(text) {
-    try { callback(JSON.parse(text)); }
-    catch(e) { callback({ success: false, message: 'Invalid response: ' + text.substring(0,100) }); }
+    var parsed;
+    try   { parsed = JSON.parse(text); }
+    catch (e) {
+      parsed = { success: false, message: 'ไม่สามารถแปลง response ได้: ' + text.substring(0, 120) };
+    }
+    callback(parsed);
   })
-  .catch(function(e) { callback({ success: false, message: e.message }); });
+  .catch(function(e) {
+    callback({ success: false, message: 'Network error: ' + e.message });
+  });
 }
 
-// google.script.run wrappers (when running inside GAS iframe)
-function gasRun(fnName, params, successCb, errorCb) {
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    var runner = google.script.run
-      .withSuccessHandler(successCb || function(){})
-      .withFailureHandler(errorCb || function(e){ showToast(e.message, 'error'); });
-    runner[fnName](params);
-  } else {
-    // Fallback: POST to GAS
-    gasPost(Object.assign({ action: fnName }, params), function(result) {
-      if (result.success === false && errorCb) errorCb(result);
-      else if (successCb) successCb(result);
-    });
-  }
-}
+// Legacy alias so existing calls still work
+function gasPost(data, callback) { gasCall(data, callback); }
 
 // ══════════════════════════════════════════════════════════════
 //  FACE-API INITIALIZATION
@@ -1519,20 +1541,11 @@ function calcDistance(lat1, lng1, lat2, lng2) {
 // ══════════════════════════════════════════════════════════════
 function loadDashboard() {
   showLoading('กำลังโหลดแดชบอร์ด...');
-
-  // Use google.script.run if inside GAS, else POST
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler(renderDashboard)
-      .withFailureHandler(function(e) { hideLoading(); showToast(e.message, 'error'); })
-      .getDashboardData();
-  } else {
-    gasPost({ action: 'getDashboardData' }, function(res) {
-      hideLoading();
-      if (res.error) { showToast(res.error, 'error'); return; }
-      renderDashboard(res);
-    });
-  }
+  gasCall({ action: 'getDashboardData' }, function(res) {
+    hideLoading();
+    if (!res || res.success === false) { showToast(res ? res.message : 'โหลดไม่สำเร็จ', 'error'); return; }
+    renderDashboard(res);
+  });
 }
 
 function renderDashboard(data) {
@@ -1594,18 +1607,12 @@ var allEmployees = [];
 
 function loadEmployees() {
   showLoading('กำลังโหลดข้อมูลพนักงาน...');
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler(function(data) { hideLoading(); allEmployees = data; renderEmployees(data); })
-      .withFailureHandler(function(e) { hideLoading(); showToast(e.message, 'error'); })
-      .getEmployeesList();
-  } else {
-    gasPost({ action: 'getEmployeesList' }, function(data) {
-      hideLoading();
-      allEmployees = Array.isArray(data) ? data : [];
-      renderEmployees(allEmployees);
-    });
-  }
+  gasCall({ action: 'getEmployeesList' }, function(res) {
+    hideLoading();
+    var list = (res && res.employees) ? res.employees : (Array.isArray(res) ? res : []);
+    allEmployees = list;
+    renderEmployees(list);
+  });
 }
 
 function filterEmployees() {
@@ -1663,16 +1670,11 @@ function approveEmp(empId, action) {
   }).then(function(r) {
     if (!r.isConfirmed) return;
     showLoading('กำลังดำเนินการ...');
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run
-        .withSuccessHandler(function(res) { hideLoading(); showToast(res.message, res.success ? 'success' : 'error'); loadEmployees(); })
-        .withFailureHandler(function(e) { hideLoading(); showToast(e.message, 'error'); })
-        .approveEmployee(empId, action, r.value);
-    } else {
-      gasPost({ action: 'approveEmployee', empId: empId, approveAction: action, note: r.value }, function(res) {
-        hideLoading(); showToast(res.message, res.success ? 'success' : 'error'); loadEmployees();
-      });
-    }
+    gasCall({ action: 'approveEmployee', empId: empId, approveAction: action, note: r.value }, function(res) {
+      hideLoading();
+      showToast(res.message || 'ดำเนินการแล้ว', res.success ? 'success' : 'error');
+      loadEmployees();
+    });
   });
 }
 
@@ -1696,24 +1698,15 @@ function suspendEmp(empId) {
 // ══════════════════════════════════════════════════════════════
 function loadAttendance() {
   showLoading('กำลังโหลดข้อมูล...');
-  var params = {
+  gasCall({
     action: 'getAttendanceRecords',
     filterDate: convertDateToDMY($('#filterDate').val()),
     filterDept: $('#filterDept').val(),
     filterLoc:  $('#filterLoc').val()
-  };
-
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler(function(res) { hideLoading(); renderAttendance(res); })
-      .withFailureHandler(function(e) { hideLoading(); showToast(e.message, 'error'); })
-      .getAttendanceRecords(params.filterDate, params.filterDept, params.filterLoc);
-  } else {
-    gasPost(params, function(res) {
-      hideLoading();
-      renderAttendance(res);
-    });
-  }
+  }, function(res) {
+    hideLoading();
+    renderAttendance(res);
+  });
 }
 
 function convertDateToDMY(isoDate) {
@@ -1760,18 +1753,11 @@ function sendReport() {
   }).then(function(r) {
     if (!r.isConfirmed) return;
     showLoading('กำลังส่งรายงาน...');
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run
-        .withSuccessHandler(function(res) { hideLoading(); showSweetSuccess('ส่งสำเร็จ', res.message); })
-        .withFailureHandler(function(e) { hideLoading(); showSweetError('ส่งไม่สำเร็จ', e.message); })
-        .sendReport(type, email, new Date().toLocaleDateString('th-TH'));
-    } else {
-      gasPost({ action: 'sendReport', type: type, email: email, period: new Date().toLocaleDateString('th-TH') }, function(res) {
-        hideLoading();
-        if (res.success) showSweetSuccess('ส่งสำเร็จ', res.message);
-        else showSweetError('ส่งไม่สำเร็จ', res.message);
-      });
-    }
+    gasCall({ action: 'sendReport', type: type, email: email, period: new Date().toLocaleDateString('th-TH') }, function(res) {
+      hideLoading();
+      if (res.success) showSweetSuccess('ส่งสำเร็จ', res.message);
+      else showSweetError('ส่งไม่สำเร็จ', res.message);
+    });
   });
 }
 
@@ -1787,16 +1773,12 @@ function setupAutoReport() {
     confirmButtonText: 'ตั้งค่า', cancelButtonText: 'ยกเลิก'
   }).then(function(r) {
     if (!r.isConfirmed) return;
-    showLoading('กำลังตั้งค่า...');
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run
-        .withSuccessHandler(function() { hideLoading(); showSweetSuccess('ตั้งค่าสำเร็จ', 'Trigger ถูกตั้งค่าแล้ว'); })
-        .withFailureHandler(function(e) { hideLoading(); showSweetError('ไม่สำเร็จ', e.message); })
-        .setupTriggers();
-    } else {
+    showLoading('กำลังตั้งค่า Triggers...');
+    gasCall({ action: 'setupTriggers' }, function(res) {
       hideLoading();
-      showSweetSuccess('บันทึกแล้ว', 'กรุณารัน setupTriggers() ใน Apps Script Editor เพื่อเปิดใช้งาน');
-    }
+      if (res.success) showSweetSuccess('ตั้งค่าสำเร็จ', res.message);
+      else showSweetError('ไม่สำเร็จ', res.message || 'กรุณารัน setupTriggers() ใน Apps Script Editor');
+    });
   });
 }
 
@@ -1861,18 +1843,11 @@ function showForgotPassword() {
   }).then(function(r) {
     if (!r.isConfirmed) return;
     showLoading('กำลังส่งรหัสผ่าน...');
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run
-        .withSuccessHandler(function(res) { hideLoading(); showSweetSuccess('ส่งสำเร็จ', res.message); })
-        .withFailureHandler(function(e) { hideLoading(); showSweetError('ไม่สำเร็จ', e.message); })
-        .forgotPassword(r.value.u, r.value.e);
-    } else {
-      gasPost({ action: 'forgotPassword', username: r.value.u, email: r.value.e }, function(res) {
-        hideLoading();
-        if (res.success) showSweetSuccess('ส่งสำเร็จ', res.message);
-        else showSweetError('ไม่สำเร็จ', res.message);
-      });
-    }
+    gasCall({ action: 'forgotPassword', username: r.value.u, email: r.value.e }, function(res) {
+      hideLoading();
+      if (res.success) showSweetSuccess('ส่งสำเร็จ', res.message);
+      else showSweetError('ไม่สำเร็จ', res.message);
+    });
   });
 }
 
@@ -1920,7 +1895,7 @@ function togglePwd(id, btn) {
 // ══════════════════════════════════════════════════════════════
 $(function() {
   // Load GAS URL from storage
-  var savedUrl = localStorage.getItem('gasUrl') || '';
+  var savedUrl = localStorage.getItem('gasUrl') || 'https://script.google.com/macros/s/AKfycbxlhRmyhqIdNCjynhZViUi-10QJYWP4B3pcVfZJewyR65jihCmLULdEEjIE4Q50oaK1iA/exec';
   GAS_URL = savedUrl;
   if (savedUrl) $('#gasUrl').val(savedUrl);
 
