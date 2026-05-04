@@ -4,7 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <meta name="theme-color" content="#4f46e5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <title>ระบบเข้า-ออก พนักงาน | FaceScan GPS</title>
 
 <!-- Google Fonts: Sarabun -->
@@ -256,6 +258,15 @@ body[data-theme="night"] .login-card{background:rgba(30,41,59,.95)}
 
 <!-- ── ANIMATED CANVAS BACKGROUND ── -->
 <canvas id="bgCanvas"></canvas>
+
+<!-- ── DEMO MODE BANNER ── -->
+<div id="demoBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;text-align:center;
+  padding:6px 12px;font-size:.82rem;font-weight:700;font-family:'Sarabun',sans-serif">
+  ⚠️ โหมด Demo — ยังไม่ได้เชื่อมต่อ Google Sheet จริง
+  (<a href="#" onclick="showPage('adminPage');showAdminTab('settings');return false"
+     style="color:#fff;text-decoration:underline">ตั้งค่า GAS_URL</a>)
+</div>
 
 <!-- ── LOADING ── -->
 <div class="loading-overlay" id="loadingOverlay">
@@ -932,16 +943,32 @@ body[data-theme="night"] .login-card{background:rgba(30,41,59,.95)}
             <div class="col-md-6">
               <div class="glass-card p-4">
                 <h6 class="fw-700 mb-3"><i class="bi bi-database me-2"></i>Google Sheet</h6>
-                <div class="mb-3">
-                  <label class="form-label small fw-600">Spreadsheet ID</label>
-                  <input type="text" class="form-control-custom w-100" id="ssIdInput" placeholder="ใส่ Spreadsheet ID"/>
+              <div class="mb-3">
+                <label class="form-label small fw-600">GAS Web App URL (Deployment URL)</label>
+                <div class="input-group">
+                  <input type="text" class="form-control-custom w-100" id="gasUrlInput"
+                         placeholder="https://script.google.com/macros/s/.../exec"
+                         style="border-radius:12px 0 0 12px;font-size:.78rem"/>
+                  <button class="btn btn-outline-custom px-3" onclick="applyGasUrl()"
+                          style="border-radius:0 12px 12px 0;white-space:nowrap">
+                    <i class="bi bi-check-lg"></i> ใช้งาน
+                  </button>
                 </div>
-                <button class="btn btn-primary-custom w-100 mb-2" onclick="callSetup()">
-                  <i class="bi bi-play-fill me-1"></i>รัน Setup (สร้างชีต/หัวคอลัมน์)
-                </button>
-                <div class="small text-muted">
-                  <i class="bi bi-info-circle me-1"></i>กดปุ่มนี้ครั้งแรกเพื่อสร้าง Spreadsheet และหัวคอลัมน์ทั้งหมด
+                <div class="small text-muted mt-1">
+                  <i class="bi bi-info-circle me-1"></i>GAS → Deploy → Manage deployments → Copy Web App URL
                 </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-600">Spreadsheet ID (ไม่บังคับ)</label>
+                <input type="text" class="form-control-custom w-100" id="ssIdInput"
+                       placeholder="ใส่ Spreadsheet ID หรือเว้นว่างเพื่อสร้างใหม่"/>
+              </div>
+              <button class="btn btn-primary-custom w-100 mb-2" onclick="callSetup()">
+                <i class="bi bi-play-fill me-1"></i>รัน Setup (สร้างชีต/หัวคอลัมน์)
+              </button>
+              <div class="small text-muted">
+                <i class="bi bi-info-circle me-1"></i>กดปุ่มนี้ครั้งแรกเพื่อสร้าง Google Sheet และหัวคอลัมน์ทั้งหมด
+              </div>
               </div>
             </div>
             <div class="col-md-6">
@@ -1012,8 +1039,9 @@ body[data-theme="night"] .login-card{background:rgba(30,41,59,.95)}
 // ================================================================
 // GAS ENDPOINT — ใส่ URL ของ Web App ที่นี่
 // ================================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwGW12g3QJeTnRBR-y5IqNFFhd8W-KuNcwJWLh3mk7-BCKqYfGua047pHnEagU5jwxr/exec';
-// ^^^^^^^^ เปลี่ยน YOUR_DEPLOYMENT_ID เป็น ID ของ Web App จริง
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwQY6vG0Dy0ZZbJlCjDmQOXzA8wwEmj747qGFjB2pAPHQD3lPeZcittUi8vWoKpiAQN/exec';
+// ^^^^^^^^ เปลี่ยน YOUR_DEPLOYMENT_ID เป็น Deployment ID จริงของ Web App
+// วิธีหา: Apps Script → Deploy → Manage deployments → Copy Deployment ID
 
 // ================================================================
 // STATE
@@ -1148,39 +1176,166 @@ function showLoading(show) {
 }
 
 // ================================================================
-// CALL GAS via fetch (no-cors fallback)
+// CALL GAS via fetch — รองรับทั้ง GAS iframe และ External Host
 // ================================================================
 async function callGAS(action, data = {}) {
-  const payload = { action, ...data };
+  // ลบ keys ที่เป็น undefined ออกก่อนส่ง
+  const clean = {};
+  Object.keys(data).forEach(k => { if (data[k] !== undefined) clean[k] = data[k]; });
+  const payload = { action, ...clean };
+
+  // ถ้ายังไม่ได้ตั้งค่า GAS_URL ให้ใช้โหมด demo
+  if (!GAS_URL || GAS_URL.includes('YOUR_DEPLOYMENT_ID')) {
+    console.warn('⚠️ GAS_URL ยังไม่ได้ตั้งค่า — ใช้โหมด Demo');
+    return _demoHandler(action, payload);
+  }
+
   try {
+    // ส่ง POST พร้อม Content-Type: text/plain เพื่อหลีกเลี่ยง CORB
     const res = await fetch(GAS_URL, {
-      method:   'POST',
-      headers:  { 'Content-Type': 'text/plain' },
-      body:     JSON.stringify(payload),
-      redirect: 'follow'
+      method:      'POST',
+      headers:     { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:        JSON.stringify(payload),
+      redirect:    'follow',
+      mode:        'cors',
+      credentials: 'omit'
     });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     const text = await res.text();
+
+    // รับมือกรณี GAS ส่ง HTML กลับมา (เกิด error ใน GAS)
+    if (text.trim().startsWith('<')) {
+      console.error('GAS returned HTML instead of JSON:', text.substring(0, 200));
+      throw new Error('GAS ส่งค่าไม่ถูกต้อง กรุณาตรวจสอบ GAS_URL และสิทธิ์การ Deploy');
+    }
+
     return JSON.parse(text);
   } catch (e) {
-    console.warn('GAS fetch error:', e);
-    return { success: false, message: 'ไม่สามารถเชื่อมต่อกับ Server ได้: ' + e.message };
+    console.error('GAS fetch error [' + action + ']:', e);
+    return { success: false, message: '❌ ไม่สามารถเชื่อมต่อ Server: ' + e.message };
   }
 }
 
-// google.script.run wrapper (ใช้เมื่อ Deploy บน GAS)
+// ── Demo/Mock handler เมื่อ GAS_URL ยังไม่ถูกตั้งค่า ───────────────
+function _demoHandler(action, payload) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      if (action === 'adminLogin') {
+        if (payload.username === 'admin' && payload.password === 'admin123')
+          return resolve({ success: true, message: 'เข้าสู่ระบบสำเร็จ (Demo)', role: 'admin' });
+        return resolve({ success: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+      }
+      if (action === 'loginEmployee') {
+        return resolve({ success: true, message: 'เข้าสู่ระบบสำเร็จ (Demo)',
+          employee: { empId: 'DEMO-001', fullName: payload.fullName || 'พนักงาน Demo',
+            email: payload.email || 'demo@company.com', department: 'ฝ่าย IT',
+            position: 'นักพัฒนา', faceDescriptor: [], status: 'active' }});
+      }
+      if (action === 'registerEmployee') {
+        return resolve({ success: true,
+          message: 'ลงทะเบียนสำเร็จ! กรุณารอการอนุมัติจากผู้ดูแลระบบ (Demo)',
+          pendId: 'PEND-DEMO-' + Date.now() });
+      }
+      if (action === 'saveFaceScan') {
+        const now = new Date().toLocaleTimeString('th-TH');
+        return resolve({ success: true,
+          message: (payload.scanType === 'checkin' ? 'เช็คอิน' : 'เช็คเอาต์') + 'สำเร็จ เวลา ' + now + ' (Demo)',
+          time: now, workHours: '8.00', attId: 'ATT-DEMO-' + Date.now() });
+      }
+      if (action === 'getDashboardStats') {
+        return resolve({ totalEmployees: 12, activeEmployees: 10, todayCheckIn: 8,
+          todayCheckOut: 3, pendingApprovals: 2,
+          last7Days: [
+            { date: _demoDate(-6), count: 7 }, { date: _demoDate(-5), count: 9 },
+            { date: _demoDate(-4), count: 8 }, { date: _demoDate(-3), count: 10 },
+            { date: _demoDate(-2), count: 6 }, { date: _demoDate(-1), count: 11 },
+            { date: _demoDate(0),  count: 8 }
+          ], generatedAt: new Date().toLocaleString('th-TH') });
+      }
+      if (action === 'getPendingRegistrations') {
+        return resolve([
+          { pendId: 'PEND-001', fullName: 'สมชาย ใจดี', email: 'somchai@demo.com',
+            department: 'บัญชี', position: 'นักบัญชี', submittedAt: new Date().toLocaleString('th-TH'),
+            facePhoto: '', rowIndex: 2 },
+          { pendId: 'PEND-002', fullName: 'สมหญิง รักงาน', email: 'somying@demo.com',
+            department: 'HR', position: 'เจ้าหน้าที่ HR', submittedAt: new Date().toLocaleString('th-TH'),
+            facePhoto: '', rowIndex: 3 }
+        ]);
+      }
+      if (action === 'getAllEmployees') {
+        return resolve([
+          { empId: 'EMP-001', fullName: 'สมชาย ใจดี', email: 'somchai@demo.com',
+            department: 'บัญชี', position: 'นักบัญชี', status: 'active',
+            approved: 'approved', registeredAt: '01/01/2568', lastLogin: new Date().toLocaleString('th-TH') },
+          { empId: 'EMP-002', fullName: 'สมหญิง รักงาน', email: 'somying@demo.com',
+            department: 'HR', position: 'เจ้าหน้าที่ HR', status: 'active',
+            approved: 'approved', registeredAt: '02/01/2568', lastLogin: '' }
+        ]);
+      }
+      if (action === 'getAttendanceReport') {
+        return resolve([
+          { attId: 'ATT-001', empId: 'EMP-001', fullName: 'สมชาย ใจดี',
+            date: _demoDate(0), checkIn: '08:30:00', checkOut: '17:30:00',
+            officeName: 'สำนักงานใหญ่', distance: 45, workHours: '9.00', status: 'checkout' },
+          { attId: 'ATT-002', empId: 'EMP-002', fullName: 'สมหญิง รักงาน',
+            date: _demoDate(0), checkIn: '08:45:00', checkOut: '',
+            officeName: 'สุขุมวิท101', distance: 120, workHours: '', status: 'checkin' }
+        ]);
+      }
+      if (action === 'approveEmployee' || action === 'rejectEmployee')
+        return resolve({ success: true, message: 'ดำเนินการสำเร็จ (Demo)' });
+      if (action === 'updateEmployeeStatus')
+        return resolve({ success: true, message: 'อัปเดตสถานะสำเร็จ (Demo)' });
+      if (action === 'resetEmployeePassword')
+        return resolve({ success: true, message: 'ส่งรหัสผ่านใหม่สำเร็จ (Demo)' });
+      if (action === 'getReportSettings')
+        return resolve({ report_email: 'admin@demo.com', report_daily: 'false',
+          report_weekly: 'false', report_monthly: 'false' });
+      if (action === 'saveReportSettings')
+        return resolve({ success: true, message: 'บันทึกการตั้งค่าสำเร็จ (Demo)' });
+      if (action === 'initializeSheets' || action === 'setup')
+        return resolve({ success: true, ssId: 'DEMO-SS-ID', ssUrl: '#',
+          message: 'Demo mode: ไม่มีการสร้าง Sheet จริง' });
+
+      resolve({ success: false, message: 'Demo: ไม่รู้จัก action "' + action + '"' });
+    }, 600); // simulate network delay
+  });
+}
+
+function _demoDate(offsetDays) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().split('T')[0];
+}
+
+// ── gasRun: รองรับทั้ง google.script.run (GAS iframe) และ fetch (External Host) ──
 function gasRun(fnName, params, successCb, failCb) {
   if (typeof google !== 'undefined' && google.script) {
-    let runner = google.script.run
-      .withSuccessHandler(successCb || function(){})
-      .withFailureHandler(failCb || function(e){ showToast('❌ ' + e.message, 'error'); });
-    runner[fnName](params);
+    // ── ทำงานบน GAS iframe: ใช้ google.script.run โดยตรง ──
+    const runner = google.script.run
+      .withSuccessHandler(r => { if (successCb) successCb(r); })
+      .withFailureHandler(err => {
+        console.error('GAS run error:', err);
+        if (failCb) failCb(err);
+        else showToast('❌ ' + (err.message || err), 'error');
+      });
+    // เรียกใช้ฟังก์ชันตามชื่อ
+    if (typeof runner[fnName] === 'function') {
+      runner[fnName](params);
+    } else {
+      console.error('Function not found on GAS:', fnName);
+      if (failCb) failCb({ message: 'ไม่พบฟังก์ชัน: ' + fnName });
+    }
   } else {
-    // Fallback: fetch via POST for external hosting
-    callGAS(fnName, params).then(r => {
-      if (successCb) successCb(r);
-    }).catch(e => {
-      if (failCb) failCb(e);
-    });
+    // ── ทำงานบน External Host: ส่งผ่าน POST โดยใช้ชื่อฟังก์ชันเป็น action ──
+    callGAS(fnName, params)
+      .then(r => { if (successCb) successCb(r); })
+      .catch(err => {
+        console.error('gasRun error:', err);
+        if (failCb) failCb(err);
+        else showToast('❌ ' + (err.message || err), 'error');
+      });
   }
 }
 
@@ -1396,7 +1551,7 @@ async function handleEmployeeLogin() {
 
   showLoading(true);
   gasRun('loginEmployee',
-    { email, loginType: 'face', officeName: office, facePhoto: capturedPhotos.login },
+    { email, loginType: 'face', officeName: office, facePhoto: capturedPhotos.login, fullName: email.split('@')[0] },
     res => {
       showLoading(false);
       _handleLoginResponse(res, office);
@@ -1522,12 +1677,13 @@ function _initEmployeeDashboard() {
 }
 
 function loadEmpStats() {
-  gasRun('getAttendanceReport', { empId: currentUser.empId }, data => {
-    if (!Array.isArray(data)) return;
+  gasRun('getAttendanceReport', { empId: currentUser ? currentUser.empId : '' }, data => {
+    if (!Array.isArray(data)) { $('#statDaysThis').text(0); $('#statHoursThis').text('0.0'); return; }
     const month = new Date().getMonth();
     const year  = new Date().getFullYear();
     let days = 0, hours = 0;
     data.forEach(r => {
+      if (!r.date) return;
       const d = new Date(r.date);
       if (d.getMonth() === month && d.getFullYear() === year) {
         days++;
@@ -1536,11 +1692,12 @@ function loadEmpStats() {
     });
     $('#statDaysThis').text(days);
     $('#statHoursThis').text(hours.toFixed(1));
-    $('#statOffice').text(gpsData.office || $('#mainOffice').val());
+    $('#statOffice').text(gpsData.office || $('#mainOffice').val() || '-');
   });
 }
 
 function loadEmpTodayRecord() {
+  if (!currentUser) return;
   const today = new Date().toISOString().split('T')[0];
   gasRun('getAttendanceReport', { empId: currentUser.empId, dateFrom: today, dateTo: today }, data => {
     if (!Array.isArray(data) || data.length === 0) {
@@ -1773,7 +1930,10 @@ function loadDashboard() {
   showLoading(true);
   gasRun('getDashboardStats', {}, stats => {
     showLoading(false);
-    if (!stats || stats.error) return;
+    if (!stats || Array.isArray(stats) || stats.error) {
+      showToast('⚠️ ไม่สามารถโหลด Dashboard ได้: ' + (stats && stats.error ? stats.error : 'ไม่มีข้อมูล'), 'warning');
+      return;
+    }
 
     $('#dashTotalEmp').text(stats.totalEmployees  || 0);
     $('#dashActiveEmp').text(stats.activeEmployees || 0);
@@ -2025,11 +2185,11 @@ function loadAttendance() {
 // ================================================================
 function loadReportSettings() {
   gasRun('getReportSettings', {}, cfg => {
-    if (!cfg) return;
+    if (!cfg || Array.isArray(cfg)) return;
     if (cfg.report_email)   $('#reportEmail').val(cfg.report_email);
-    if (cfg.report_daily)   $('#reportDaily').prop('checked',   cfg.report_daily   === 'true');
-    if (cfg.report_weekly)  $('#reportWeekly').prop('checked',  cfg.report_weekly  === 'true');
-    if (cfg.report_monthly) $('#reportMonthly').prop('checked', cfg.report_monthly === 'true');
+    $('#reportDaily').prop('checked',   cfg.report_daily   === 'true' || cfg.report_daily   === true);
+    $('#reportWeekly').prop('checked',  cfg.report_weekly  === 'true' || cfg.report_weekly  === true);
+    $('#reportMonthly').prop('checked', cfg.report_monthly === 'true' || cfg.report_monthly === true);
   });
 }
 
@@ -2064,22 +2224,31 @@ async function saveReportSettings() {
 // SETUP (Admin Settings)
 // ================================================================
 async function callSetup() {
+  const ssId = $('#ssIdInput').val().trim();
   const { isConfirmed } = await Swal.fire({
-    icon:'warning', title:'รัน Setup?',
-    text:'จะสร้าง Google Sheet พร้อมหัวคอลัมน์ทั้งหมด (เรียกครั้งแรกเท่านั้น)',
-    showCancelButton:true, confirmButtonText:'รัน Setup', cancelButtonText:'ยกเลิก',
-    confirmButtonColor:'#4f46e5'
+    icon: 'warning',
+    title: 'รัน Setup?',
+    html: `จะสร้าง Google Sheet พร้อมหัวคอลัมน์ทั้งหมด<br>
+           <small class="text-muted">${ssId ? 'ใช้ Sheet ID: ' + ssId : 'สร้าง Sheet ใหม่อัตโนมัติ'}</small>`,
+    showCancelButton: true, confirmButtonText: '▶ รัน Setup', cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#4f46e5'
   });
   if (!isConfirmed) return;
   showLoading(true);
-  gasRun('initializeSheets', {}, res => {
+  gasRun('initializeSheets', { ssId: ssId || null }, res => {
     showLoading(false);
     if (res && res.success) {
-      Swal.fire({ icon:'success', title:'Setup สำเร็จ!',
-        html:`Spreadsheet ID: <code>${res.ssId}</code><br><a href="${res.ssUrl}" target="_blank">เปิด Google Sheet</a>`,
-        confirmButtonColor:'#4f46e5' });
+      Swal.fire({
+        icon: 'success', title: 'Setup สำเร็จ! 🎉',
+        html: `<p>สร้าง Google Sheet สำเร็จ</p>
+               <p>Spreadsheet ID:<br><code style="word-break:break-all">${res.ssId}</code></p>
+               ${res.ssUrl && res.ssUrl !== '#' ? `<a href="${res.ssUrl}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">🔗 เปิด Google Sheet</a>` : ''}`,
+        confirmButtonColor: '#4f46e5'
+      });
     } else {
-      Swal.fire({ icon:'error', text: res ? res.message : 'ผิดพลาด', confirmButtonColor:'#4f46e5' });
+      Swal.fire({ icon: 'error', title: 'Setup ไม่สำเร็จ',
+        text: res ? res.message : 'เกิดข้อผิดพลาด กรุณาตรวจสอบ GAS_URL',
+        confirmButtonColor: '#4f46e5' });
     }
   });
 }
@@ -2097,28 +2266,51 @@ function showPhoto(src, info) {
 // INIT
 // ================================================================
 $(document).ready(function () {
-  // Restore theme
+  // ── Restore theme ──────────────────────────────────────────
   const savedTheme = localStorage.getItem('theme') || 'day';
   setTheme(savedTheme);
 
-  // Set today's date filter defaults
-  const today = new Date().toISOString().split('T')[0];
+  // ── Demo banner ────────────────────────────────────────────
+  const isDemo = !GAS_URL || GAS_URL.includes('YOUR_DEPLOYMENT_ID');
+  if (isDemo) {
+    $('#demoBanner').show();
+    // เลื่อน body ลงเพื่อให้ banner ไม่บัง login card
+    document.body.style.paddingTop = '34px';
+    console.warn('⚠️  Demo mode active — ตั้งค่า GAS_URL เพื่อเชื่อมต่อ Google Sheet จริง');
+  }
+
+  // ── Date filter defaults ───────────────────────────────────
+  const today      = new Date().toISOString().split('T')[0];
   const monthStart = today.slice(0, 8) + '01';
   $('#attDateFrom').val(monthStart);
   $('#attDateTo').val(today);
 
-  // Hide loading
-  setTimeout(() => showLoading(false), 800);
+  // ── Hide loading ───────────────────────────────────────────
+  setTimeout(() => showLoading(false), 600);
 
-  // Auto GPS on login page
-  setTimeout(() => getGPS('login'), 1200);
+  // ── Auto-get GPS ───────────────────────────────────────────
+  setTimeout(() => getGPS('login'), 1000);
 
-  // Enter key handlers
-  $('#loginEmail').on('keydown', e => { if (e.key === 'Enter') handleEmployeeLogin(); });
-  $('#adminPass').on('keydown',  e => { if (e.key === 'Enter') handleAdminLogin(); });
+  // ── Enter key handlers ─────────────────────────────────────
+  $('#loginEmail').on('keydown',  e => { if (e.key === 'Enter') handleEmployeeLogin(); });
+  $('#adminPass').on('keydown',   e => { if (e.key === 'Enter') handleAdminLogin(); });
+  $('#regPassword').on('keydown', e => { if (e.key === 'Enter') handleRegister(); });
+
+  // ── Keyboard shortcut: Ctrl+Shift+A = Admin quick login ───
+  $(document).on('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      switchLoginTab('admin');
+      $('#adminUser').val('admin');
+      $('#adminPass').val('admin123');
+      setTimeout(handleAdminLogin, 100);
+    }
+  });
 
   console.log('🚀 FaceScan GPS System ready');
-  console.log('📌 ตั้งค่า GAS_URL ที่ตัวแปร GAS_URL ด้านบน');
+  console.log(isDemo
+    ? '⚠️  Demo mode — ตั้งค่า const GAS_URL ในไฟล์ index.html'
+    : '✅ เชื่อมต่อ GAS: ' + GAS_URL.substring(0, 60) + '...'
+  );
 });
 </script>
 </body>
