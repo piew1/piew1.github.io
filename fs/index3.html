@@ -1032,8 +1032,8 @@ body{
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-<!-- face-api.js -->
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<!-- face-api.js (use GitHub CDN for both script and weights) -->
+<script src="https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
 // ============================================================
@@ -1082,17 +1082,23 @@ function setTodayDates(){
 // FACE API LOADER
 // ============================================================
 async function loadFaceApi(){
+  // Show non-blocking status
+  showToast('กำลังโหลดโมเดล AI สำหรับสแกนใบหน้า...', 'info');
+  const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
   try{
-    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-    ]);
+    // Load sequentially to avoid hitting CDN rate limits simultaneously
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
     APP.faceApiLoaded = true;
-    console.log('face-api.js loaded');
+    showToast('โมเดล AI พร้อมใช้งาน ✅', 'success');
+    console.log('face-api.js models loaded successfully from:', MODEL_URL);
   }catch(e){
-    console.warn('face-api.js load error:', e);
+    console.warn('face-api.js load error (will use photo-only mode):', e.message || e);
+    APP.faceApiLoaded = false;
+    showToast('โหลดโมเดล AI ไม่สำเร็จ — ใช้โหมดถ่ายภาพแทน ⚠️', 'warning');
+    // Update all scan buttons to show degraded mode
+    $('.face-guide').css({'border-color':'rgba(245,158,11,0.8)','animation':'none'});
   }
 }
 
