@@ -136,8 +136,24 @@ body.theme-night .table-striped>tbody>tr:nth-of-type(odd)>*{background:rgba(255,
 .chart-bar{transition:height .6s ease;}
 
 /* ── LOADING ── */
-.loading-spin{display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+.loading-spin{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(79,142,247,0.35);border-top-color:#4f8ef7;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px;}
+.theme-night .loading-spin{border-color:rgba(255,255,255,0.25);border-top-color:#fff;}
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── MANUAL LOGIN BTN HIGHLIGHT ── */
+#btnManualFaceLogin:not(:disabled){
+  animation: pulse-btn 2s infinite;
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.6);
+}
+@keyframes pulse-btn{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,0.55);}
+  60%{box-shadow:0 0 0 10px rgba(34,197,94,0);}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}
+}
+
+/* ── DEBUG BOX ── */
+#loginDebugBox{font-family:monospace;font-size:.78rem;color:#555;border:1px dashed #ccc;}
+.theme-night #loginDebugBox{color:#aaa;border-color:#444;background:rgba(255,255,255,0.05)!important;}
 
 /* ── MODAL ── */
 .modal-content{border-radius:var(--radius);border:none;box-shadow:0 24px 64px rgba(0,0,0,0.15);}
@@ -236,18 +252,37 @@ body.theme-night .table-striped>tbody>tr:nth-of-type(odd)>*{background:rgba(255,
 
             <!-- FACE SCAN SECTION -->
             <div class="mb-3">
-              <label class="form-label fw-600"><i class="bi bi-camera-fill text-primary me-1"></i>สแกนใบหน้า</label>
+              <label class="form-label fw-600"><i class="bi bi-camera-fill text-primary me-1"></i>สแกนใบหน้าเพื่อเข้าสู่ระบบ</label>
               <div class="face-container" id="loginFaceContainer">
                 <video id="loginVideo" autoplay muted playsinline></video>
                 <canvas id="loginCanvas"></canvas>
                 <div class="face-overlay detecting" id="loginFaceOverlay"></div>
               </div>
-              <p class="face-status text-muted" id="loginFaceStatus"><i class="bi bi-hourglass-split"></i> รอการตรวจจับใบหน้า...</p>
-              <div class="text-center mt-2">
+              <p class="face-status" id="loginFaceStatus"><i class="bi bi-hourglass-split"></i> กำลังโหลดโมเดลใบหน้า...</p>
+
+              <!-- DEBUG BOX -->
+              <div id="loginDebugBox" class="mt-2 p-2 rounded-3 small" style="background:rgba(0,0,0,0.06);display:none;">
+                <strong>🔍 Debug:</strong> <span id="loginDebugMsg">-</span>
+              </div>
+
+              <!-- CONFIDENCE BAR -->
+              <div class="mt-2" id="loginConfBar" style="display:none;">
+                <div class="d-flex justify-content-between mb-1" style="font-size:.75rem;">
+                  <span>ความเชื่อมั่น</span><span id="loginConfPct">0%</span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div id="loginConfProgress" class="progress-bar bg-success" style="width:0%;transition:width .4s;"></div>
+                </div>
+              </div>
+
+              <div class="text-center mt-2 d-flex flex-wrap gap-2 justify-content-center">
                 <button class="btn btn-sm btn-outline-primary btn-action" id="btnStartLoginCam" onclick="startLoginCamera()">
                   <i class="bi bi-camera-video"></i> เปิดกล้อง
                 </button>
-                <button class="btn btn-sm btn-outline-secondary btn-action ms-2" id="btnLoginAlt" onclick="toggleLoginAlt()">
+                <button class="btn btn-success btn-action px-3" id="btnManualFaceLogin" onclick="manualFaceLogin()" disabled>
+                  <i class="bi bi-person-check-fill"></i> ยืนยันใบหน้า
+                </button>
+                <button class="btn btn-sm btn-outline-secondary btn-action" id="btnLoginAlt" onclick="toggleLoginAlt()">
                   <i class="bi bi-key"></i> ใช้รหัสผ่าน
                 </button>
               </div>
@@ -687,25 +722,73 @@ if (GAS_URL) $('#gasUrlInput').val(GAS_URL);
 
 // ── API HELPERS ──────────────────────────────────────────────
 function gasGet(params, onSuccess, onError) {
-  if (!GAS_URL) { showToast('กรุณาตั้งค่า GAS URL ก่อน', 'warning'); return; }
-  var qs = Object.keys(params).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
-  fetch(GAS_URL + '?' + qs, { redirect: 'follow' })
-    .then(function(r) { return r.json(); })
-    .then(function(d) { if (onSuccess) onSuccess(d); })
-    .catch(function(e) { console.error(e); if (onError) onError(e); });
+  if (!GAS_URL) { showToast('กรุณาตั้งค่า GAS URL ก่อน', 'warning'); if (onError) onError(new Error('No GAS_URL')); return; }
+  var qs = Object.keys(params)
+    .map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); })
+    .join('&');
+  var url = GAS_URL + (GAS_URL.includes('?') ? '&' : '?') + qs;
+  console.log('[gasGet] url:', url.substring(0, 150));
+  fetch(url, { redirect: 'follow' })
+    .then(function(r) { return r.text(); })
+    .then(function(txt) {
+      var d;
+      try {
+        var match = txt.match(/\{[\s\S]*\}/);
+        d = JSON.parse(match ? match[0] : txt);
+      } catch (e) {
+        console.error('[gasGet] parse error:', txt.substring(0, 200));
+        if (onError) onError(e); return;
+      }
+      if (onSuccess) onSuccess(d);
+    })
+    .catch(function(e) { console.error('[gasGet] fetch error:', e); if (onError) onError(e); });
 }
 
 function gasPost(data, onSuccess, onError) {
-  if (!GAS_URL) { showToast('กรุณาตั้งค่า GAS URL ก่อน', 'warning'); return; }
+  if (!GAS_URL) {
+    Swal.fire({ icon:'warning', title:'ยังไม่ได้ตั้งค่า GAS URL', text:'กรุณาใส่ URL ของ Google Apps Script แล้วกด "บันทึก URL" ด้านบน' });
+    if (onError) onError(new Error('No GAS_URL'));
+    return;
+  }
+
+  // ตัด faceImageBase64 ให้สั้นลงถ้า payload ใหญ่เกิน (GAS limit ~50KB)
+  var payload = Object.assign({}, data);
+  if (payload.faceImageBase64 && payload.faceImageBase64.length > 40000) {
+    payload.faceImageBase64 = payload.faceImageBase64.substring(0, 40000);
+  }
+
+  var bodyStr = JSON.stringify(payload);
+  console.log('[gasPost] action=' + data.action + ' | payload size=' + bodyStr.length + ' bytes');
+
   fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(data),
+    method:   'POST',
+    headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
+    body:     bodyStr,
     redirect: 'follow'
   })
-  .then(function(r) { return r.json(); })
-  .then(function(d) { if (onSuccess) onSuccess(d); })
-  .catch(function(e) { console.error(e); if (onError) onError(e); });
+  .then(function(r) {
+    console.log('[gasPost] HTTP status:', r.status, r.url);
+    // GAS อาจ redirect แล้วส่ง opaque response — ลอง text ก่อน
+    return r.text();
+  })
+  .then(function(txt) {
+    console.log('[gasPost] raw response (first 300):', txt.substring(0, 300));
+    var d;
+    try {
+      // หาก GAS wrap ด้วย HTML (เกิดจาก doGet ถูกเรียก) — พยายาม extract JSON
+      var match = txt.match(/\{[\s\S]*\}/);
+      d = JSON.parse(match ? match[0] : txt);
+    } catch (parseErr) {
+      console.error('[gasPost] JSON parse error:', parseErr, '| raw:', txt.substring(0, 200));
+      if (onError) onError(new Error('JSON parse failed: ' + txt.substring(0, 100)));
+      return;
+    }
+    if (onSuccess) onSuccess(d);
+  })
+  .catch(function(e) {
+    console.error('[gasPost] fetch error:', e);
+    if (onError) onError(e);
+  });
 }
 
 // ── TOAST ────────────────────────────────────────────────────
@@ -746,17 +829,32 @@ function updateNavItems() {
 }
 
 // ── FACE API INIT ────────────────────────────────────────────
+var faceModelsLoading = false;
 async function loadFaceModels() {
   if (faceModelsLoaded) return true;
+  if (faceModelsLoading) {
+    // รอจนโหลดเสร็จ
+    return new Promise(function(resolve) {
+      var t = setInterval(function() {
+        if (faceModelsLoaded) { clearInterval(t); resolve(true); }
+      }, 300);
+    });
+  }
+  faceModelsLoading = true;
   try {
+    console.log('⏳ Loading face-api models from:', FACE_API_MODELS);
     await faceapi.nets.tinyFaceDetector.loadFromUri(FACE_API_MODELS);
+    console.log('✅ tinyFaceDetector loaded');
     await faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODELS);
+    console.log('✅ faceLandmark68Net loaded');
     await faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODELS);
-    faceModelsLoaded = true;
-    console.log('✅ Face models loaded');
+    console.log('✅ faceRecognitionNet loaded');
+    faceModelsLoaded  = true;
+    faceModelsLoading = false;
     return true;
   } catch (e) {
-    console.error('Face model load error:', e);
+    faceModelsLoading = false;
+    console.error('❌ Face model load error:', e);
     return false;
   }
 }
@@ -786,65 +884,187 @@ function videoToBase64(videoEl) {
 
 // ── LOGIN CAMERA ─────────────────────────────────────────────
 async function startLoginCamera() {
-  if (loginStream) return;
+  if (loginStream) {
+    setLoginStatus('info','<i class="bi bi-camera-video-fill"></i> กล้องเปิดอยู่แล้ว — รอการตรวจจับใบหน้า...');
+    return;
+  }
+  setLoginStatus('muted','<span class="loading-spin"></span> กำลังโหลดโมเดลใบหน้า...');
   var ok = await loadFaceModels();
-  if (!ok) { $('#loginFaceStatus').html('<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> โหลดโมเดลใบหน้าไม่สำเร็จ กรุณาใช้รหัสผ่านแทน</span>'); return; }
+  if (!ok) {
+    setLoginStatus('warning','<i class="bi bi-exclamation-triangle"></i> โหลดโมเดลไม่สำเร็จ — กรุณาใช้รหัสผ่านแทน');
+    return;
+  }
+  setLoginStatus('muted','<span class="loading-spin"></span> กำลังเปิดกล้อง...');
   loginStream = await startCamera('loginVideo');
-  if (!loginStream) return;
+  if (!loginStream) {
+    setLoginStatus('danger','<i class="bi bi-camera-slash"></i> เปิดกล้องไม่ได้ — กรุณาใช้รหัสผ่านแทน');
+    return;
+  }
+  $('#btnStartLoginCam').prop('disabled', true).html('<i class="bi bi-camera-video-fill"></i> กล้องเปิดแล้ว');
   loginDetectionActive = true;
+  setLoginStatus('muted','<span class="loading-spin"></span> กำลังตรวจจับใบหน้า...');
   detectLoginFace();
+}
+
+// ── ตั้งค่าสถานะ ──────────────────────────────────────────────
+function setLoginStatus(type, html) {
+  var colors = { success:'text-success', danger:'text-danger', warning:'text-warning', info:'text-info', muted:'text-muted' };
+  $('#loginFaceStatus').attr('class', 'face-status ' + (colors[type]||'text-muted')).html(html);
+}
+function setLoginDebug(msg) {
+  $('#loginDebugBox').show();
+  $('#loginDebugMsg').text(msg);
+  console.log('[FaceLogin Debug]', msg);
 }
 
 async function detectLoginFace() {
   if (!loginDetectionActive) return;
-  var video = document.getElementById('loginVideo');
+  var video  = document.getElementById('loginVideo');
   var canvas = document.getElementById('loginCanvas');
-  if (video.readyState < 2) { setTimeout(detectLoginFace, 200); return; }
-  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+
+  if (!video || video.readyState < 2) {
+    setTimeout(detectLoginFace, 300);
+    return;
+  }
+
+  canvas.width  = video.videoWidth  || 280;
+  canvas.height = video.videoHeight || 210;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   try {
-    var det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+    var options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
+    var det = await faceapi
+      .detectSingleFace(video, options)
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
     var overlay = document.getElementById('loginFaceOverlay');
-    var ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     if (det) {
+      // วาด detection
       faceapi.draw.drawDetections(canvas, [det]);
       faceapi.draw.drawFaceLandmarks(canvas, [det]);
+
+      var score = Math.round((det.detection.score || 0) * 100);
       overlay.className = 'face-overlay detected';
-      loginFaceDescriptor = Array.from(det.descriptor);
-      loginFaceImageBase64 = videoToBase64(video);
-      $('#loginFaceStatus').html('<span class="text-success fw-600"><i class="bi bi-check-circle-fill"></i> พบใบหน้า — กำลังยืนยัน...</span>');
-      // Auto login attempt
-      if (GAS_URL) autoFaceLogin();
+      loginFaceDescriptor   = Array.from(det.descriptor);
+      loginFaceImageBase64  = videoToBase64(video);
+
+      // แสดง confidence bar
+      $('#loginConfBar').show();
+      $('#loginConfPct').text(score + '%');
+      $('#loginConfProgress').css('width', score + '%');
+
+      setLoginStatus('success','<i class="bi bi-check-circle-fill"></i> พบใบหน้า (score: ' + score + '%) — กดปุ่ม "ยืนยันใบหน้า" หรือรอระบบตรวจสอบอัตโนมัติ');
+      $('#btnManualFaceLogin').prop('disabled', false);
+
+      // Auto-login ถ้า GAS URL ตั้งค่าแล้ว
+      if (GAS_URL && !autoLoginCooldown) {
+        autoFaceLogin();
+      } else if (!GAS_URL) {
+        setLoginDebug('ยังไม่ได้ตั้งค่า GAS URL — กรุณาตั้งค่าด้านบนก่อน');
+      }
+
     } else {
       overlay.className = 'face-overlay no-face';
-      loginFaceDescriptor = null;
-      $('#loginFaceStatus').html('<span class="text-danger"><i class="bi bi-x-circle"></i> ไม่พบใบหน้า กรุณาหันหน้าตรงกล้อง</span>');
+      loginFaceDescriptor  = null;
+      loginFaceImageBase64 = null;
+      $('#btnManualFaceLogin').prop('disabled', true);
+      $('#loginConfBar').hide();
+      setLoginStatus('danger','<i class="bi bi-x-circle"></i> ไม่พบใบหน้า — หันหน้าตรงกล้อง และให้แสงสว่างเพียงพอ');
     }
-  } catch (e) {}
-  if (loginDetectionActive) setTimeout(detectLoginFace, 1200);
+  } catch (err) {
+    setLoginDebug('detectError: ' + err.message);
+  }
+
+  if (loginDetectionActive) setTimeout(detectLoginFace, 900);
 }
 
-var autoLoginCooldown = false;
+// ── ปุ่ม Manual Login ─────────────────────────────────────────
+function manualFaceLogin() {
+  if (!loginFaceDescriptor) {
+    Swal.fire({ icon:'warning', text:'ยังไม่พบใบหน้า กรุณารอให้กล้องตรวจจับใบหน้าก่อน' });
+    return;
+  }
+  if (!GAS_URL) {
+    Swal.fire({ icon:'warning', text:'กรุณาตั้งค่า GAS URL ด้านบนก่อน แล้วกดบันทึก' });
+    return;
+  }
+  autoLoginCooldown = false; // force reset cooldown
+  autoFaceLogin();
+}
+
+// ── Auto Face Login ───────────────────────────────────────────
+var autoLoginCooldown   = false;
+var loginInProgress     = false;
+
 function autoFaceLogin() {
-  if (autoLoginCooldown || !loginFaceDescriptor) return;
-  autoLoginCooldown = true;
+  if (loginInProgress || autoLoginCooldown) return;
+  if (!loginFaceDescriptor || !loginFaceDescriptor.length) {
+    setLoginDebug('ไม่มี descriptor — ข้าม');
+    return;
+  }
+
+  loginInProgress    = true;
+  autoLoginCooldown  = true;
+
+  setLoginStatus('info','<span class="loading-spin"></span> กำลังยืนยันตัวตนกับเซิร์ฟเวอร์...');
+  setLoginDebug('กำลังส่ง descriptor (' + loginFaceDescriptor.length + ' dim) ไปยัง GAS...');
+
   gasPost({
-    action: 'loginFace',
-    faceDescriptor: loginFaceDescriptor,
+    action:          'loginFace',
+    faceDescriptor:  loginFaceDescriptor,
     faceImageBase64: loginFaceImageBase64
-  }, function(res) {
-    autoLoginCooldown = false;
+  },
+  function(res) {
+    loginInProgress = false;
+    setLoginDebug('GAS ตอบกลับ: status=' + res.status + ' | ' + (res.message || ''));
+
     if (res.status === 'ok') {
+      // ✅ สำเร็จ
+      autoLoginCooldown  = false;
+      loginDetectionActive = false;
       currentUser = res;
       sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-      loginDetectionActive = false;
       stopStream(loginStream); loginStream = null;
-      Swal.fire({ icon:'success', title:'ยินดีต้อนรับ! 🎉', text: res.name + ' (' + res.empId + ')', timer:2000, showConfirmButton:false })
-        .then(function() { showPage('emp'); loadMyAttendance(); });
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ยินดีต้อนรับ! 🎉',
+        html: '<b>' + (res.name || '') + '</b><br><small>รหัส: ' + (res.empId || '') + '</small>',
+        timer: 2200,
+        showConfirmButton: false
+      }).then(function() {
+        showPage('emp');
+        loadMyAttendance();
+        updateNavItems();
+      });
+
     } else {
-      setTimeout(function() { autoLoginCooldown = false; }, 4000);
+      // ❌ ไม่สำเร็จ — แสดงข้อความ + รอ cooldown
+      var errMsg = res.message || 'ไม่พบข้อมูลในระบบ';
+      setLoginStatus('danger','<i class="bi bi-x-circle-fill"></i> ' + errMsg);
+
+      // แสดง Toast แจ้งผล แต่ไม่หยุดกล้อง
+      showToast('⚠️ ' + errMsg, 'warning');
+
+      // รอ 3 วิ แล้วลองใหม่อัตโนมัติ
+      setTimeout(function() {
+        autoLoginCooldown = false;
+        if (loginDetectionActive) {
+          setLoginStatus('muted','<i class="bi bi-arrow-repeat"></i> รอตรวจจับใบหน้าใหม่...');
+        }
+      }, 3000);
     }
-  }, function() { setTimeout(function() { autoLoginCooldown = false; }, 4000); });
+  },
+  function(fetchErr) {
+    // Network error
+    loginInProgress = false;
+    setLoginDebug('Network error: ' + (fetchErr ? fetchErr.toString() : 'unknown'));
+    setLoginStatus('danger','<i class="bi bi-wifi-off"></i> เชื่อมต่อ GAS ไม่สำเร็จ — ตรวจสอบ URL และ Internet');
+    setTimeout(function() { autoLoginCooldown = false; }, 3000);
+  });
 }
 
 // ── LOGIN PASSWORD ────────────────────────────────────────────
@@ -1388,11 +1608,18 @@ $(document).ready(function() {
     showPage('admin'); loadAdminData();
   } else {
     showPage('login');
-    // Pre-load face models
-    loadFaceModels().then(function(ok) {
-      if (ok) startLoginCamera();
-    });
     startGpsWatch();
+
+    // โหลด face models แล้วเปิดกล้องทันที
+    setLoginStatus('muted','<span class="loading-spin"></span> กำลังโหลด AI โมเดลใบหน้า...');
+    loadFaceModels().then(function(ok) {
+      if (ok) {
+        setLoginStatus('muted','<span class="loading-spin"></span> โมเดลพร้อม — กำลังเปิดกล้อง...');
+        startLoginCamera();
+      } else {
+        setLoginStatus('warning','<i class="bi bi-exclamation-triangle-fill"></i> โหลดโมเดลใบหน้าไม่สำเร็จ — กรุณาใช้รหัสผ่านแทน หรือ Refresh หน้าเว็บ');
+      }
+    });
   }
   updateNavItems();
 
@@ -1402,6 +1629,11 @@ $(document).ready(function() {
 
   // Location change
   $('#selLocation, #empSelLocation').on('change', updateGpsDistanceBadge);
+
+  // Show debug box toggle
+  $(document).on('dblclick', '#loginFaceStatus', function() {
+    $('#loginDebugBox').toggle();
+  });
 });
 
 // ── SERVICE WORKER (PWA) ──────────────────────────────────────
