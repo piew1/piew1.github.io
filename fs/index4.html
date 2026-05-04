@@ -987,7 +987,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 //   STATE & CONFIG
 // ╚══════════════════════════════════════════════════════════╝
 const APP = {
-  gasUrl       : localStorage.getItem('gasUrl') || '',
+  gasUrl       : localStorage.getItem('gasUrl') || 'https://script.google.com/macros/s/AKfycbznTKyyrt7W9GHui4r3SdnGfGIMFZMEIXVOBEPUly3Zpi9AlOoC5OUUyBZ_y65jjeBd/exec',
   admin        : null,
   gps          : { lat:null, lng:null, watching:false, accuracy:null },
   camera       : { loginStream:null, regStream:null, checkinStream:null },
