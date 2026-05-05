@@ -1,0 +1,16 @@
+{
+  "name": "ระบบเข้า-ออก พนักงาน Face Scan GPS",
+  "short_name": "FaceScanGPS",
+  "description": "Face Scan & GPS Attendance System",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a73e8",
+  "theme_color": "#1a73e8",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "https://via.placeholder.com/192x192/1a73e8/ffffff?text=F", "sizes": "192x192", "type": "image/png" },
+    { "src": "https://via.placeholder.com/512x512/1a73e8/ffffff?text=F", "sizes": "512x512", "type": "image/png" }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "th"
+}
