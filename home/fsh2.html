@@ -409,8 +409,11 @@ body {
         <i class="bi bi-person-check"></i> ลงทะเบียน
       </button>
       <div class="text-center">
-        <button class="btn-outline-action" onclick="showPage('loginPage');stopAllCameras();">
+        <button class="btn-outline-action me-2" onclick="showPage('loginPage');stopAllCameras();">
           <i class="bi bi-arrow-left"></i> กลับหน้าเข้าสู่ระบบ
+        </button>
+        <button class="btn-outline-action" onclick="goToSettings()">
+          <i class="bi bi-gear"></i> ตั้งค่า GAS URL
         </button>
       </div>
     </div>
@@ -721,11 +724,13 @@ body {
         <!-- GAS URL Setting -->
         <div class="settings-group">
           <h6><i class="bi bi-link-45deg"></i> ตั้งค่า GAS URL</h6>
-          <div class="input-group">
+          <div class="input-group mb-2">
             <input type="url" class="form-control" id="settingGasUrl" placeholder="https://script.google.com/macros/s/xxx/exec" style="border-radius:10px 0 0 10px;">
             <button class="btn-action" onclick="saveGasUrl()" style="border-radius:0 10px 10px 0;"><i class="bi bi-save"></i> บันทึก</button>
           </div>
-          <small class="text-secondary mt-1 d-block">* Deploy GAS Web App แล้ววาง URL ที่นี่</small>
+          <button class="btn-outline-action" onclick="testConnection()" style="margin-right:8px;"><i class="bi bi-wifi"></i> ทดสอบการเชื่อมต่อ</button>
+          <button class="btn-outline-action" onclick="showDeployGuide()"><i class="bi bi-question-circle"></i> วิธี Deploy GAS</button>
+          <div id="connectionStatus" class="mt-2"></div>
         </div>
 
         <!-- Theme -->
@@ -833,7 +838,7 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
 <script>
 // ==================== GLOBALS ====================
-let GAS_URL = localStorage.getItem('GAS_URL') || 'https://script.google.com/macros/s/AKfycbzcwCDAqzCP2fej6KPXgqfWZXrTIbLGADyDsu_I1fMJ4idSsBOQ-_jYYaod3P12vQ/exec';
+let GAS_URL = localStorage.getItem('GAS_URL') || 'https://script.google.com/macros/s/AKfycbwfPmDFzBy6Koc19d8nKo5zDcTnFrvwsXf1eQ3hcPJaQZcOypgDcbLw0_cLSCUaTzA/exec';
 let currentUser = null;
 let isAdmin = false;
 let gpsCoords = null;
@@ -918,22 +923,36 @@ async function apiPost(action, data = {}) {
   data.action = action;
   data.device = navigator.userAgent.substring(0, 100);
   
+  // Try fetching user's IP (non-blocking)
   try {
-    // Try fetching user's IP
-    try {
-      const ipRes = await fetch('https://api.ipify.org?format=json');
-      const ipData = await ipRes.json();
-      data.ip = ipData.ip;
-    } catch(e) { data.ip = ''; }
+    const ipRes = await fetch('https://api.ipify.org?format=json', { timeout: 3000 });
+    const ipData = await ipRes.json();
+    data.ip = ipData.ip;
   } catch(e) { data.ip = ''; }
 
-  const res = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(data),
-    redirect: 'follow'
-  });
-  return await res.json();
+  console.log('API POST:', action, data);
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(data),
+      redirect: 'follow'
+    });
+    
+    const text = await res.text();
+    console.log('API Response:', text);
+    
+    try {
+      return JSON.parse(text);
+    } catch(e) {
+      console.error('JSON parse error:', text);
+      throw new Error('การตอบกลับไม่ถูกต้อง: ' + text.substring(0, 100));
+    }
+  } catch(e) {
+    console.error('Fetch error:', e);
+    throw new Error('ไม่สามารถเชื่อมต่อ API: ' + e.message);
+  }
 }
 
 // ==================== PAGE NAVIGATION ====================
@@ -1102,27 +1121,35 @@ async function handleRegister() {
   const phone = $('#regPhone').val().trim();
 
   if (!fullName || !username || !password) {
-    Toast.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบ' });
+    Toast.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบ (ชื่อ, ผู้ใช้, รหัส)' });
     return;
   }
   if (!GAS_URL) {
-    Swal.fire('ยังไม่ได้ตั้งค่า', 'กรุณาตั้งค่า GAS URL ก่อน', 'warning');
+    Swal.fire({
+      icon: 'warning',
+      title: 'ยังไม่ได้ตั้งค่า GAS URL',
+      html: 'กรุณาไปที่หน้า <b>ตั้งค่า</b> และกรอก GAS URL ก่อน<br><small>Deploy Web App แล้วคัดลอก URL มาวาง</small>',
+      confirmButtonText: 'ไปหน้าตั้งค่า'
+    }).then(() => {
+      showPage('mainPage');
+      switchTab('tabSettings');
+    });
     return;
   }
 
   Swal.fire({ title: 'กำลังลงทะเบียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  // Capture face if camera is open
+  // Capture face if camera is open (optional)
   let faceImage = '';
   let faceData = '';
   const video = document.getElementById('regVideo');
-  if (regCameraStream && video && video.srcObject) {
+  if (regCameraStream && video && video.srcObject && video.readyState >= 2) {
     try {
       const canvas = document.getElementById('regCanvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth || 320;
+      canvas.height = video.videoHeight || 240;
       canvas.getContext('2d').drawImage(video, 0, 0);
-      faceImage = canvas.toDataURL('image/png', 0.7);
+      faceImage = canvas.toDataURL('image/jpeg', 0.5); // Use JPEG with lower quality for smaller size
 
       if (faceModelsLoaded) {
         const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
@@ -1132,24 +1159,43 @@ async function handleRegister() {
           faceData = JSON.stringify(Array.from(detection.descriptor));
         }
       }
-    } catch(e) { console.warn('Face capture error:', e); }
+    } catch(e) { 
+      console.warn('Face capture error:', e); 
+      // Continue without face data
+    }
   }
 
   try {
+    console.log('Registering user:', username);
     const res = await apiPost('register', {
       fullName, username, password, email, phone,
       faceImage: faceImage, faceData: faceData
     });
     Swal.close();
+    
+    console.log('Register response:', res);
+    
     if (res.success) {
-      Swal.fire('ลงทะเบียนสำเร็จ!', res.message, 'success');
+      Swal.fire({
+        icon: 'success',
+        title: 'ลงทะเบียนสำเร็จ!',
+        html: res.message + '<br><small>รหัสพนักงาน: ' + (res.empId || '-') + '</small>',
+        confirmButtonText: 'ไปหน้าเข้าสู่ระบบ'
+      });
       showPage('loginPage');
       stopAllCameras();
+      // Clear form
+      $('#regFullName, #regUsername, #regPassword, #regEmail, #regPhone').val('');
     } else {
-      Swal.fire('ลงทะเบียนล้มเหลว', res.message, 'error');
+      Swal.fire('ลงทะเบียนล้มเหลว', res.message || 'ไม่ทราบสาเหตุ', 'error');
     }
   } catch(e) {
-    Swal.fire('เกิดข้อผิดพลาด', e.message, 'error');
+    console.error('Register error:', e);
+    Swal.fire({
+      icon: 'error',
+      title: 'เกิดข้อผิดพลาด',
+      html: e.message + '<br><small>ตรวจสอบ Console (F12) สำหรับรายละเอียด</small>'
+    });
   }
 }
 
@@ -1754,11 +1800,74 @@ async function sendEmailReport() {
 function saveGasUrl() {
   const url = $('#settingGasUrl').val().trim();
   if (!url) { Toast.fire({ icon: 'warning', title: 'กรุณากรอก URL' }); return; }
+  if (!url.includes('script.google.com')) {
+    Toast.fire({ icon: 'warning', title: 'URL ต้องเป็น script.google.com' }); 
+    return;
+  }
   GAS_URL = url;
   localStorage.setItem('GAS_URL', url);
   Toast.fire({ icon: 'success', title: 'บันทึก GAS URL สำเร็จ' });
   // Init sheets
-  apiGet('init').then(r => console.log('Init result:', r)).catch(e => console.warn(e));
+  testConnection();
+}
+
+async function testConnection() {
+  if (!GAS_URL) {
+    $('#connectionStatus').html('<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> ยังไม่ได้ตั้งค่า URL</span>');
+    return;
+  }
+  $('#connectionStatus').html('<span class="text-info"><i class="bi bi-hourglass-split"></i> กำลังทดสอบ...</span>');
+  try {
+    const res = await apiGet('init');
+    if (res.success) {
+      $('#connectionStatus').html('<span class="text-success"><i class="bi bi-check-circle-fill"></i> เชื่อมต่อสำเร็จ! ' + (res.message || '') + '</span>');
+    } else {
+      $('#connectionStatus').html('<span class="text-danger"><i class="bi bi-x-circle-fill"></i> ' + (res.message || 'การเชื่อมต่อล้มเหลว') + '</span>');
+    }
+  } catch(e) {
+    $('#connectionStatus').html('<span class="text-danger"><i class="bi bi-x-circle-fill"></i> Error: ' + e.message + '</span>');
+  }
+}
+
+function goToSettings() {
+  showPage('mainPage');
+  switchTab('tabSettings');
+  stopAllCameras();
+}
+
+function showDeployGuide() {
+  Swal.fire({
+    title: 'วิธี Deploy GAS Web App',
+    html: `
+      <div style="text-align:left;font-size:0.9rem;line-height:1.8;">
+        <ol>
+          <li>ไปที่ <a href="https://script.google.com" target="_blank">script.google.com</a></li>
+          <li>สร้างโปรเจกต์ใหม่ (New Project)</li>
+          <li>คัดลอกโค้ด <b>Code.gs</b> ทั้งหมดไปวาง</li>
+          <li>คลิก <b>Deploy → New deployment</b></li>
+          <li>เลือก Type: <b>Web app</b></li>
+          <li>ตั้งค่า:
+            <ul>
+              <li>Execute as: <b>Me</b></li>
+              <li>Who has access: <b>Anyone</b></li>
+            </ul>
+          </li>
+          <li>คลิก <b>Deploy</b></li>
+          <li>คัดลอก <b>Web app URL</b> มาวางที่นี่</li>
+        </ol>
+        <hr>
+        <p class="text-warning mb-0"><i class="bi bi-exclamation-triangle"></i> หากแก้ไขโค้ด ต้อง Deploy ใหม่ (New deployment) ทุกครั้ง</p>
+      </div>
+    `,
+    width: 600,
+    confirmButtonText: 'เข้าใจแล้ว',
+    showCancelButton: true,
+    cancelButtonText: 'เปิด script.google.com',
+  }).then((result) => {
+    if (result.dismiss === Swal.DismissReason.cancel) {
+      window.open('https://script.google.com', '_blank');
+    }
+  });
 }
 
 function setTheme(theme) {
