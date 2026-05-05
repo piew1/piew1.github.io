@@ -830,7 +830,7 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
 <script>
 // ==================== GLOBALS ====================
 let GAS_URL = localStorage.getItem('GAS_URL') || 'https://script.google.com/macros/s/AKfycbzcwCDAqzCP2fej6KPXgqfWZXrTIbLGADyDsu_I1fMJ4idSsBOQ-_jYYaod3P12vQ/exec';
@@ -846,7 +846,7 @@ let currentAnim = localStorage.getItem('bgAnim') || 'particles';
 let animFrame = null;
 let faceMatcher = null;
 let faceModelsLoaded = false;
-const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
 
 // Toast config
 const Toast = Swal.mixin({
@@ -869,12 +869,23 @@ $(document).ready(async function() {
   // Load face-api models
   try {
     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
     faceModelsLoaded = true;
-    console.log('Face models loaded');
+    console.log('Face models loaded successfully');
   } catch(e) {
     console.warn('Face models failed to load:', e);
+    // Fallback: try alternative model URL
+    try {
+      const ALT_MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+      await faceapi.nets.tinyFaceDetector.loadFromUri(ALT_MODEL_URL);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(ALT_MODEL_URL);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(ALT_MODEL_URL);
+      faceModelsLoaded = true;
+      console.log('Face models loaded from fallback URL');
+    } catch(e2) {
+      console.warn('Fallback face models also failed:', e2);
+    }
   }
 
   setTimeout(() => { $('#appLoader').addClass('hidden'); }, 1200);
@@ -1115,7 +1126,7 @@ async function handleRegister() {
 
       if (faceModelsLoaded) {
         const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-          .withFaceLandmarks(true)
+          .withFaceLandmarks()
           .withFaceDescriptor();
         if (detection) {
           faceData = JSON.stringify(Array.from(detection.descriptor));
@@ -1263,7 +1274,7 @@ function startFaceDetection(videoId, overlayId, statusId, mode) {
 
     try {
       const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks(true)
+        .withFaceLandmarks()
         .withFaceDescriptor();
 
       if (detection) {
