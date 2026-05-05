@@ -2,7 +2,7 @@
   "name": "ระบบเข้า-ออก พนักงาน",
   "short_name": "Attendance",
   "description": "Face Scan & GPS Attendance System",
-  "start_url": "./index4.html",
+  "start_url": "/index4.html",
   "display": "standalone",
   "background_color": "#1a73e8",
   "theme_color": "#1a73e8",
