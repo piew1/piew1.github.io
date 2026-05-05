@@ -2,7 +2,7 @@
 const CACHE_NAME = 'attendance-v1.0';
 const urlsToCache = [
   '/',
-  '/index.html',
+  './index4.html',
   'https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
