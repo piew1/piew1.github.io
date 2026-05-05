@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a73e8">
+<title>ระบบเข้า-ออก พนักงาน</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoi4Lij4Liw4Lia4Lia4LmA4LiC4LmJ4LiyLeC4reC4reC4gSDguJ7guJnguLHguIHguIfguLLguJkiLCJzaG9ydF9uYW1lIjoiRmFjZVNjYW4iLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzFhNzNlOCIsInRoZW1lX2NvbG9yIjoiIzFhNzNlOCJ9">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<style>
+:root {
+  --primary: #1a73e8;
+  --primary-dark: #1557b0;
+  --secondary: #5f6368;
+  --success: #0f9d58;
+  --warning: #f9ab00;
+  --danger: #ea4335;
+  --bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --text: #202124;
+  --text-muted: #5f6368;
+  --border: #e0e0e0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+[data-theme="night"] {
+  --primary: #8ab4f8;
+  --primary-dark: #669df6;
+  --bg: #1a1a2e;
+  --card-bg: #16213e;
+  --text: #e0e0e0;
+  --text-muted: #a0a0a0;
+  --border: #2a2a4a;
+  --shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+[data-theme="sea"] {
+  --primary: #00897b;
+  --primary-dark: #00695c;
+  --bg: #e0f2f1;
+  --card-bg: #ffffff;
+  --text: #004d40;
+  --text-muted: #00796b;
+  --border: #b2dfdb;
+}
+[data-theme="sky"] {
+  --primary: #0288d1;
+  --primary-dark: #01579b;
+  --bg: #e1f5fe;
+  --card-bg: #ffffff;
+  --text: #01579b;
+  --text-muted: #0277bd;
+  --border: #b3e5fc;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: all 0.3s ease;
+  overflow-x: hidden;
+}
+.page { display: none; min-height: 100vh; }
+.page.active { display: block; }
+
+/* Canvas Animation Background */
+#bgCanvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: -1; opacity: 0.15;
+}
+
+/* Navbar */
+.navbar-custom {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link { color: #fff !important; font-weight: 600; }
+.navbar-custom .nav-link:hover { opacity: 0.85; }
+.badge-notify {
+  position: absolute; top: 2px; right: 2px;
+  font-size: 0.6rem; padding: 2px 5px;
+}
+
+/* Cards */
+.card-custom {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-custom:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+
+/* Stat Cards */
+.stat-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+}
+.stat-card:hover { transform: translateY(-4px); }
+.stat-card .stat-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.stat-card .stat-value { font-size: 2rem; font-weight: 700; }
+.stat-card .stat-label { color: var(--text-muted); font-size: 0.9rem; }
+
+/* Login Page */
+.login-container {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 1rem;
+}
+.login-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  max-width: 420px; width: 100%;
+  padding: 2.5rem;
+  border: 1px solid var(--border);
+}
+.login-card .logo-icon { font-size: 3.5rem; color: var(--primary); }
+
+/* Camera */
+.camera-container {
+  position: relative; width: 100%; max-width: 320px;
+  margin: 0 auto; border-radius: var(--radius); overflow: hidden;
+  border: 3px solid var(--primary);
+}
+.camera-container video,
+.camera-container canvas { width: 100%; display: block; border-radius: 12px; }
+.camera-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.face-guide {
+  width: 180px; height: 220px;
+  border: 3px dashed rgba(26,115,232,0.6);
+  border-radius: 50%; animation: pulse-border 2s infinite;
+}
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(26,115,232,0.4); transform: scale(1); }
+  50% { border-color: rgba(26,115,232,0.9); transform: scale(1.03); }
+}
+.scan-line {
+  position: absolute; top: 0; left: 5%; width: 90%; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  animation: scanMove 2s linear infinite;
+}
+@keyframes scanMove { 0% { top: 10%; } 100% { top: 85%; } }
+
+/* Table */
+.table-custom { font-size: 0.85rem; }
+.table-custom th {
+  background: var(--primary); color: #fff;
+  position: sticky; top: 0; z-index: 2;
+  font-weight: 600;
+}
+.table-custom img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+
+/* Status badges */
+.badge-status { padding: 0.35em 0.65em; border-radius: 50px; font-weight: 500; font-size: 0.8rem; }
+
+/* Buttons */
+.btn-primary-custom {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border: none; color: #fff; border-radius: 50px; padding: 0.6rem 2rem;
+  font-weight: 600; letter-spacing: 0.5px;
+  transition: all 0.3s;
+}
+.btn-primary-custom:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,115,232,0.35); color: #fff; }
+
+.btn-outline-custom {
+  border: 2px solid var(--primary); color: var(--primary);
+  border-radius: 50px; padding: 0.5rem 1.5rem; font-weight: 600;
+  background: transparent; transition: all 0.3s;
+}
+.btn-outline-custom:hover { background: var(--primary); color: #fff; }
+
+/* Loading */
+.loading-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(255,255,255,0.85); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.spinner-grow-custom { width: 3rem; height: 3rem; color: var(--primary); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .login-card { padding: 1.5rem; margin: 0.5rem; }
+  .stat-card { padding: 1rem; }
+  .stat-card .stat-value { font-size: 1.5rem; }
+  .navbar-custom { padding: 0.3rem 0.5rem; }
+}
+
+/* Animations */
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Scroll */
+.scroll-table { max-height: 400px; overflow-y: auto; }
+
+/* Theme selector buttons */
+.theme-btn { width: 35px; height: 35px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: all 0.3s; }
+.theme-btn:hover, .theme-btn.active { border-color: var(--primary); transform: scale(1.15); }
+.theme-day { background: linear-gradient(135deg, #f0f4f8, #fff); }
+.theme-night { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+.theme-sea { background: linear-gradient(135deg, #e0f2f1, #00897b); }
+.theme-sky { background: linear-gradient(135deg, #e1f5fe, #0288d1); }
+
+/* Print */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}
+</style>
+</head>
+<body data-theme="day">
+
+<!-- Background Canvas -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner-grow spinner-grow-custom" role="status"></div>
+  <p class="mt-3 fw-semibold" style="color:var(--primary)">กำลังโหลดระบบ...</p>
+</div>
+
+<!-- ============== LOGIN PAGE ============== -->
+<div class="page active" id="pageLogin">
+  <div class="login-container">
+    <div class="login-card fade-in">
+      <div class="text-center mb-4">
+        <i class="bi bi-person-bounding-box logo-icon"></i>
+        <h4 class="mt-2 fw-bold">ระบบเข้า-ออก พนักงาน</h4>
+        <p class="text-muted">Face Scan & GPS Attendance</p>
+      </div>
+
+      <!-- Face Scan Area on Login -->
+      <div class="camera-container mb-3" id="loginCameraBox" style="display:none;">
+        <video id="loginVideo" autoplay playsinline muted></video>
+        <canvas id="loginCanvas" style="display:none;"></canvas>
+        <div class="camera-overlay">
+          <div class="face-guide"></div>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+      <div class="text-center mb-3" id="loginCameraStatus">
+        <button class="btn btn-outline-custom btn-sm" onclick="startLoginCamera()">
+          <i class="bi bi-camera-video"></i> เปิดกล้องสแกนใบหน้า
+        </button>
+      </div>
+
+      <form id="loginForm" onsubmit="return handleLogin(event)">
+        <div class="mb-3">
+          <label class="form-label fw-semibold"><i class="bi bi-person"></i> ชื่อผู้ใช้</label>
+          <input type="text" class="form-control" id="loginUsername" placeholder="กรอกชื่อผู้ใช้" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold"><i class="bi bi-lock"></i> รหัสผ่าน</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="loginPassword" placeholder="กรอกรหัสผ่าน" required>
+            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('loginPassword', this)">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold"><i class="bi bi-geo-alt"></i> สถานที่ทำงาน</label>
+          <select class="form-select" id="loginLocation">
+            <option value="สำนักงานใหญ่">สำนักงานใหญ่</option>
+            <option value="สุขุมวิท101">สุขุมวิท101</option>
+            <option value="ชลบุรี">ชลบุรี</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary-custom w-100 mb-3">
+          <i class="bi bi-box-arrow-in-right"></i> เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <div class="d-flex justify-content-between">
+        <button class="btn btn-link text-decoration-none" onclick="showPage('pageRegister')">
+          <i class="bi bi-person-plus"></i> ลงทะเบียน
+        </button>
+        <button class="btn btn-link text-decoration-none" onclick="showForgotPassword()">
+          <i class="bi bi-key"></i> ลืมรหัสผ่าน
+        </button>
+      </div>
+
+      <div class="text-center mt-3">
+        <small class="text-muted">GPS Status: <span id="gpsStatus" class="badge bg-secondary">checking...</span></small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== REGISTER PAGE ============== -->
+<div class="page" id="pageRegister">
+  <div class="login-container">
+    <div class="login-card fade-in" style="max-width:500px;">
+      <div class="text-center mb-4">
+        <i class="bi bi-person-plus-fill logo-icon"></i>
+        <h4 class="fw-bold">ลงทะเบียนพนักงาน</h4>
+      </div>
+
+      <div class="camera-container mb-3" id="regCameraBox" style="display:none;">
+        <video id="regVideo" autoplay playsinline muted></video>
+        <canvas id="regCanvas" style="display:none;"></canvas>
+        <div class="camera-overlay">
+          <div class="face-guide"></div>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+      <div class="text-center mb-2" id="regCameraStatus">
+        <button class="btn btn-outline-custom btn-sm" onclick="startRegCamera()">
+          <i class="bi bi-camera-video"></i> เปิดกล้องถ่ายภาพลงทะเบียน
+        </button>
+      </div>
+      <div class="text-center mb-3" id="regCapturedPreview" style="display:none;">
+        <img id="regCapturedImg" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);">
+        <p class="text-success mt-1 mb-0"><i class="bi bi-check-circle"></i> ถ่ายภาพสำเร็จ</p>
+      </div>
+
+      <form id="registerForm" onsubmit="return handleRegister(event)">
+        <div class="row g-2">
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-semibold">ชื่อ-นามสกุล *</label>
+            <input type="text" class="form-control" id="regFullName" required placeholder="ชื่อ-นามสกุล">
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-semibold">ชื่อผู้ใช้ *</label>
+            <input type="text" class="form-control" id="regUsername" required placeholder="ชื่อผู้ใช้">
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-semibold">รหัสผ่าน *</label>
+            <input type="password" class="form-control" id="regPassword" required placeholder="รหัสผ่าน">
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-semibold">อีเมล</label>
+            <input type="email" class="form-control" id="regEmail" placeholder="อีเมล">
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-semibold">เบอร์โทร</label>
+            <input type="tel" class="form-control" id="regPhone" placeholder="เบอร์โทร">
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-semibold">แผนก</label>
+            <input type="text" class="form-control" id="regDepartment" placeholder="แผนก">
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-semibold">ตำแหน่ง</label>
+            <input type="text" class="form-control" id="regPosition" placeholder="ตำแหน่ง">
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-semibold">สถานที่</label>
+            <select class="form-select" id="regLocation">
+              <option value="สำนักงานใหญ่">สำนักงานใหญ่</option>
+              <option value="สุขุมวิท101">สุขุมวิท101</option>
+              <option value="ชลบุรี">ชลบุรี</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary-custom w-100 mt-3">
+          <i class="bi bi-person-check"></i> ลงทะเบียน
+        </button>
+      </form>
+      <div class="text-center mt-3">
+        <button class="btn btn-link" onclick="showPage('pageLogin')">
+          <i class="bi bi-arrow-left"></i> กลับหน้าเข้าสู่ระบบ
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== MAIN APP (After Login) ============== -->
+<div class="page" id="pageMain">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-custom no-print">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><i class="bi bi-person-bounding-box"></i> FaceScan</a>
+      <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+        <i class="bi bi-list fs-4"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="switchTab('dashboard')"><i class="bi bi-speedometer2"></i> แดชบอร์ด</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="switchTab('checkin')"><i class="bi bi-camera-video"></i> เช็คอิน/เช็คเอาท์</a>
+          </li>
+          <li class="nav-item" id="navMyStats">
+            <a class="nav-link" href="#" onclick="switchTab('mystats')"><i class="bi bi-bar-chart"></i> สถิติของฉัน</a>
+          </li>
+          <li class="nav-item" id="navEmployees" style="display:none;">
+            <a class="nav-link" href="#" onclick="switchTab('employees')">
+              <i class="bi bi-people"></i> พนักงาน
+              <span class="badge bg-danger badge-notify" id="pendingBadge" style="display:none;">0</span>
+            </a>
+          </li>
+          <li class="nav-item" id="navAttendance" style="display:none;">
+            <a class="nav-link" href="#" onclick="switchTab('attendance')"><i class="bi bi-calendar-check"></i> รายงาน</a>
+          </li>
+          <li class="nav-item" id="navActivityLog" style="display:none;">
+            <a class="nav-link" href="#" onclick="switchTab('activitylog')"><i class="bi bi-journal-text"></i> บันทึก</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="switchTab('settings')"><i class="bi bi-gear"></i> ตั้งค่า</a>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center">
+          <span class="text-white me-3"><i class="bi bi-person-circle"></i> <span id="currentUserName">-</span></span>
+          <button class="btn btn-outline-light btn-sm" onclick="handleLogout()"><i class="bi bi-box-arrow-right"></i> ออก</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid p-3 p-md-4">
+
+    <!-- ====== DASHBOARD TAB ====== -->
+    <div class="tab-content-area" id="tabDashboard">
+      <h4 class="fw-bold mb-3 fade-in"><i class="bi bi-speedometer2"></i> แดชบอร์ด</h4>
+      <div class="row g-3 mb-4" id="dashboardStats">
+        <!-- Stats cards injected by JS -->
+      </div>
+      <div class="row g-3">
+        <div class="col-lg-8">
+          <div class="card-custom p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-people"></i> การเข้างานวันนี้</h6>
+            <div class="scroll-table">
+              <table class="table table-custom table-hover table-sm">
+                <thead>
+                  <tr><th>#</th><th>ชื่อ</th><th>เข้า</th><th>สถานะ</th><th>ออก</th><th>สาขา</th></tr>
+                </thead>
+                <tbody id="dashTodayTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card-custom p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-graph-up"></i> สถิติ 7 วัน</h6>
+            <canvas id="weeklyChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== CHECK-IN/OUT TAB ====== -->
+    <div class="tab-content-area" id="tabCheckin" style="display:none;">
+      <div class="row justify-content-center">
+        <div class="col-lg-6">
+          <div class="card-custom p-4 fade-in">
+            <h5 class="fw-bold text-center mb-3"><i class="bi bi-camera-video"></i> เช็คอิน / เช็คเอาท์</h5>
+
+            <div class="camera-container mb-3" id="checkinCameraBox" style="display:none;">
+              <video id="checkinVideo" autoplay playsinline muted></video>
+              <canvas id="checkinCanvas" style="display:none;"></canvas>
+              <div class="camera-overlay">
+                <div class="face-guide"></div>
+                <div class="scan-line"></div>
+              </div>
+            </div>
+            <div class="text-center mb-3">
+              <button class="btn btn-outline-custom" id="btnStartCheckinCam" onclick="startCheckinCamera()">
+                <i class="bi bi-camera-video"></i> เปิดกล้อง
+              </button>
+              <button class="btn btn-outline-secondary btn-sm ms-2" onclick="captureCheckinPhoto()" id="btnCaptureCheckin" style="display:none;">
+                <i class="bi bi-camera"></i> ถ่ายภาพ
+              </button>
+            </div>
+
+            <div id="checkinCapturedPreview" class="text-center mb-3" style="display:none;">
+              <img id="checkinCapturedImg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--success);">
+              <p class="text-success mt-1 mb-0 small"><i class="bi bi-check-circle"></i> ถ่ายภาพแล้ว</p>
+            </div>
+
+            <div class="text-center mb-3">
+              <p class="mb-1"><i class="bi bi-geo-alt text-primary"></i> ตำแหน่ง: <span id="checkinGpsInfo">กำลังค้นหา...</span></p>
+              <p class="mb-0"><i class="bi bi-pin-map text-primary"></i> สถานที่: <strong id="checkinLocationName">-</strong></p>
+              <p class="mb-0"><i class="bi bi-clock text-primary"></i> เวลา: <strong id="checkinCurrentTime">-</strong></p>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-success btn-lg" onclick="doCheckIn()">
+                <i class="bi bi-box-arrow-in-right"></i> เช็คอิน (เข้างาน)
+              </button>
+              <button class="btn btn-warning btn-lg" onclick="doCheckOut()">
+                <i class="bi bi-box-arrow-right"></i> เช็คเอาท์ (ออกงาน)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== MY STATS TAB ====== -->
+    <div class="tab-content-area" id="tabMystats" style="display:none;">
+      <h4 class="fw-bold mb-3 fade-in"><i class="bi bi-bar-chart"></i> สถิติของฉัน</h4>
+      <div class="row g-3 mb-3" id="myStatsCards"></div>
+      <div class="card-custom p-3">
+        <h6 class="fw-bold mb-3">ประวัติการเข้างาน</h6>
+        <div class="scroll-table" style="max-height:500px;">
+          <table class="table table-custom table-hover table-sm">
+            <thead>
+              <tr><th>วันที่</th><th>เข้า</th><th>สถานะเข้า</th><th>ออก</th><th>สถานะออก</th><th>ชั่วโมง</th></tr>
+            </thead>
+            <tbody id="myStatsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== EMPLOYEES TAB (Admin) ====== -->
+    <div class="tab-content-area" id="tabEmployees" style="display:none;">
+      <h4 class="fw-bold mb-3 fade-in"><i class="bi bi-people"></i> จัดการพนักงาน</h4>
+      <ul class="nav nav-tabs mb-3" id="empSubTabs">
+        <li class="nav-item"><a class="nav-link active" href="#" onclick="filterEmployees('all')">ทั้งหมด</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="filterEmployees('pending')">รออนุมัติ <span class="badge bg-warning" id="pendingCount2">0</span></a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="filterEmployees('approved')">อนุมัติแล้ว</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="filterEmployees('rejected')">ปฏิเสธ</a></li>
+      </ul>
+      <div class="card-custom p-3">
+        <div class="scroll-table" style="max-height:600px;">
+          <table class="table table-custom table-hover table-sm">
+            <thead>
+              <tr><th>#</th><th>รูป</th><th>ชื่อ</th><th>ชื่อผู้ใช้</th><th>แผนก</th><th>สาขา</th><th>วันลงทะเบียน</th><th>สถานะ</th><th>จัดการ</th></tr>
+            </thead>
+            <tbody id="employeesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== ATTENDANCE REPORT TAB (Admin) ====== -->
+    <div class="tab-content-area" id="tabAttendance" style="display:none;">
+      <h4 class="fw-bold mb-3 fade-in"><i class="bi bi-calendar-check"></i> รายงานการเข้างาน</h4>
+      <div class="row g-2 mb-3 no-print">
+        <div class="col-auto">
+          <input type="date" class="form-control" id="reportDate" onchange="loadAttendanceReport()">
+        </div>
+        <div class="col-auto">
+          <input type="text" class="form-control" id="reportSearch" placeholder="ค้นหาชื่อ..." oninput="filterAttendanceReport()">
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์</button>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-outline-success" onclick="exportCSV()"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</button>
+        </div>
+      </div>
+      <div class="card-custom p-3">
+        <div class="scroll-table" style="max-height:600px;">
+          <table class="table table-custom table-hover table-sm" id="attendanceReportTable">
+            <thead>
+              <tr><th>#</th><th>ชื่อ</th><th>วันที่</th><th>เข้า</th><th>ภาพเข้า</th><th>สถานะ</th><th>ออก</th><th>ภาพออก</th><th>สถานะออก</th><th>เหตุผล</th><th>ชม.</th></tr>
+            </thead>
+            <tbody id="attendanceReportBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== ACTIVITY LOG TAB (Admin) ====== -->
+    <div class="tab-content-area" id="tabActivitylog" style="display:none;">
+      <h4 class="fw-bold mb-3 fade-in"><i class="bi bi-journal-text"></i> บันทึกกิจกรรม</h4>
+      <div class="card-custom p-3">
+        <div class="scroll-table" style="max-height:600px;">
+          <table class="table table-custom table-hover table-sm">
+            <thead>
+              <tr><th>เวลา</th><th>ผู้ใช้</th><th>การกระทำ</th><th>รายละเอียด</th><th>IP</th><th>อุปกรณ์</th></tr>
+            </thead>
+            <tbody id="activityLogTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== SETTINGS TAB ====== -->
+    <div class="tab-content-area" id="tabSettings" style="display:none;">
+      <h4 class="fw-bold mb-3 fade-in"><i class="bi bi-gear"></i> ตั้งค่า</h4>
+      <div class="row g-3">
+        <!-- GAS URL -->
+        <div class="col-lg-6">
+          <div class="card-custom p-3">
+            <h6 class="fw-bold"><i class="bi bi-link-45deg"></i> ตั้งค่า GAS URL</h6>
+            <div class="mb-2">
+              <label class="form-label">Google Apps Script Web App URL</label>
+              <input type="url" class="form-control" id="settingGasUrl" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+            <button class="btn btn-primary-custom btn-sm" onclick="saveGasUrl()">
+              <i class="bi bi-check-lg"></i> บันทึก
+            </button>
+            <button class="btn btn-outline-secondary btn-sm ms-1" onclick="testConnection()">
+              <i class="bi bi-wifi"></i> ทดสอบ
+            </button>
+          </div>
+        </div>
+
+        <!-- Theme -->
+        <div class="col-lg-6">
+          <div class="card-custom p-3">
+            <h6 class="fw-bold"><i class="bi bi-palette"></i> ธีม</h6>
+            <div class="d-flex gap-3 mt-2">
+              <div class="text-center">
+                <div class="theme-btn theme-day active" onclick="setTheme('day')" title="Day"></div>
+                <small class="d-block mt-1">Day</small>
+              </div>
+              <div class="text-center">
+                <div class="theme-btn theme-night" onclick="setTheme('night')" title="Night"></div>
+                <small class="d-block mt-1">Night</small>
+              </div>
+              <div class="text-center">
+                <div class="theme-btn theme-sea" onclick="setTheme('sea')" title="Sea"></div>
+                <small class="d-block mt-1">Sea</small>
+              </div>
+              <div class="text-center">
+                <div class="theme-btn theme-sky" onclick="setTheme('sky')" title="Sky"></div>
+                <small class="d-block mt-1">Sky</small>
+              </div>
+            </div>
+            <div class="mt-3">
+              <label class="form-label">Background Animation</label>
+              <select class="form-select form-select-sm" id="settingBgAnim" onchange="changeBgAnimation(this.value)">
+                <option value="particles">Particles</option>
+                <option value="waves">Waves</option>
+                <option value="bubbles">Bubbles</option>
+                <option value="matrix">Matrix</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Locations (Admin) -->
+        <div class="col-lg-6" id="settingLocations" style="display:none;">
+          <div class="card-custom p-3">
+            <h6 class="fw-bold"><i class="bi bi-geo-alt"></i> ตำแหน่งสาขา</h6>
+            <div class="mb-2">
+              <label class="form-label small">สำนักงานใหญ่</label>
+              <div class="row g-1">
+                <div class="col"><input type="text" class="form-control form-control-sm" id="loc1Lat" value="13.66730" placeholder="Lat"></div>
+                <div class="col"><input type="text" class="form-control form-control-sm" id="loc1Lng" value="100.63500" placeholder="Lng"></div>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">สุขุมวิท101</label>
+              <div class="row g-1">
+                <div class="col"><input type="text" class="form-control form-control-sm" id="loc2Lat" value="13.7200" placeholder="Lat"></div>
+                <div class="col"><input type="text" class="form-control form-control-sm" id="loc2Lng" value="100.6200" placeholder="Lng"></div>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">ชลบุรี</label>
+              <div class="row g-1">
+                <div class="col"><input type="text" class="form-control form-control-sm" id="loc3Lat" value="13.3611" placeholder="Lat"></div>
+                <div class="col"><input type="text" class="form-control form-control-sm" id="loc3Lng" value="100.9" placeholder="Lng"></div>
+              </div>
+            </div>
+            <button class="btn btn-primary-custom btn-sm" onclick="saveLocations()"><i class="bi bi-check-lg"></i> บันทึกตำแหน่ง</button>
+          </div>
+        </div>
+
+        <!-- Report Scheduling (Admin) -->
+        <div class="col-lg-6" id="settingReport" style="display:none;">
+          <div class="card-custom p-3">
+            <h6 class="fw-bold"><i class="bi bi-envelope"></i> รายงานอัตโนมัติ</h6>
+            <div class="mb-2">
+              <label class="form-label">อีเมลรับรายงาน</label>
+              <input type="email" class="form-control form-control-sm" id="reportEmail" placeholder="email@example.com">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">ความถี่</label>
+              <select class="form-select form-select-sm" id="reportFrequency">
+                <option value="daily">รายวัน</option>
+                <option value="weekly">รายสัปดาห์</option>
+                <option value="monthly">รายเดือน</option>
+              </select>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="reportEnabled">
+              <label class="form-check-label">เปิดใช้งาน</label>
+            </div>
+            <button class="btn btn-primary-custom btn-sm" onclick="saveReportSchedule()"><i class="bi bi-check-lg"></i> บันทึก</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<script>
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
+var APP = {
+  GAS_URL: localStorage.getItem('GAS_URL') || 'https://script.google.com/macros/s/AKfycbyIST97Z04G3lwBVSetuVu7EfCW0omhbNK7InJOVhFjV5oK-2im3lpCERou-Am9o8m9xA/exec',
+  currentUser: null,
+  userRole: null,
+  gpsLat: null,
+  gpsLng: null,
+  gpsReady: false,
+  cameraStreams: {},
+  capturedImages: {},
+  allEmployees: [],
+  allAttendance: [],
+  bgAnimType: localStorage.getItem('bgAnim') || 'particles',
+  theme: localStorage.getItem('theme') || 'day',
+  deviceInfo: navigator.userAgent.substring(0, 80),
+  userIP: ''
+};
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
+$(document).ready(function() {
+  setTheme(APP.theme);
+  initBgCanvas();
+  initGPS();
+  fetchUserIP();
+
+  if (APP.GAS_URL) {
+    $('#settingGasUrl').val(APP.GAS_URL);
+  }
+
+  // Update time
+  setInterval(function() {
+    var now = new Date();
+    var hh = String(now.getHours()).padStart(2, '0');
+    var mm = String(now.getMinutes()).padStart(2, '0');
+    var ss = String(now.getSeconds()).padStart(2, '0');
+    $('#checkinCurrentTime').text(hh + ':' + mm + ':' + ss);
+  }, 1000);
+
+  setTimeout(function() {
+    $('#loadingOverlay').fadeOut(400);
+  }, 800);
+});
+
+/* ============================================================
+   FETCH USER IP
+   ============================================================ */
+function fetchUserIP() {
+  $.getJSON('https://api.ipify.org?format=json', function(data) {
+    APP.userIP = data.ip;
+  }).fail(function() { APP.userIP = 'unknown'; });
+}
+
+/* ============================================================
+   GPS
+   ============================================================ */
+function initGPS() {
+  if (!navigator.geolocation) {
+    $('#gpsStatus').text('ไม่รองรับ').removeClass('bg-secondary').addClass('bg-danger');
+    return;
+  }
+  navigator.geolocation.watchPosition(
+    function(pos) {
+      APP.gpsLat = pos.coords.latitude;
+      APP.gpsLng = pos.coords.longitude;
+      APP.gpsReady = true;
+      $('#gpsStatus').text('พร้อม ✓').removeClass('bg-secondary bg-danger').addClass('bg-success');
+      $('#checkinGpsInfo').html(APP.gpsLat.toFixed(5) + ', ' + APP.gpsLng.toFixed(5) +
+        ' <span class="badge bg-success">OK</span>');
+    },
+    function(err) {
+      $('#gpsStatus').text('ผิดพลาด: ' + err.message).removeClass('bg-secondary bg-success').addClass('bg-danger');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+  );
+}
+
+/* ============================================================
+   API CALLS
+   ============================================================ */
+function apiGet(action, params, callback) {
+  if (!APP.GAS_URL) {
+    Swal.fire('แจ้งเตือน', 'กรุณาตั้งค่า GAS URL ก่อน', 'warning');
+    switchTab('settings');
+    return;
+  }
+  var url = APP.GAS_URL + '?action=' + action;
+  if (params) {
+    Object.keys(params).forEach(function(k) {
+      url += '&' + k + '=' + encodeURIComponent(params[k]);
+    });
+  }
+  // Use JSONP to avoid CORS
+  $.ajax({
+    url: url,
+    dataType: 'jsonp',
+    jsonpCallback: 'callback',
+    timeout: 30000,
+    success: function(res) {
+      callback(null, res);
+    },
+    error: function(xhr, status, err) {
+      // Fallback: try fetch with redirect follow
+      fetch(url, { method: 'GET', redirect: 'follow' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { callback(null, data); })
+        .catch(function(e) { callback(e.message || 'Network error'); });
+    }
+  });
+}
+
+function apiPost(action, data, callback) {
+  if (!APP.GAS_URL) {
+    Swal.fire('แจ้งเตือน', 'กรุณาตั้งค่า GAS URL ก่อน', 'warning');
+    switchTab('settings');
+    return;
+  }
+  data.action = action;
+  data.ip = APP.userIP;
+  data.device = APP.deviceInfo;
+
+  fetch(APP.GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data),
+    redirect: 'follow'
+  })
+  .then(function(response) { return response.json(); })
+  .then(function(result) { callback(null, result); })
+  .catch(function(err) {
+    // Try no-cors fallback
+    fetch(APP.GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(data)
+    })
+    .then(function() { callback(null, { success: true, message: 'ส่งข้อมูลสำเร็จ (no-cors)' }); })
+    .catch(function(e) { callback(e.message || 'Network error'); });
+  });
+}
+
+/* ============================================================
+   PAGE NAVIGATION
+   ============================================================ */
+function showPage(pageId) {
+  stopAllCameras();
+  $('.page').removeClass('active');
+  $('#' + pageId).addClass('active');
+}
+
+function switchTab(tabName) {
+  $('.tab-content-area').hide();
+  $('#tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).show().addClass('fade-in');
+  // Update nav active
+  $('.navbar-nav .nav-link').removeClass('active');
+
+  if (tabName === 'dashboard') loadDashboard();
+  else if (tabName === 'employees') loadEmployees();
+  else if (tabName === 'attendance') loadAttendanceReport();
+  else if (tabName === 'mystats') loadMyStats();
+  else if (tabName === 'activitylog') loadActivityLog();
+  else if (tabName === 'checkin') {
+    updateCheckinLocation();
+  }
+}
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+function handleLogin(e) {
+  e.preventDefault();
+  var username = $('#loginUsername').val().trim();
+  var password = $('#loginPassword').val().trim();
+  var location = $('#loginLocation').val();
+
+  if (!username || !password) {
+    Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบ', 'warning');
+    return false;
+  }
+
+  Swal.fire({ title: 'กำลังเข้าสู่ระบบ...', allowOutsideClick: false, didOpen: function() { Swal.showLoading(); }});
+
+  apiPost('login', {
+    username: username,
+    password: password,
+    location: location
+  }, function(err, res) {
+    Swal.close();
+    if (err) { Swal.fire('ผิดพลาด', err, 'error'); return; }
+    if (!res.success) { Swal.fire('ผิดพลาด', res.error, 'error'); return; }
+
+    APP.currentUser = res.user;
+    APP.userRole = res.role;
+    onLoginSuccess();
+  });
+  return false;
+}
+
+function onLoginSuccess() {
+  stopAllCameras();
+  $('#currentUserName').text(APP.currentUser.fullName || APP.currentUser.username);
+
+  if (APP.userRole === 'admin') {
+    $('#navEmployees, #navAttendance, #navActivityLog, #settingLocations, #settingReport').show();
+  } else {
+    $('#navEmployees, #navAttendance, #navActivityLog, #settingLocations, #settingReport').hide();
+  }
+
+  showPage('pageMain');
+  switchTab('dashboard');
+
+  Swal.fire({
+    toast: true, position: 'top-end', icon: 'success',
+    title: 'เข้าสู่ระบบสำเร็จ', showConfirmButton: false, timer: 2000
+  });
+}
+
+function handleLogout() {
+  Swal.fire({
+    title: 'ออกจากระบบ?', icon: 'question',
+    showCancelButton: true, confirmButtonText: 'ออกจากระบบ', cancelButtonText: 'ยกเลิก'
+  }).then(function(result) {
+    if (result.isConfirmed) {
+      stopAllCameras();
+      APP.currentUser = null;
+      APP.userRole = null;
+      $('#loginForm')[0].reset();
+      showPage('pageLogin');
+    }
+  });
+}
+
+/* ============================================================
+   FORGOT PASSWORD
+   ============================================================ */
+function showForgotPassword() {
+  Swal.fire({
+    title: 'ลืมรหัสผ่าน',
+    html: '<input id="fpUser" class="swal2-input" placeholder="ชื่อผู้ใช้">' +
+          '<input id="fpEmail" class="swal2-input" placeholder="อีเมลที่ลงทะเบียน">',
+    confirmButtonText: 'ส่งรหัสผ่านใหม่',
+    showCancelButton: true,
+    cancelButtonText: 'ยกเลิก',
+    preConfirm: function() {
+      var u = document.getElementById('fpUser').value;
+      var e = document.getElementById('fpEmail').value;
+      if (!u || !e) { Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบ'); return false; }
+      return { username: u, email: e };
+    }
+  }).then(function(result) {
+    if (result.isConfirmed) {
+      apiPost('forgotPassword', result.value, function(err, res) {
+        if (err || !res.success) { Swal.fire('ผิดพลาด', (res && res.error) || err, 'error'); }
+        else { Swal.fire('สำเร็จ', res.message, 'success'); }
+      });
+    }
+  });
+}
+
+/* ============================================================
+   REGISTRATION
+   ============================================================ */
+function handleRegister(e) {
+  e.preventDefault();
+
+  var data = {
+    fullName: $('#regFullName').val().trim(),
+    username: $('#regUsername').val().trim(),
+    password: $('#regPassword').val().trim(),
+    email: $('#regEmail').val().trim(),
+    phone: $('#regPhone').val().trim(),
+    department: $('#regDepartment').val().trim(),
+    position: $('#regPosition').val().trim(),
+    location: $('#regLocation').val(),
+    faceImage: APP.capturedImages.register || '',
+    faceData: APP.capturedImages.registerData || ''
+  };
+
+  if (!data.fullName || !data.username || !data.password) {
+    Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลที่จำเป็น', 'warning');
+    return false;
+  }
+
+  Swal.fire({ title: 'กำลังลงทะเบียน...', allowOutsideClick: false, didOpen: function() { Swal.showLoading(); }});
+
+  apiPost('register', data, function(err, res) {
+    Swal.close();
+    if (err) { Swal.fire('ผิดพลาด', err, 'error'); return; }
+    if (!res.success) { Swal.fire('ผิดพลาด', res.error, 'error'); return; }
+
+    Swal.fire('สำเร็จ!', res.message, 'success');
+    stopAllCameras();
+    showPage('pageLogin');
+  });
+  return false;
+}
+
+/* ============================================================
+   CAMERA MANAGEMENT
+   ============================================================ */
+function startCamera(videoId, onSuccess) {
+  var video = document.getElementById(videoId);
+  if (!video) return;
+  var constraints = { video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }, audio: false };
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+      APP.cameraStreams[videoId] = stream;
+      video.srcObject = stream;
+      video.play();
+      if (onSuccess) onSuccess();
+    })
+    .catch(function(err) {
+      Swal.fire('กล้อง', 'ไม่สามารถเปิดกล้องได้: ' + err.message + '\nกรุณาใช้รหัสผ่านแทน', 'warning');
+    });
+}
+
+function stopCamera(videoId) {
+  if (APP.cameraStreams[videoId]) {
+    APP.cameraStreams[videoId].getTracks().forEach(function(t) { t.stop(); });
+    delete APP.cameraStreams[videoId];
+  }
+}
+
+function stopAllCameras() {
+  Object.keys(APP.cameraStreams).forEach(function(k) { stopCamera(k); });
+}
+
+function capturePhoto(videoId, canvasId) {
+  var video = document.getElementById(videoId);
+  var canvas = document.getElementById(canvasId);
+  if (!video || !canvas) return null;
+  canvas.width = video.videoWidth || 320;
+  canvas.height = video.videoHeight || 240;
+  var ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.6);
+}
+
+/* Login Camera */
+function startLoginCamera() {
+  $('#loginCameraBox').show();
+  $('#loginCameraStatus').html('<span class="text-primary"><i class="bi bi-camera-video-fill"></i> กำลังสแกนใบหน้า...</span>');
+  startCamera('loginVideo', function() {
+    // Auto scan simulation (in real app, use face-api.js)
+    // For demo: user clicks login button with face
+  });
+}
+
+/* Register Camera */
+function startRegCamera() {
+  $('#regCameraBox').show();
+  $('#regCameraStatus').html(
+    '<button class="btn btn-success btn-sm" onclick="captureRegPhoto()"><i class="bi bi-camera"></i> ถ่ายภาพ</button>' +
+    ' <button class="btn btn-outline-danger btn-sm" onclick="stopRegCamera()"><i class="bi bi-x"></i> ปิด</button>'
+  );
+  startCamera('regVideo');
+}
+
+function captureRegPhoto() {
+  var dataUrl = capturePhoto('regVideo', 'regCanvas');
+  if (dataUrl) {
+    APP.capturedImages.register = dataUrl;
+    APP.capturedImages.registerData = dataUrl.substring(0, 200); // simplified face data
+    $('#regCapturedImg').attr('src', dataUrl);
+    $('#regCapturedPreview').show();
+    stopCamera('regVideo');
+    $('#regCameraBox').hide();
+    $('#regCameraStatus').html('<span class="text-success"><i class="bi bi-check-circle"></i> ถ่ายภาพแล้ว</span>');
+  }
+}
+
+function stopRegCamera() {
+  stopCamera('regVideo');
+  $('#regCameraBox').hide();
+  $('#regCameraStatus').html(
+    '<button class="btn btn-outline-custom btn-sm" onclick="startRegCamera()"><i class="bi bi-camera-video"></i> เปิดกล้องถ่ายภาพลงทะเบียน</button>'
+  );
+}
+
+/* Checkin Camera */
+function startCheckinCamera() {
+  $('#checkinCameraBox').show();
+  $('#btnStartCheckinCam').hide();
+  $('#btnCaptureCheckin').show();
+  startCamera('checkinVideo');
+}
+
+function captureCheckinPhoto() {
+  var dataUrl = capturePhoto('checkinVideo', 'checkinCanvas');
+  if (dataUrl) {
+    APP.capturedImages.checkin = dataUrl;
+    $('#checkinCapturedImg').attr('src', dataUrl);
+    $('#checkinCapturedPreview').show();
+    Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'ถ่ายภาพสำเร็จ', showConfirmButton: false, timer: 1500 });
+  }
+}
+
+function updateCheckinLocation() {
+  if (APP.currentUser) {
+    var loc = APP.currentUser.location || $('#loginLocation').val();
+    $('#checkinLocationName').text(loc);
+  }
+}
+
+/* ============================================================
+   CHECK-IN / CHECK-OUT
+   ============================================================ */
+function doCheckIn() {
+  if (!APP.currentUser) return;
+  if (!APP.gpsReady) {
+    Swal.fire('แจ้งเตือน', 'กรุณาเปิด GPS และรอจนกว่าจะพร้อม', 'warning');
+    return;
+  }
+
+  // Capture photo if camera is open and not yet captured
+  if (APP.cameraStreams['checkinVideo'] && !APP.capturedImages.checkin) {
+    APP.capturedImages.checkin = capturePhoto('checkinVideo', 'checkinCanvas');
+  }
+
+  Swal.fire({
+    title: 'ยืนยันเช็คอิน?',
+    text: 'ตำแหน่ง: ' + (APP.currentUser.location || $('#loginLocation').val()),
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'เช็คอิน',
+    cancelButtonText: 'ยกเลิก'
+  }).then(function(result) {
+    if (result.isConfirmed) {
+      Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: function() { Swal.showLoading(); }});
+
+      apiPost('checkIn', {
+        employeeId: APP.currentUser.employeeId || '',
+        username: APP.currentUser.username,
+        fullName: APP.currentUser.fullName,
+        lat: APP.gpsLat,
+        lng: APP.gpsLng,
+        location: APP.currentUser.location || $('#loginLocation').val(),
+        faceImage: APP.capturedImages.checkin || ''
+      }, function(err, res) {
+        Swal.close();
+        APP.capturedImages.checkin = null;
+        if (err) { Swal.fire('ผิดพลาด', err, 'error'); return; }
+        if (!res.success) { Swal.fire('ผิดพลาด', res.error, 'error'); return; }
+
+        var icon = res.alreadyCheckedIn ? 'info' : 'success';
+        Swal.fire({
+          icon: icon,
+          title: res.alreadyCheckedIn ? 'เช็คอินซ้ำ' : 'เช็คอินสำเร็จ!',
+          html: res.message + (res.status ? '<br><span class="badge bg-' + (res.status === 'สาย' ? 'warning' : 'success') + '">' + res.status + '</span>' : '')
+        });
+      });
+    }
+  });
+}
+
+function doCheckOut() {
+  if (!APP.currentUser) return;
+  if (!APP.gpsReady) {
+    Swal.fire('แจ้งเตือน', 'กรุณาเปิด GPS', 'warning');
+    return;
+  }
+
+  if (APP.cameraStreams['checkinVideo'] && !APP.capturedImages.checkin) {
+    APP.capturedImages.checkin = capturePhoto('checkinVideo', 'checkinCanvas');
+  }
+
+  // Check if before 17:00 -> need reason
+  var now = new Date();
+  var currentMinutes = now.getHours() * 60 + now.getMinutes();
+  var endMinutes = 17 * 60;
+
+  if (currentMinutes < endMinutes) {
+    Swal.fire({
+      title: 'ออกก่อนเวลา 17:00',
+      input: 'textarea',
+      inputLabel: 'กรุณาระบุเหตุผล',
+      inputPlaceholder: 'เหตุผลที่ออกก่อนเวลา...',
+      inputValidator: function(value) {
+        if (!value) return 'กรุณาระบุเหตุผล';
+      },
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก'
+    }).then(function(result) {
+      if (result.isConfirmed) {
+        processCheckOut(result.value);
+      }
+    });
+  } else {
+    Swal.fire({
+      title: 'ยืนยันเช็คเอาท์?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'เช็คเอาท์',
+      cancelButtonText: 'ยกเลิก'
+    }).then(function(result) {
+      if (result.isConfirmed) {
+        processCheckOut('');
+      }
+    });
+  }
+}
+
+function processCheckOut(reason) {
+  Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: function() { Swal.showLoading(); }});
+
+  apiPost('checkOut', {
+    employeeId: APP.currentUser.employeeId || '',
+    username: APP.currentUser.username,
+    fullName: APP.currentUser.fullName,
+    lat: APP.gpsLat,
+    lng: APP.gpsLng,
+    location: APP.currentUser.location || $('#loginLocation').val(),
+    faceImage: APP.capturedImages.checkin || '',
+    reason: reason
+  }, function(err, res) {
+    Swal.close();
+    APP.capturedImages.checkin = null;
+    if (err) { Swal.fire('ผิดพลาด', err, 'error'); return; }
+    if (!res.success) {
+      if (res.requireReason) {
+        doCheckOut(); // Ask for reason
+        return;
+      }
+      Swal.fire('ผิดพลาด', res.error, 'error');
+      return;
+    }
+    Swal.fire({
+      icon: res.alreadyCheckedOut ? 'info' : 'success',
+      title: 'เช็คเอาท์สำเร็จ!',
+      html: res.message + (res.workHours ? '<br>ทำงาน: ' + res.workHours + ' ชั่วโมง' : '')
+    });
+  });
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function loadDashboard() {
+  apiGet('getDashboard', {}, function(err, res) {
+    if (err || !res.success) return;
+    var d = res.data;
+
+    var statsHtml = '';
+    var stats = [
+      { icon: 'bi-people-fill', color: '#1a73e8', value: d.totalEmployees, label: 'พนักงานทั้งหมด' },
+      { icon: 'bi-box-arrow-in-right', color: '#0f9d58', value: d.todayCheckedIn, label: 'เข้างานวันนี้' },
+      { icon: 'bi-clock-history', color: '#f9ab00', value: d.todayLate, label: 'มาสาย' },
+      { icon: 'bi-x-circle', color: '#ea4335', value: d.todayAbsent, label: 'ขาดงาน' },
+      { icon: 'bi-box-arrow-right', color: '#673ab7', value: d.todayCheckedOut, label: 'เช็คเอาท์แล้ว' },
+      { icon: 'bi-hourglass-split', color: '#ff6f00', value: d.pendingApproval, label: 'รออนุมัติ' }
+    ];
+
+    stats.forEach(function(s) {
+      statsHtml += '<div class="col-6 col-md-4 col-lg-2">' +
+        '<div class="stat-card">' +
+        '<div class="stat-icon" style="color:' + s.color + '"><i class="bi ' + s.icon + '"></i></div>' +
+        '<div class="stat-value" style="color:' + s.color + '">' + s.value + '</div>' +
+        '<div class="stat-label">' + s.label + '</div>' +
+        '</div></div>';
+    });
+    $('#dashboardStats').html(statsHtml);
+
+    // Update pending badge
+    if (d.pendingApproval > 0) {
+      $('#pendingBadge').text(d.pendingApproval).show();
+    } else {
+      $('#pendingBadge').hide();
+    }
+
+    // Today table
+    var tblHtml = '';
+    if (d.todayRecords && d.todayRecords.length > 0) {
+      d.todayRecords.forEach(function(r, idx) {
+        var statusBadge = r.checkInStatus === 'สาย'
+          ? '<span class="badge bg-warning text-dark">สาย</span>'
+          : '<span class="badge bg-success">ปกติ</span>';
+        tblHtml += '<tr>' +
+          '<td>' + (idx + 1) + '</td>' +
+          '<td>' + r.fullName + '</td>' +
+          '<td>' + (r.checkInTime || '-') + '</td>' +
+          '<td>' + statusBadge + '</td>' +
+          '<td>' + (r.checkOutTime || '-') + '</td>' +
+          '<td>' + (r.location || '-') + '</td>' +
+          '</tr>';
+      });
+    } else {
+      tblHtml = '<tr><td colspan="6" class="text-center text-muted">ยังไม่มีข้อมูลวันนี้</td></tr>';
+    }
+    $('#dashTodayTable').html(tblHtml);
+
+    // Weekly chart
+    renderWeeklyChart(d.weeklyData || []);
+  });
+}
+
+function renderWeeklyChart(data) {
+  var ctx = document.getElementById('weeklyChart');
+  if (!ctx) return;
+
+  if (window.weeklyChartInstance) window.weeklyChartInstance.destroy();
+
+  var labels = data.map(function(d) { return d.date; });
+  var onTime = data.map(function(d) { return d.onTime || 0; });
+  var late = data.map(function(d) { return d.late || 0; });
+
+  window.weeklyChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'ตรงเวลา', data: onTime, backgroundColor: 'rgba(15,157,88,0.7)', borderRadius: 6 },
+        { label: 'สาย', data: late, backgroundColor: 'rgba(249,171,0,0.7)', borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+    }
+  });
+}
+
+/* ============================================================
+   MY STATS (Employee)
+   ============================================================ */
+function loadMyStats() {
+  if (!APP.currentUser) return;
+  apiGet('getMyStats', { username: APP.currentUser.username }, function(err, res) {
+    if (err || !res.success) return;
+    var s = res.data;
+
+    var cardsHtml = [
+      { icon: 'bi-calendar-check', color: '#1a73e8', value: s.totalDays, label: 'วันทำงาน' },
+      { icon: 'bi-check-circle', color: '#0f9d58', value: s.onTimeDays, label: 'ตรงเวลา' },
+      { icon: 'bi-clock', color: '#f9ab00', value: s.lateDays, label: 'มาสาย' },
+      { icon: 'bi-arrow-left-circle', color: '#ea4335', value: s.earlyLeaveDays, label: 'ออกก่อน' }
+    ].map(function(c) {
+      return '<div class="col-6 col-md-3"><div class="stat-card">' +
+        '<div class="stat-icon" style="color:' + c.color + '"><i class="bi ' + c.icon + '"></i></div>' +
+        '<div class="stat-value" style="color:' + c.color + '">' + c.value + '</div>' +
+        '<div class="stat-label">' + c.label + '</div></div></div>';
+    }).join('');
+    $('#myStatsCards').html(cardsHtml);
+
+    var tbl = '';
+    (s.records || []).reverse().forEach(function(r) {
+      var ciBadge = r.checkInStatus === 'สาย' ? '<span class="badge bg-warning text-dark">สาย</span>' : '<span class="badge bg-success">ปกติ</span>';
+      var coBadge = r.checkOutStatus === 'ออกก่อนเวลา' ? '<span class="badge bg-danger">ออกก่อน</span>' : (r.checkOutStatus ? '<span class="badge bg-success">ปกติ</span>' : '-');
+      tbl += '<tr><td>' + r.date + '</td><td>' + (r.checkInTime || '-') + '</td><td>' + ciBadge + '</td>' +
+        '<td>' + (r.checkOutTime || '-') + '</td><td>' + coBadge + '</td><td>' + (r.workHours || '-') + '</td></tr>';
+    });
+    if (!tbl) tbl = '<tr><td colspan="6" class="text-center text-muted">ยังไม่มีข้อมูล</td></tr>';
+    $('#myStatsTable').html(tbl);
+  });
+}
+
+/* ============================================================
+   EMPLOYEES MANAGEMENT (Admin)
+   ============================================================ */
+function loadEmployees() {
+  apiGet('getEmployees', {}, function(err, res) {
+    if (err || !res.success) return;
+    APP.allEmployees = res.data || [];
+    filterEmployees('all');
+
+    var pending = APP.allEmployees.filter(function(e) { return e.status === 'pending'; }).length;
+    $('#pendingCount2').text(pending);
+    if (pending > 0) { $('#pendingBadge').text(pending).show(); }
+  });
+}
+
+function filterEmployees(status) {
+  $('#empSubTabs .nav-link').removeClass('active');
+  var filtered = status === 'all' ? APP.allEmployees : APP.allEmployees.filter(function(e) { return e.status === status; });
+
+  var html = '';
+  filtered.forEach(function(emp, idx) {
+    var statusBadge = '';
+    if (emp.status === 'pending') statusBadge = '<span class="badge bg-warning text-dark">รออนุมัติ</span>';
+    else if (emp.status === 'approved') statusBadge = '<span class="badge bg-success">อนุมัติ</span>';
+    else if (emp.status === 'rejected') statusBadge = '<span class="badge bg-danger">ปฏิเสธ</span>';
+
+    var actions = '';
+    if (emp.status === 'pending') {
+      actions = '<button class="btn btn-success btn-sm me-1" onclick="approveEmp(\'' + emp.employeeId + '\')"><i class="bi bi-check"></i></button>' +
+        '<button class="btn btn-danger btn-sm" onclick="rejectEmp(\'' + emp.employeeId + '\')"><i class="bi bi-x"></i></button>';
+    } else {
+      actions = '<button class="btn btn-outline-danger btn-sm" onclick="deleteEmp(\'' + emp.employeeId + '\')"><i class="bi bi-trash"></i></button>';
+    }
+
+    var img = emp.faceImage ? '<img src="' + emp.faceImage + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjIwIiB5PSIyNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSIgZm9udC1zaXplPSIxNCI+PzwvdGV4dD48L3N2Zz4=\'">' : '<i class="bi bi-person-circle fs-4"></i>';
+
+    html += '<tr><td>' + (idx + 1) + '</td><td>' + img + '</td><td>' + emp.fullName + '</td><td>' + emp.username + '</td>' +
+      '<td>' + (emp.department || '-') + '</td><td>' + (emp.location || '-') + '</td><td>' + (emp.registerDate || '-') + '</td>' +
+      '<td>' + statusBadge + '</td><td>' + actions + '</td></tr>';
+  });
+
+  if (!html) html = '<tr><td colspan="9" class="text-center text-muted">ไม่พบข้อมูล</td></tr>';
+  $('#employeesTable').html(html);
+}
+
+function approveEmp(id) {
+  Swal.fire({
+    title: 'อนุมัติพนักงาน?', icon: 'question',
+    showCancelButton: true, confirmButtonText: 'อนุมัติ', cancelButtonText: 'ยกเลิก'
+  }).then(function(result) {
+    if (result.isConfirmed) {
+      apiPost('approveEmployee', { employeeId: id, approvedBy: APP.currentUser.username }, function(err, res) {
+        if (err || !res.success) { Swal.fire('ผิดพลาด', (res && res.error) || err, 'error'); return; }
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+        loadEmployees();
+      });
+    }
+  });
+}
+
+function rejectEmp(id) {
+  Swal.fire({
+    title: 'ปฏิเสธพนักงาน?', icon: 'warning',
+    showCancelButton: true, confirmButtonText: 'ปฏิเสธ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#ea4335'
+  }).then(function(result) {
+    if (result.isConfirmed) {
+      apiPost('rejectEmployee', { employeeId: id, approvedBy: APP.currentUser.username }, function(err, res) {
+        if (err || !res.success) { Swal.fire('ผิดพลาด', (res && res.error) || err, 'error'); return; }
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+        loadEmployees();
+      });
+    }
+  });
+}
+
+function deleteEmp(id) {
+  Swal.fire({
+    title: 'ลบพนักงาน?', text: 'การกระทำนี้ไม่สามารถย้อนกลับได้', icon: 'error',
+    showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#ea4335'
+  }).then(function(result) {
+    if (result.isConfirmed) {
+      apiPost('deleteEmployee', { employeeId: id }, function(err, res) {
+        if (err || !res.success) { Swal.fire('ผิดพลาด', (res && res.error) || err, 'error'); return; }
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+        loadEmployees();
+      });
+    }
+  });
+}
+
+/* ============================================================
+   ATTENDANCE REPORT (Admin)
+   ============================================================ */
+function loadAttendanceReport() {
+  var dateVal = $('#reportDate').val();
+  var params = {};
+  if (dateVal) {
+    var parts = dateVal.split('-');
+    params.date = parts[2] + '/' + parts[1] + '/' + parts[0];
+  }
+
+  apiGet('getAttendance', params, function(err, res) {
+    if (err || !res.success) return;
+    APP.allAttendance = res.data || [];
+    renderAttendanceTable(APP.allAttendance);
+  });
+}
+
+function renderAttendanceTable(data) {
+  var html = '';
+  data.forEach(function(r, idx) {
+    var ciBadge = r.checkInStatus === 'สาย' ? '<span class="badge bg-warning text-dark">สาย</span>' : '<span class="badge bg-success">ปกติ</span>';
+    var coBadge = r.checkOutStatus === 'ออกก่อนเวลา' ? '<span class="badge bg-danger">ออกก่อน</span>' : (r.checkOutStatus ? '<span class="badge bg-success">ปกติ</span>' : '-');
+    var ciImg = r.checkInImage ? '<img src="' + r.checkInImage + '" style="width:35px;height:35px;border-radius:50%;object-fit:cover;" onerror="this.style.display=\'none\'">' : '-';
+    var coImg = r.checkOutImage ? '<img src="' + r.checkOutImage + '" style="width:35px;height:35px;border-radius:50%;object-fit:cover;" onerror="this.style.display=\'none\'">' : '-';
+
+    html += '<tr><td>' + (idx + 1) + '</td><td>' + r.fullName + '</td><td>' + r.date + '</td>' +
+      '<td>' + (r.checkInTime || '-') + '</td><td>' + ciImg + '</td><td>' + ciBadge + '</td>' +
+      '<td>' + (r.checkOutTime || '-') + '</td><td>' + coImg + '</td><td>' + coBadge + '</td>' +
+      '<td>' + (r.checkOutReason || '-') + '</td><td>' + (r.workHours || '-') + '</td></tr>';
+  });
+  if (!html) html = '<tr><td colspan="11" class="text-center text-muted">ไม่พบข้อมูล</td></tr>';
+  $('#attendanceReportBody').html(html);
+}
+
+function filterAttendanceReport() {
+  var q = $('#reportSearch').val().toLowerCase();
+  var filtered = APP.allAttendance.filter(function(r) {
+    return r.fullName.toLowerCase().indexOf(q) !== -1 || r.username.toLowerCase().indexOf(q) !== -1;
+  });
+  renderAttendanceTable(filtered);
+}
+
+function exportCSV() {
+  var rows = [['#', 'ชื่อ', 'วันที่', 'เวลาเข้า', 'สถานะเข้า', 'เวลาออก', 'สถานะออก', 'เหตุผล', 'ชั่วโมง']];
+  APP.allAttendance.forEach(function(r, i) {
+    rows.push([i + 1, r.fullName, r.date, r.checkInTime || '', r.checkInStatus || '', r.checkOutTime || '', r.checkOutStatus || '', r.checkOutReason || '', r.workHours || '']);
+  });
+  var csvContent = '\ufeff' + rows.map(function(r) { return r.join(','); }).join('\n');
+  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'attendance_report.csv';
+  link.click();
+}
+
+/* ============================================================
+   ACTIVITY LOG (Admin)
+   ============================================================ */
+function loadActivityLog() {
+  apiGet('getActivityLog', { limit: 200 }, function(err, res) {
+    if (err || !res.success) return;
+    var html = '';
+    (res.data || []).forEach(function(log) {
+      html += '<tr><td class="small">' + log.timestamp + '</td><td>' + log.username + '</td>' +
+        '<td><span class="badge bg-info text-dark">' + log.action + '</span></td>' +
+        '<td class="small">' + log.details + '</td><td class="small">' + (log.ip || '-') + '</td>' +
+        '<td class="small">' + (log.device || '-').substring(0, 30) + '</td></tr>';
+    });
+    if (!html) html = '<tr><td colspan="6" class="text-center text-muted">ไม่มีบันทึก</td></tr>';
+    $('#activityLogTable').html(html);
+  });
+}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function saveGasUrl() {
+  var url = $('#settingGasUrl').val().trim();
+  if (!url) { Swal.fire('แจ้งเตือน', 'กรุณากรอก URL', 'warning'); return; }
+  APP.GAS_URL = url;
+  localStorage.setItem('GAS_URL', url);
+  Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'บันทึก GAS URL สำเร็จ', showConfirmButton: false, timer: 2000 });
+}
+
+function testConnection() {
+  if (!APP.GAS_URL) { Swal.fire('แจ้งเตือน', 'กรุณาตั้งค่า GAS URL ก่อน', 'warning'); return; }
+  Swal.fire({ title: 'กำลังทดสอบ...', allowOutsideClick: false, didOpen: function() { Swal.showLoading(); }});
+  apiGet('ping', {}, function(err, res) {
+    Swal.close();
+    if (err) { Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อได้: ' + err, 'error'); return; }
+    if (res.success) {
+      Swal.fire('สำเร็จ!', 'เชื่อมต่อ GAS สำเร็จ\n' + (res.timestamp || ''), 'success');
+    } else {
+      Swal.fire('ผิดพลาด', res.error || 'ไม่ทราบข้อผิดพลาด', 'error');
+    }
+  });
+}
+
+function saveLocations() {
+  var settings = {
+    'loc_main_lat': $('#loc1Lat').val(),
+    'loc_main_lng': $('#loc1Lng').val(),
+    'loc_sukhumvit_lat': $('#loc2Lat').val(),
+    'loc_sukhumvit_lng': $('#loc2Lng').val(),
+    'loc_chonburi_lat': $('#loc3Lat').val(),
+    'loc_chonburi_lng': $('#loc3Lng').val()
+  };
+  apiPost('updateSettings', { settings: settings, updatedBy: APP.currentUser ? APP.currentUser.username : 'admin' }, function(err, res) {
+    if (err || !res.success) { Swal.fire('ผิดพลาด', (res && res.error) || err, 'error'); return; }
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'บันทึกตำแหน่งสำเร็จ', showConfirmButton: false, timer: 2000 });
+  });
+}
+
+function saveReportSchedule() {
+  apiPost('saveReportSchedule', {
+    email: $('#reportEmail').val(),
+    frequency: $('#reportFrequency').val(),
+    enabled: $('#reportEnabled').prop('checked'),
+    updatedBy: APP.currentUser ? APP.currentUser.username : 'admin'
+  }, function(err, res) {
+    if (err || !res.success) { Swal.fire('ผิดพลาด', (res && res.error) || err, 'error'); return; }
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+  });
+}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function setTheme(theme) {
+  APP.theme = theme;
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  $('.theme-btn').removeClass('active');
+  $('.theme-' + theme).addClass('active');
+  initBgCanvas();
+}
+
+function togglePassword(inputId, btn) {
+  var input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    $(btn).find('i').removeClass('bi-eye').addClass('bi-eye-slash');
+  } else {
+    input.type = 'password';
+    $(btn).find('i').removeClass('bi-eye-slash').addClass('bi-eye');
+  }
+}
+
+/* ============================================================
+   CANVAS ANIMATION BACKGROUND
+   ============================================================ */
+var bgAnimFrame;
+function initBgCanvas() {
+  var canvas = document.getElementById('bgCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  if (bgAnimFrame) cancelAnimationFrame(bgAnimFrame);
+
+  var type = APP.bgAnimType;
+
+  if (type === 'none') { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+
+  var particles = [];
+  var particleCount = type === 'matrix' ? 60 : (type === 'bubbles' ? 30 : 50);
+
+  for (var i = 0; i < particleCount; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * (type === 'matrix' ? 0.2 : 1),
+      vy: type === 'matrix' ? Math.random() * 2 + 0.5 : (type === 'bubbles' ? -(Math.random() * 1 + 0.3) : (Math.random() - 0.5) * 1),
+      radius: type === 'bubbles' ? Math.random() * 15 + 5 : Math.random() * 3 + 1,
+      char: String.fromCharCode(0x30A0 + Math.random() * 96),
+      opacity: Math.random() * 0.5 + 0.2,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+
+  var themeColors = {
+    day: '#1a73e8', night: '#8ab4f8', sea: '#00897b', sky: '#0288d1'
+  };
+  var color = themeColors[APP.theme] || '#1a73e8';
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (type === 'waves') {
+      var time = Date.now() * 0.001;
+      for (var w = 0; w < 3; w++) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.15 - w * 0.04;
+        ctx.lineWidth = 2;
+        for (var x = 0; x < canvas.width; x += 5) {
+          var y = canvas.height * 0.5 + Math.sin(x * 0.01 + time + w) * (40 + w * 20) + Math.cos(x * 0.005 + time * 0.5) * 20;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } else if (type === 'matrix') {
+      particles.forEach(function(p) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = p.opacity;
+        ctx.font = '14px monospace';
+        ctx.fillText(p.char, p.x, p.y);
+        p.y += p.vy;
+        if (p.y > canvas.height) {
+          p.y = -20;
+          p.x = Math.random() * canvas.width;
+          p.char = String.fromCharCode(0x30A0 + Math.random() * 96);
+        }
+      });
+      ctx.globalAlpha = 1;
+    } else if (type === 'bubbles') {
+      particles.forEach(function(p) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = p.opacity;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        p.y += p.vy;
+        p.x += Math.sin(p.phase) * 0.3;
+        p.phase += 0.01;
+        if (p.y < -p.radius * 2) {
+          p.y = canvas.height + p.radius;
+          p.x = Math.random() * canvas.width;
+        }
+      });
+      ctx.globalAlpha = 1;
+    } else {
+      // Particles with connections
+      particles.forEach(function(p) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.4;
+        ctx.fill();
+      });
+
+      // Connections
+      for (var a = 0; a < particles.length; a++) {
+        for (var b = a + 1; b < particles.length; b++) {
+          var dx = particles[a].x - particles[b].x;
+          var dy = particles[a].y - particles[b].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = 0.1 * (1 - dist / 120);
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particles[a].x, particles[a].y);
+            ctx.lineTo(particles[b].x, particles[b].y);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    bgAnimFrame = requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+function changeBgAnimation(type) {
+  APP.bgAnimType = type;
+  localStorage.setItem('bgAnim', type);
+  initBgCanvas();
+}
+
+window.addEventListener('resize', function() {
+  var canvas = document.getElementById('bgCanvas');
+  if (canvas) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+});
+
+/* ============================================================
+   PWA / SERVICE WORKER (basic)
+   ============================================================ */
+if ('serviceWorker' in navigator) {
+  // Minimal SW registration for PWA support
+  // In production, create a separate sw.js file
+}
+
+// Notification permission
+if ('Notification' in window && Notification.permission === 'default') {
+  // Will request when needed
+}
+
+function showNotification(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body: body, icon: '/favicon.ico' });
+  } else if ('Notification' in window && Notification.permission !== 'denied') {
+    Notification.requestPermission().then(function(perm) {
+      if (perm === 'granted') new Notification(title, { body: body });
+    });
+  }
+}
+</script>
+</body>
+</html>
