@@ -6,7 +6,9 @@
 <title>ระบบเข้า-ออก พนักงาน</title>
 <meta name="description" content="Face Scan and GPS - ระบบเข้า-ออกพนักงาน">
 <meta name="theme-color" content="#4361ee">
-<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoi4Lij4Liw4Lia4Lia4LmA4LiC4LmJ4Liy4LmJ4Lit4Lit4LiBIOC4nuC4meC4seC4geC4h-C4suC4mSIsInNob3J0X25hbWUiOiJGYWNlU2NhbiIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsInRoZW1lX2NvbG9yIjoiIzQzNjFlZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjhmOWZhIn0=">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -451,6 +453,16 @@ body {
           <a href="#" class="small text-decoration-none" onclick="showForgotPassword()">
             <i class="bi bi-question-circle"></i> ลืมรหัสผ่าน
           </a>
+        </div>
+        
+        <!-- GAS URL Status -->
+        <div class="mt-3 pt-3 border-top">
+          <div id="gasUrlStatus" class="small text-center"></div>
+          <div class="text-center mt-1">
+            <a href="#" class="small text-decoration-none text-primary" onclick="showGasUrlPrompt()">
+              <i class="bi bi-gear"></i> ตั้งค่า Server URL
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -994,7 +1006,8 @@ function getDeviceInfo() {
 // ===================== API CALLS =====================
 async function apiGet(action, params) {
   if (!APP.gasUrl) {
-    toast('กรุณาตั้งค่า GAS URL ก่อน', 'warning');
+    console.warn('GAS URL not configured');
+    showGasUrlPrompt();
     return null;
   }
   let url = APP.gasUrl + '?action=' + action;
@@ -1005,17 +1018,24 @@ async function apiGet(action, params) {
   }
   try {
     const res = await fetch(url, { redirect: 'follow' });
-    return await res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch(parseErr) {
+      console.error('JSON Parse Error:', parseErr, 'Response:', text.substring(0, 200));
+      return null;
+    }
   } catch (e) {
     console.error('API GET Error:', e);
-    toast('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ', 'error');
+    toast('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ: ' + e.message, 'error');
     return null;
   }
 }
 
 async function apiPost(data) {
   if (!APP.gasUrl) {
-    toast('กรุณาตั้งค่า GAS URL ก่อน', 'warning');
+    console.warn('GAS URL not configured');
+    showGasUrlPrompt();
     return null;
   }
   try {
@@ -1025,12 +1045,46 @@ async function apiPost(data) {
       body: JSON.stringify(data),
       redirect: 'follow'
     });
-    return await res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch(parseErr) {
+      console.error('JSON Parse Error:', parseErr, 'Response:', text.substring(0, 200));
+      return null;
+    }
   } catch (e) {
     console.error('API POST Error:', e);
-    toast('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ', 'error');
+    toast('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ: ' + e.message, 'error');
     return null;
   }
+}
+
+async function showGasUrlPrompt() {
+  const { value: url } = await Swal.fire({
+    title: 'ตั้งค่า GAS URL',
+    html: `<p class="small text-muted">กรุณากรอก URL ของ Google Apps Script Web App</p>
+           <p class="small text-info"><i class="bi bi-info-circle"></i> ได้จากการ Deploy > Deploy as web app</p>`,
+    input: 'url',
+    inputLabel: 'Google Apps Script URL',
+    inputPlaceholder: 'https://script.google.com/macros/s/xxxxx/exec',
+    inputValue: APP.gasUrl || '',
+    showCancelButton: true,
+    confirmButtonText: 'บันทึก',
+    cancelButtonText: 'ยกเลิก',
+    inputValidator: (value) => {
+      if (!value) return 'กรุณากรอก URL';
+      if (!value.includes('script.google.com')) return 'URL ไม่ถูกต้อง';
+    }
+  });
+  if (url) {
+    APP.gasUrl = url;
+    localStorage.setItem('gasUrl', url);
+    $('#settingsGasUrl').val(url);
+    updateGasUrlStatus();
+    toast('บันทึก GAS URL สำเร็จ', 'success');
+    return true;
+  }
+  return false;
 }
 
 // ===================== GPS =====================
@@ -1142,10 +1196,15 @@ async function startLoginFaceScan() {
     return;
   }
 
-  // Load face data
-  const result = await apiPost({ action: 'scanLogin' });
-  if (result && result.success) {
-    APP.allFaceDescriptors = result.data || [];
+  // Load face data - only if GAS URL is configured
+  if (APP.gasUrl) {
+    const result = await apiPost({ action: 'scanLogin' });
+    if (result && result.success) {
+      APP.allFaceDescriptors = result.data || [];
+      console.log('Loaded', APP.allFaceDescriptors.length, 'face descriptors');
+    }
+  } else {
+    $('#loginFaceStatus').html('<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> ยังไม่ได้ตั้งค่า GAS URL</span>');
   }
 
   loginScanInterval = setInterval(async () => {
@@ -1190,6 +1249,13 @@ async function startLoginFaceScan() {
 
 async function confirmCheckIn() {
   if (!APP.matchedEmployee) return;
+  
+  // Check if GAS URL is configured
+  if (!APP.gasUrl) {
+    const configured = await showGasUrlPrompt();
+    if (!configured) return;
+  }
+  
   const branch = $('#loginBranch').val();
   showLoading('กำลังบันทึกเข้างาน...');
 
@@ -1220,6 +1286,13 @@ async function confirmCheckIn() {
 
 async function confirmCheckOut() {
   if (!APP.matchedEmployee) return;
+  
+  // Check if GAS URL is configured
+  if (!APP.gasUrl) {
+    const configured = await showGasUrlPrompt();
+    if (!configured) return;
+  }
+  
   const branch = $('#loginBranch').val();
 
   // Check if early checkout
@@ -1327,6 +1400,12 @@ async function handleRegister() {
     return;
   }
 
+  // Check if GAS URL is configured
+  if (!APP.gasUrl) {
+    const configured = await showGasUrlPrompt();
+    if (!configured) return;
+  }
+
   const confirmed = await Swal.fire({
     title: 'ยืนยันการลงทะเบียน?',
     html: `ชื่อ: <b>${fullName}</b><br>ผู้ใช้: <b>${username}</b><br>สาขา: <b>${branch}</b>`,
@@ -1369,6 +1448,12 @@ async function handleLogin() {
   if (!username || !password) {
     toast('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน', 'warning');
     return;
+  }
+
+  // Check if GAS URL is configured
+  if (!APP.gasUrl) {
+    const configured = await showGasUrlPrompt();
+    if (!configured) return;
   }
 
   showLoading('กำลังเข้าสู่ระบบ...');
@@ -1903,6 +1988,15 @@ async function sendEmailReport() {
 }
 
 // ===================== SETTINGS =====================
+function updateGasUrlStatus() {
+  const statusEl = $('#gasUrlStatus');
+  if (APP.gasUrl) {
+    statusEl.html('<span class="text-success"><i class="bi bi-check-circle-fill"></i> เชื่อมต่อ Server แล้ว</span>');
+  } else {
+    statusEl.html('<span class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> ยังไม่ได้ตั้งค่า Server URL</span>');
+  }
+}
+
 function saveGasUrl() {
   const url = $('#settingsGasUrl').val().trim();
   if (!url) {
@@ -1911,6 +2005,7 @@ function saveGasUrl() {
   }
   APP.gasUrl = url;
   localStorage.setItem('gasUrl', url);
+  updateGasUrlStatus();
   toast('บันทึก GAS URL สำเร็จ', 'success');
 }
 
@@ -2167,7 +2262,8 @@ $(document).ready(function() {
   // Init GPS
   initGPS();
 
-  // Load saved GAS URL
+  // Load saved GAS URL and update status
+  updateGasUrlStatus();
   if (APP.gasUrl) {
     $('#settingsGasUrl').val(APP.gasUrl);
   }
@@ -2205,15 +2301,10 @@ $(document).ready(function() {
   });
 });
 
-// PWA Service Worker Registration
-if ('serviceWorker' in navigator) {
-  // Minimal inline SW not needed for single file, but we set up the manifest
-  console.log('PWA ready');
-}
-
-// Notification permission
+// Notification permission (optional)
 if ('Notification' in window && Notification.permission === 'default') {
-  Notification.requestPermission();
+  // Don't auto-request, wait for user action
+  console.log('Notification permission available');
 }
 </script>
 </body>
