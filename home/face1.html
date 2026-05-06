@@ -295,13 +295,50 @@ body { padding-bottom: 70px; }
         <div class="camera-overlay"></div>
         <div class="scan-status" id="loginScanStatus"><i class="bi bi-camera"></i> กำลังสแกนใบหน้า...</div>
       </div>
+      
+      <!-- ปุ่มถ่ายภาพเพื่อจับคู่ใบหน้า -->
+      <div class="d-flex gap-2 justify-content-center mb-2">
+        <button class="btn btn-outline-primary btn-sm" onclick="startLoginCamera()">
+          <i class="bi bi-camera-video"></i> เปิดกล้อง
+        </button>
+        <button class="btn btn-primary" onclick="captureAndMatchFace()" id="btnCaptureFace">
+          <i class="bi bi-person-bounding-box"></i> ถ่ายภาพเพื่อจับคู่ใบหน้า
+        </button>
+      </div>
+      
+      <!-- เลือกสถานที่ทำงาน -->
+      <div class="mb-2">
+        <select class="form-select form-select-sm" id="loginFaceLocation">
+          <option value="สำนักงานใหญ่">📍 สำนักงานใหญ่</option>
+          <option value="สุขุมวิท101">📍 สุขุมวิท101</option>
+          <option value="ชลบุรี">📍 ชลบุรี</option>
+        </select>
+      </div>
+      
       <div class="text-center">
         <span id="loginGpsStatus" class="gps-indicator gps-loading"><i class="bi bi-geo-alt"></i> ตรวจสอบตำแหน่ง...</span>
       </div>
+      
+      <!-- แสดงภาพที่ถ่าย -->
+      <div class="text-center mt-2" id="loginPreview" style="display:none;">
+        <img id="loginPreviewImg" style="max-width:120px;border-radius:12px;border:2px solid var(--primary);">
+        <p class="text-primary mt-1 mb-0" style="font-size:0.8rem;"><i class="bi bi-check-circle"></i> ถ่ายภาพแล้ว</p>
+      </div>
+      
+      <!-- ข้อมูลเมื่อจับคู่ใบหน้าสำเร็จ -->
       <div class="text-center mt-2" id="faceMatchInfo" style="display:none;">
-        <div class="alert alert-success py-2 mb-2"><i class="bi bi-check-circle"></i> <span id="matchedName"></span></div>
-        <button class="btn btn-success btn-sm me-1" onclick="confirmFaceCheckIn()"><i class="bi bi-box-arrow-in-right"></i> บันทึกเข้างาน</button>
-        <button class="btn btn-warning btn-sm" onclick="confirmFaceCheckOut()"><i class="bi bi-box-arrow-right"></i> บันทึกออกงาน</button>
+        <div class="alert alert-success py-2 mb-2">
+          <i class="bi bi-check-circle-fill"></i> ยืนยันตัวตนสำเร็จ!<br>
+          <strong><span id="matchedName"></span></strong>
+        </div>
+        <div class="d-flex gap-2 justify-content-center">
+          <button class="btn btn-success" onclick="confirmFaceCheckIn()">
+            <i class="bi bi-box-arrow-in-right"></i> บันทึกเข้างาน
+          </button>
+          <button class="btn btn-warning" onclick="confirmFaceCheckOut()">
+            <i class="bi bi-box-arrow-right"></i> บันทึกออกงาน
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1118,47 +1155,109 @@ async function loadFaceDataForMatching() {
   }
 }
 
-function matchFaceFromLogin() {
-  // Capture current frame
-  const img = captureFrame('loginVideo', 'loginCanvas');
-  if (!img) return;
+// ฟังก์ชันหลัก: ถ่ายภาพเพื่อจับคู่ใบหน้า
+async function captureAndMatchFace() {
+  // ตรวจสอบว่ากล้องเปิดอยู่หรือไม่
+  const video = document.getElementById('loginVideo');
+  if (!video || !video.srcObject) {
+    showToast('กรุณาเปิดกล้องก่อน', 'warning');
+    startLoginCamera();
+    return;
+  }
 
-  // Simple approach: capture and let user confirm match
-  // Real face-api.js integration would go here
+  // ถ่ายภาพ
+  const img = captureFrame('loginVideo', 'loginCanvas');
+  if (!img) {
+    showToast('ไม่สามารถถ่ายภาพได้ กรุณาลองใหม่', 'error');
+    return;
+  }
+
   APP.capturedImage = img;
+  
+  // แสดงภาพที่ถ่าย
+  $('#loginPreview').show();
+  $('#loginPreviewImg').attr('src', img);
+  document.getElementById('loginScanStatus').innerHTML = '<i class="bi bi-check-circle text-success"></i> ถ่ายภาพแล้ว';
+
+  // โหลดข้อมูลใบหน้าจากระบบถ้ายังไม่มี
+  if (APP.faceDataCache.length === 0) {
+    showLoading();
+    await loadFaceDataForMatching();
+    hideLoading();
+  }
 
   if (APP.faceDataCache.length > 0) {
-    // Show user selection for face match
+    // แสดงรายชื่อให้เลือกยืนยันตัวตน
     let options = {};
-    APP.faceDataCache.forEach(f => { options[f.username] = f.fullName + ' (' + f.username + ')'; });
+    APP.faceDataCache.forEach(f => { 
+      options[f.username] = f.fullName + ' (' + f.username + ')'; 
+    });
 
-    Swal.fire({
-      title: 'เลือกตัวตน',
-      text: 'ระบบตรวจพบใบหน้า กรุณายืนยันตัวตน',
+    const { value: selectedUser, isConfirmed } = await Swal.fire({
+      title: '<i class="bi bi-person-check"></i> ยืนยันตัวตน',
+      html: '<p class="mb-2">ระบบตรวจพบใบหน้า กรุณาเลือกชื่อของคุณ</p>',
       input: 'select',
       inputOptions: options,
-      inputPlaceholder: 'เลือกชื่อของคุณ',
+      inputPlaceholder: '-- เลือกชื่อของคุณ --',
       showCancelButton: true,
-      confirmButtonText: 'ยืนยัน',
-      cancelButtonText: 'ยกเลิก'
-    }).then(result => {
-      if (result.isConfirmed && result.value) {
-        const matched = APP.faceDataCache.find(f => f.username === result.value);
-        if (matched) {
-          $('#faceMatchInfo').show();
-          $('#matchedName').text(matched.fullName + ' (' + matched.username + ')');
-          APP.matchedUser = matched;
-        }
+      confirmButtonText: '<i class="bi bi-check-lg"></i> ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#06d6a0',
+      inputValidator: (value) => {
+        if (!value) return 'กรุณาเลือกชื่อของคุณ';
       }
     });
+
+    if (isConfirmed && selectedUser) {
+      const matched = APP.faceDataCache.find(f => f.username === selectedUser);
+      if (matched) {
+        APP.matchedUser = matched;
+        APP.matchedUser.location = $('#loginFaceLocation').val(); // ใช้สถานที่ที่เลือก
+        
+        // แสดงข้อมูลการจับคู่สำเร็จ
+        $('#faceMatchInfo').show();
+        $('#matchedName').text(matched.fullName);
+        
+        showToast('ยืนยันตัวตนสำเร็จ! เลือกบันทึกเข้าหรือออกงาน', 'success');
+      }
+    }
   } else {
-    showToast('ยังไม่มีข้อมูลใบหน้าในระบบ', 'info');
+    Swal.fire({
+      icon: 'info',
+      title: 'ยังไม่มีข้อมูลใบหน้าในระบบ',
+      html: 'กรุณา<b>ลงทะเบียน</b>ก่อนใช้งานการสแกนใบหน้า<br>หรือใช้วิธีเข้าสู่ระบบด้วยรหัสผ่าน',
+      confirmButtonText: 'ตกลง'
+    });
   }
+}
+
+function matchFaceFromLogin() {
+  // เรียกใช้ฟังก์ชันใหม่
+  captureAndMatchFace();
 }
 
 // Face check-in from login page
 async function confirmFaceCheckIn() {
-  if (!APP.matchedUser) return;
+  if (!APP.matchedUser) {
+    showToast('กรุณาถ่ายภาพและยืนยันตัวตนก่อน', 'warning');
+    return;
+  }
+  
+  // ตรวจสอบ GPS
+  if (!APP.gpsReady) {
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: 'ไม่สามารถตรวจสอบตำแหน่งได้',
+      text: 'ต้องการดำเนินการต่อโดยไม่ตรวจสอบตำแหน่งหรือไม่?',
+      showCancelButton: true,
+      confirmButtonText: 'ดำเนินการต่อ',
+      cancelButtonText: 'ยกเลิก'
+    });
+    if (!confirm.isConfirmed) return;
+  }
+
+  const selectedLocation = $('#loginFaceLocation').val();
+  
   showLoading();
   const result = await apiPost({
     action: 'faceScanLogin',
@@ -1173,7 +1272,7 @@ async function confirmFaceCheckIn() {
       employeeId: result.employee.id,
       username: result.employee.username,
       fullName: result.employee.fullName,
-      location: result.employee.location,
+      location: selectedLocation,
       lat: APP.currentGPS.lat,
       lng: APP.currentGPS.lng,
       faceImage: APP.capturedImage,
@@ -1181,11 +1280,31 @@ async function confirmFaceCheckIn() {
     });
     hideLoading();
     if (checkResult && checkResult.success) {
-      Swal.fire({ icon: 'success', title: 'เข้างานสำเร็จ!', text: checkResult.message, timer: 3000 });
+      Swal.fire({ 
+        icon: 'success', 
+        title: '🎉 เข้างานสำเร็จ!', 
+        html: `<b>${result.employee.fullName}</b><br>${checkResult.message}<br><small>สถานที่: ${selectedLocation}</small>`,
+        timer: 4000,
+        timerProgressBar: true
+      });
+      result.employee.location = selectedLocation;
       loginSuccess(result.employee, false);
     } else {
-      Swal.fire({ icon: checkResult && checkResult.alreadyCheckedIn ? 'info' : 'error', title: checkResult ? checkResult.error : 'เกิดข้อผิดพลาด' });
-      if (checkResult && checkResult.alreadyCheckedIn) loginSuccess(result.employee, false);
+      if (checkResult && checkResult.alreadyCheckedIn) {
+        Swal.fire({ 
+          icon: 'info', 
+          title: 'ลงเวลาแล้ว', 
+          text: checkResult.error 
+        });
+        result.employee.location = selectedLocation;
+        loginSuccess(result.employee, false);
+      } else {
+        Swal.fire({ 
+          icon: 'error', 
+          title: 'เกิดข้อผิดพลาด', 
+          text: checkResult ? checkResult.error : 'ไม่สามารถเชื่อมต่อได้' 
+        });
+      }
     }
   } else {
     hideLoading();
@@ -1194,7 +1313,10 @@ async function confirmFaceCheckIn() {
 }
 
 async function confirmFaceCheckOut() {
-  if (!APP.matchedUser) return;
+  if (!APP.matchedUser) {
+    showToast('กรุณาถ่ายภาพและยืนยันตัวตนก่อน', 'warning');
+    return;
+  }
 
   // Check if early leave
   const now = getTZ7Now();
@@ -1203,18 +1325,33 @@ async function confirmFaceCheckOut() {
 
   if (totalMin < 17 * 60) {
     const { value } = await Swal.fire({
-      title: 'ออกก่อนเวลา',
-      text: 'กรุณาระบุเหตุผลการออกก่อน 17:00',
+      title: '<i class="bi bi-clock text-warning"></i> ออกก่อนเวลา 17:00',
+      html: 'กรุณาระบุเหตุผลการออกก่อนเวลา',
       input: 'textarea',
-      inputPlaceholder: 'เหตุผล...',
+      inputPlaceholder: 'เหตุผล เช่น ธุระส่วนตัว, ไม่สบาย...',
       showCancelButton: true,
-      confirmButtonText: 'ยืนยัน',
+      confirmButtonText: '<i class="bi bi-check-lg"></i> ยืนยัน',
       cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ffc107',
       inputValidator: v => { if (!v) return 'กรุณาระบุเหตุผล'; }
     });
     if (!value) return;
     reason = value;
+  } else {
+    // ยืนยันก่อนออกงาน
+    const confirm = await Swal.fire({
+      title: 'ยืนยันการออกงาน?',
+      html: `<b>${APP.matchedUser.fullName}</b><br>เวลา: ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '<i class="bi bi-box-arrow-right"></i> ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ffc107'
+    });
+    if (!confirm.isConfirmed) return;
   }
+
+  const selectedLocation = $('#loginFaceLocation').val();
 
   showLoading();
   const loginResult = await apiPost({
@@ -1228,7 +1365,7 @@ async function confirmFaceCheckOut() {
       action: 'checkOut',
       username: loginResult.employee.username,
       fullName: loginResult.employee.fullName,
-      location: loginResult.employee.location,
+      location: selectedLocation,
       lat: APP.currentGPS.lat,
       lng: APP.currentGPS.lng,
       faceImage: APP.capturedImage,
@@ -1237,10 +1374,21 @@ async function confirmFaceCheckOut() {
     });
     hideLoading();
     if (checkResult && checkResult.success) {
-      Swal.fire({ icon: 'success', title: 'ออกงานสำเร็จ!', text: checkResult.message, timer: 3000 });
+      Swal.fire({ 
+        icon: 'success', 
+        title: '👋 ออกงานสำเร็จ!', 
+        html: `<b>${loginResult.employee.fullName}</b><br>${checkResult.message}`,
+        timer: 4000,
+        timerProgressBar: true
+      });
+      loginResult.employee.location = selectedLocation;
       loginSuccess(loginResult.employee, false);
     } else {
-      showToast(checkResult ? checkResult.error : 'เกิดข้อผิดพลาด', 'error');
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: checkResult ? checkResult.error : 'ไม่สามารถเชื่อมต่อได้'
+      });
     }
   } else {
     hideLoading();
