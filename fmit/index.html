@@ -1,0 +1,46 @@
+จะต้อง prompts ว่าอย่างไร ถึงจะได้ระบบที่ทำงานได้สมบูรณ์
+
+-----
+ต้องการพัฒนาระบบ กรอกเอกสาร มีส่วนต่อประสานผู้ใช้ (UI/UX) ที่ทันสมัยและใช้งานง่าย ที่พัฒนาบน Google Apps Script (GAS) และ HTML ในรูปแบบ Webapp
+
+**1. หน้าหลัก (Main Page):**
+   - แสดงรายการใบสั่งสินค้าทั้งหมดในรูปแบบของตาราง (DataTable) ที่สามารถค้นหาและจัดเรียงข้อมูลได้
+   - ตารางประกอบด้วยคอลัมน์: No., ใบสั่งสินค้า, ใบสั่งงาน, ชื่องาน, ชื่อลูกค้า, สถานะ, วันที่สั่งงาน, รายการ, File1, File2, File3, File4, View, แก้ไข, ลบ with Password
+   - มีปุ่มสำหรับ "บันทึกข้อมูล" เพื่อสร้างใบสั่งสินค้าใหม่
+
+**2. แบบฟอร์มบันทึกและแก้ไขข้อมูล (Data Form):**
+   - ใช้แบบฟอร์มเดียวกันทั้งสำหรับการสร้างใหม่และแก้ไขข้อมูลเดิม
+   - ประกอบด้วยช่องสำหรับกรอกข้อมูล:
+   -- [ส่วนท้าย] มีช่องสำหรับอัปโหลดไฟล์แนบ 4 ไฟล์ (File1 - File4)
+
+**เทคโนโลยีและข้อกำหนดเพิ่มเติม:**
+- Backend: Google Apps Script
+- Frontend: HTML, CSS, JavaScript (ใช้ไลบรารี DataTable สำหรับการแสดงตาราง )
+- Database: Google Sheets
+-----
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>IT Management System</title>
+
+  <base target="_top">
+    <style>
+      iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    </style>
+  </head>
+<body>
+  <iframe src="https://script.google.com/macros/s/AKfycbwCpHZcVKYhIxTWfrC_4c_-PtaIpaunzyn-8EZNixayQtOZ5e-FJVDar-fybYTBk7E/exec"></iframe>
+</body>
+</html>
