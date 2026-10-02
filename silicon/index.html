@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบสแกน ซิลิโคน2</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.0.1/html5-qrcode.min.js"
+    integrity="sha512-JXdlXFkKGAhP2yUubNT7hXNjEtPrAJz1Gs7oztdP47KhqL5ux88uof5FnIm2D0Ud/TdqiAe1mM1179kJDy/HKA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+    integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <style>
+    @import url(https://fonts.googleapis.com/css?family=Sarabun);
+    body { font-family: Sarabun, sans-serif; }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="col-md-8 mx-auto">
+      <div class="container-fluid text-center my-2">
+        <img src="https://lh5.googleusercontent.com/d/1yCn4QI15LHfmvW6dvcR6k026GqplhbQ_" width="100" alt="logo">
+      </div>
+
+      <!-- หน้า 1: สแกน -->
+      <div class="col-md-12 mb-2" id="page1">
+        <div class="col-md-12 mb-2 text-center">
+          <div style="width:100%" id="reader"></div>
+          <div id="camError" class="text-danger small mt-2" style="display:none"></div>
+        </div>
+        <div class="col-md-12 mb-2">
+          <input type="file" accept="image/*" class="form-control" name="file" id="file">
+        </div>
+        <div class="col-md-12 mb-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="startCamera()">
+            <i class="fas fa-camera"></i> เปิดกล้องอีกครั้ง
+          </button>
+        </div>
+      </div>
+
+      <!-- หน้า 2: ฟอร์ม -->
+      <div class="col-md-12 mx-auto" id="page2" style="display:none">
+        <form id="myForm">
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label>รหัส</label>
+              <input type="text" class="form-control" name="_code" id="_code" readonly>
+            </div>
+            <div class="col-md-6 mb-2">
+              <label>รับเข้า-ส่งออก</label>
+              <select class="form-control" name="_io" id="_io" required>
+                <option value="" selected disabled hidden>เลือก...</option>
+                <option value="Input">รับเข้า</option>
+                <option value="Output">ส่งออก</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label>จำนวน</label>
+              <input type="number" class="form-control" name="_num" id="_num" required>
+            </div>
+            <div class="col-md-6 mb-2">
+              <label>เอกสารอ้างอิง</label>
+              <input type="text" class="form-control" name="_note" id="_note" required>
+            </div>
+            <div class="col-md-6 mb-2">
+              <label>ผู้ค้า-ลูกค้า</label>
+              <select class="form-control" name="_vc" id="_vc" required>
+                <option value="" selected disabled hidden>เลือก...</option>
+                <option value="Vendor">ผู้ค้า</option>
+                <option value="Customer">ลูกค้า</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-2">
+              <label>รหัส ผู้ค้า-ลูกค้า</label>
+              <input type="text" class="form-control" name="_vcode" id="_vcode">
+            </div>
+            <div class="col-md-6 mb-2">
+              <label>เดือนหมดอายุ</label>
+              <input type="text" class="form-control" name="_xmonth" id="_xmonth" required>
+            </div>
+          </div>
+          <div class="col-md-12 mb-2 mx-auto">
+            <button type="submit" id="btn1" class="btn btn-warning col-12"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
+            <button class="btn btn-warning col-12" id="btn2" type="button" disabled style="display:none">
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> รอสักครู่..
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- หน้า 3: ผลลัพธ์ -->
+      <div id="page3" style="display:none">
+        <div class="bg-warning p-2 text-center mb-2"><b>รายละเอียดข้อมูล</b></div>
+        <table class="table table-striped text-center">
+          <tbody id="tb"></tbody>
+        </table>
+        <button type="button" onclick="location.reload()" class="btn btn-primary text-white col-12">
+          <i class="fa-solid fa-rotate-right"></i> กรอกข้อมูลใหม่
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    // ============ ตั้งค่า ============
+    // ใส่ URL ของ Web App ที่ Deploy จาก Apps Script (ลงท้ายด้วย /exec)
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzKxmwCwxuzmpk6ejVeHvFpzs7PV3kT8JPI9M-k3lZJetm-JDG6AOY_-kR713eJqKqy/exec';
+    // ถ้าตั้ง SECRET ใน Code.gs ให้ใส่ค่าเดียวกันที่นี่ (ไม่ตั้ง = เว้นว่าง)
+    const SECRET = 'sg2026';
+    // =================================
+
+    const html5QrCode = new Html5Qrcode("reader");
+    let scanning = false;
+
+    function showCamError(msg) {
+      const el = document.getElementById('camError');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    async function startCamera() {
+      document.getElementById('camError').style.display = 'none';
+      if (scanning) return;
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          message => { stopCamera().then(() => scanresult(message)); }
+        );
+        scanning = true;
+      } catch (err) {
+        showCamError('เปิดกล้องไม่ได้: ' + err + ' (ตรวจสอบว่าเปิดผ่าน https และอนุญาตการใช้กล้องแล้ว) — หรือใช้ปุ่มเลือกไฟล์ด้านล่างแทน');
+      }
+    }
+
+    async function stopCamera() {
+      if (!scanning) return;
+      try { await html5QrCode.stop(); } catch (e) { }
+      scanning = false;
+    }
+
+    // สแกนจากไฟล์รูป
+    document.getElementById('file').addEventListener('change', async e => {
+      if (e.target.files.length === 0) return;
+      await stopCamera();
+      try {
+        const message = await html5QrCode.scanFile(e.target.files[0], true);
+        scanresult(message);
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'อ่าน QR Code จากรูปไม่ได้', text: String(err) });
+      }
+    });
+
+    function scanresult(message) {
+      const s = message.split(",");
+      const ids = ['_code', '_io', '_num', '_note', '_vc', '_vcode', '_xmonth'];
+      ids.forEach((id, i) => { document.getElementById(id).value = (s[i] || '').trim(); });
+
+      Swal.fire({
+        title: 'รหัส: ' + message,
+        icon: 'warning',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#0d6efd',
+        showClass: { popup: 'animate__animated animate__fadeInDown' },
+        hideClass: { popup: 'animate__animated animate__fadeOutUp' },
+      }).then(result => {
+        if (result.isConfirmed) {
+          document.getElementById('page1').style.display = "none";
+          document.getElementById('page2').style.display = "block";
+        }
+      });
+    }
+
+    // ส่งข้อมูลไป Google Sheet ผ่าน Apps Script
+    document.getElementById('myForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const obj = Object.fromEntries(new FormData(e.target).entries());
+      if (SECRET) obj._secret = SECRET;
+
+      document.getElementById('btn1').style.display = "none";
+      document.getElementById('btn2').style.display = "block";
+
+      try {
+        // ไม่ตั้ง Content-Type เพื่อให้เป็น text/plain (ไม่ต้องทำ preflight CORS)
+        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(obj) });
+        const out = await res.json();
+        if (!out.ok) throw new Error(out.error || 'บันทึกไม่สำเร็จ');
+        success(out);
+      } catch (err) {
+        document.getElementById('btn2').style.display = "none";
+        document.getElementById('btn1').style.display = "block";
+        Swal.fire({ icon: 'error', title: 'บันทึกข้อมูลไม่สำเร็จ', text: String(err) });
+      }
+    });
+
+    function success(output) {
+      document.getElementById('myForm').reset();
+      document.getElementById('page1').style.display = "none";
+      document.getElementById('page2').style.display = "none";
+      document.getElementById('page3').style.display = "block";
+      document.getElementById('btn2').style.display = "none";
+      document.getElementById('btn1').style.display = "block";
+
+      Swal.fire({
+        position: 'top', icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย',
+        showClass: { popup: 'animate__animated animate__fadeInDown' },
+        hideClass: { popup: 'animate__animated animate__fadeOutUp' },
+        showConfirmButton: false, timer: 1500
+      });
+
+      const labels = ['รหัส', 'รับเข้า-ส่งออก', 'จำนวน', 'เอกสารอ้างอิง', 'ผู้ค้า-ลูกค้า', 'รหัส ผู้ค้า-ลูกค้า', 'เดือนหมดอายุ'];
+      const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      document.getElementById('tb').innerHTML = labels
+        .map((l, i) => `<tr><th scope="row">${l}</th><td>${esc(output.data[i + 1])}</td></tr>`)
+        .join('');
+    }
+
+    startCamera();
+  </script>
+</body>
+
+</html>
