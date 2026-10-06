@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ระบบสแกนสต๊อกสินค้า | StockScan</title>
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="StockScan">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<!-- Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+<style>
+:root{
+  --c1:#a5b4fc; --c2:#c4b5fd; --c3:#93c5fd; --c4:#99f6e4; --c5:#fbcfe8;
+  --primary:#6366f1; --primary-dark:#4f46e5; --accent:#8b5cf6;
+  --bg1:#eef2ff; --bg2:#f5f3ff; --text-dark:#312e81;
+  --glass-bg: rgba(255,255,255,.55); --glass-border: rgba(255,255,255,.65);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  font-family:'Sarabun',sans-serif;
+  background: linear-gradient(135deg,var(--bg1),var(--bg2));
+  color:var(--text-dark);
+  min-height:100vh;
+  overflow-x:hidden;
+  padding-bottom:90px;
+}
+#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;}
+
+/* Glassmorphism */
+.glass{
+  background:var(--glass-bg);
+  backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid var(--glass-border);
+  border-radius:24px;
+  box-shadow:0 8px 32px rgba(99,102,241,.15);
+}
+.navbar.glass{border-radius:0 0 24px 24px;}
+.bottom-nav.glass{border-radius:24px 24px 0 0;}
+
+.navbar-brand{font-weight:800;letter-spacing:.5px;}
+.brand-emoji{display:inline-block;animation:float 3s ease-in-out infinite;}
+
+.nav-link-btn{color:#4b5563;border-radius:14px;padding:8px 16px;transition:all .2s;}
+.nav-link-btn:hover{background:rgba(99,102,241,.1);color:var(--primary);}
+.nav-link-btn.active{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;}
+
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+@keyframes pulseBadge{0%{box-shadow:0 0 0 0 rgba(239,68,68,.6);}70%{box-shadow:0 0 0 10px rgba(239,68,68,0);}100%{box-shadow:0 0 0 0 rgba(239,68,68,0);}}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fade-in{animation:fadeSlide .45s ease both;}
+
+.badge-pulse{animation:pulseBadge 1.8s infinite;}
+
+.card-soft{
+  border:none;border-radius:20px;overflow:hidden;
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+.card-soft:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(99,102,241,.2);}
+
+.btn-gradient{
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  border:none;color:#fff;font-weight:600;
+  transition:all .25s ease;
+}
+.btn-gradient:hover{filter:brightness(1.08);color:#fff;transform:translateY(-2px);}
+.btn-gradient:disabled{opacity:.6;}
+
+.stat-card{
+  border-radius:20px;padding:18px;color:#fff;position:relative;overflow:hidden;
+}
+.stat-card .stat-icon{font-size:2rem;opacity:.85;}
+.stat-card h3{font-weight:800;margin:0;}
+.stat-grad-1{background:linear-gradient(135deg,#818cf8,#6366f1);}
+.stat-grad-2{background:linear-gradient(135deg,#34d399,#10b981);}
+.stat-grad-3{background:linear-gradient(135deg,#f472b6,#ec4899);}
+.stat-grad-4{background:linear-gradient(135deg,#fb923c,#f97316);}
+
+#reader{
+  width:100%;border-radius:18px;overflow:hidden;
+  border:3px dashed var(--primary);
+}
+
+.bottom-nav{
+  position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+  width:calc(100% - 24px);max-width:480px;z-index:1030;
+  display:flex;justify-content:space-around;align-items:center;
+  padding:10px 6px;
+}
+.bottom-nav .nav-item-btn{
+  flex:1;text-align:center;color:#6b7280;background:none;border:none;
+  font-size:.75rem;padding:6px 2px;border-radius:14px;transition:all .2s;position:relative;
+}
+.bottom-nav .nav-item-btn i{display:block;font-size:1.3rem;margin-bottom:2px;}
+.bottom-nav .nav-item-btn.active{color:var(--primary);background:rgba(99,102,241,.12);font-weight:700;}
+
+.view-section{display:none;}
+.view-section.active{display:block;}
+
+.table-glass{background:rgba(255,255,255,.5);border-radius:16px;overflow:hidden;}
+.table-glass thead{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;}
+
+.low-stock-row{background:rgba(239,68,68,.08) !important;}
+
+.page-link{color:var(--primary);border-radius:10px !important;margin:0 2px;border:none;background:rgba(255,255,255,.6);}
+.page-item.active .page-link{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;}
+
+.form-control, .form-select{
+  border-radius:14px;background:rgba(255,255,255,.7);border:1px solid rgba(99,102,241,.25);
+}
+.form-control:focus,.form-select:focus{box-shadow:0 0 0 .2rem rgba(99,102,241,.2);border-color:var(--primary);}
+
+#camError{display:none;}
+
+.scan-circle-btn{
+  width:64px;height:64px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.6rem;
+  box-shadow:0 8px 20px rgba(99,102,241,.4);margin:0 auto;cursor:pointer;
+  transition:transform .2s;
+}
+.scan-circle-btn:hover{transform:scale(1.08);}
+
+.detail-table td{padding:10px 8px;}
+.detail-table tr:nth-child(even){background:rgba(99,102,241,.06);}
+
+.install-btn{display:none;}
+
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:rgba(99,102,241,.4);border-radius:10px;}
+
+@media (min-width: 768px){
+  .bottom-nav{display:none !important;}
+  body{padding-bottom:20px;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<!-- Top Navbar -->
+<nav class="navbar navbar-expand-md glass sticky-top px-3 py-2 mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand text-dark" href="#"><span class="brand-emoji">📦</span> StockScan</a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <i class="bi bi-list fs-2"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav mx-auto gap-2">
+        <li class="nav-item"><button class="btn nav-link-btn fw-semibold" data-view="scan"><i class="bi bi-qr-code-scan me-1"></i>สแกน</button></li>
+        <li class="nav-item"><button class="btn nav-link-btn fw-semibold" data-view="history"><i class="bi bi-clock-history me-1"></i>ประวัติ</button></li>
+        <li class="nav-item"><button class="btn nav-link-btn fw-semibold" data-view="stock"><i class="bi bi-boxes me-1"></i>สต็อกคงเหลือ</button></li>
+      </ul>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <button id="installBtn" class="btn btn-sm btn-outline-primary install-btn rounded-pill"><i class="bi bi-download"></i> ติดตั้งแอป</button>
+      <div class="position-relative">
+        <i class="bi bi-bell-fill fs-4 text-primary"></i>
+        <span id="lowStockBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger badge-pulse" style="display:none;">0</span>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container pb-5" style="max-width:900px;">
+
+  <!-- ================= VIEW: SCAN ================= -->
+  <section id="view-scan" class="view-section active fade-in">
+
+    <!-- Page 1: Scanner -->
+    <div id="page1" class="glass p-3 p-md-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-qr-code-scan text-primary"></i> สแกน QR Code สินค้า</h5>
+      <div id="reader"></div>
+      <div id="camError" class="alert alert-warning mt-3 small"></div>
+      <div class="d-flex flex-wrap gap-2 justify-content-center mt-3">
+        <button id="btnRestartCam" class="btn btn-gradient rounded-pill px-4"><i class="bi bi-arrow-repeat"></i> เปิดกล้องอีกครั้ง</button>
+        <label class="btn btn-outline-primary rounded-pill px-4 mb-0">
+          <i class="bi bi-image"></i> เลือกรูปภาพ
+          <input type="file" id="file" accept="image/*" hidden>
+        </label>
+      </div>
+    </div>
+
+    <!-- Page 2: Form -->
+    <div id="page2" class="glass p-3 p-md-4 mb-4 fade-in" style="display:none;">
+      <h5 class="fw-bold mb-3"><i class="bi bi-pencil-square text-primary"></i> กรอกข้อมูลใหม่</h5>
+      <form id="myForm">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">รหัส</label>
+            <input type="text" class="form-control" id="_code" name="_code" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">รับเข้า-ส่งออก</label>
+            <select class="form-select" id="_io" name="_io" required>
+              <option value="">เลือก...</option>
+              <option value="รับเข้า">รับเข้า</option>
+              <option value="ส่งออก">ส่งออก</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">จำนวน</label>
+            <input type="number" class="form-control" id="_num" name="_num" min="0" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">เอกสารอ้างอิง</label>
+            <input type="text" class="form-control" id="_note" name="_note">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">ผู้ค้า-ลูกค้า</label>
+            <select class="form-select" id="_vc" name="_vc">
+              <option value="">เลือก...</option>
+              <option value="ผู้ค้า">ผู้ค้า</option>
+              <option value="ลูกค้า">ลูกค้า</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">รหัส ผู้ค้า-ลูกค้า</label>
+            <input type="text" class="form-control" id="_vcode" name="_vcode">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">เดือนหมดอายุ</label>
+            <input type="month" class="form-control" id="_xmonth" name="_xmonth">
+          </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+          <button type="button" id="btnBackScan" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-arrow-left"></i> สแกนใหม่</button>
+          <button type="submit" id="btn1" class="btn btn-gradient rounded-pill px-4 flex-grow-1"><i class="bi bi-save"></i> บันทึกข้อมูล</button>
+          <button type="button" id="btn2" class="btn btn-gradient rounded-pill px-4 flex-grow-1" style="display:none;" disabled>
+            <span class="spinner-border spinner-border-sm me-1"></span> รอสักครู่..
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Page 3: Success -->
+    <div id="page3" class="glass p-3 p-md-4 mb-4 fade-in" style="display:none;">
+      <div class="text-center mb-3">
+        <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
+        <h5 class="fw-bold mt-2">รายละเอียดข้อมูล</h5>
+      </div>
+      <table class="table detail-table mb-3">
+        <tbody id="tb"></tbody>
+      </table>
+      <div class="d-flex gap-2">
+        <button id="btnScanAgain" class="btn btn-gradient rounded-pill px-4 flex-grow-1"><i class="bi bi-qr-code-scan"></i> สแกนใหม่</button>
+        <button id="btnGoHistory" class="btn btn-outline-primary rounded-pill px-4 flex-grow-1"><i class="bi bi-clock-history"></i> ดูประวัติ</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VIEW: HISTORY ================= -->
+  <section id="view-history" class="view-section fade-in">
+    <div class="glass p-3 p-md-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary"></i> ประวัติการสแกน</h5>
+      <div class="input-group mb-3">
+        <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
+        <input type="text" id="searchHistory" class="form-control" placeholder="ค้นหารหัสสินค้า / เอกสารอ้างอิง / รหัสคู่ค้า...">
+      </div>
+      <div class="table-responsive table-glass">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>#</th><th>วันที่</th><th>รหัส</th><th>ประเภท</th><th>จำนวน</th>
+              <th>เอกสาร</th><th>คู่ค้า</th><th>รหัสคู่ค้า</th><th>หมดอายุ</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="10" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <nav class="mt-3"><ul class="pagination justify-content-center flex-wrap" id="paginationHistory"></ul></nav>
+    </div>
+  </section>
+
+  <!-- ================= VIEW: STOCK ================= -->
+  <section id="view-stock" class="view-section fade-in">
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-grad-1 card-soft">
+          <i class="bi bi-upc-scan stat-icon"></i>
+          <h3 id="statCodes">0</h3><small>รายการสินค้า</small>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-grad-2 card-soft">
+          <i class="bi bi-box-arrow-in-down stat-icon"></i>
+          <h3 id="statIn">0</h3><small>รับเข้ารวม</small>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-grad-3 card-soft">
+          <i class="bi bi-box-arrow-up stat-icon"></i>
+          <h3 id="statOut">0</h3><small>ส่งออกรวม</small>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-grad-4 card-soft">
+          <i class="bi bi-exclamation-triangle stat-icon"></i>
+          <h3 id="statLow">0</h3><small>ใกล้หมด</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass p-3 p-md-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-boxes text-primary"></i> สต็อกคงเหลือ</h5>
+      <div class="input-group mb-3">
+        <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
+        <input type="text" id="searchStock" class="form-control" placeholder="ค้นหารหัสสินค้า...">
+      </div>
+      <div class="table-responsive table-glass">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr><th>รหัสสินค้า</th><th>รับเข้ารวม</th><th>ส่งออกรวม</th><th>คงเหลือ</th><th>สถานะ</th></tr>
+          </thead>
+          <tbody id="stockBody">
+            <tr><td colspan="5" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <nav class="mt-3"><ul class="pagination justify-content-center flex-wrap" id="paginationStock"></ul></nav>
+    </div>
+  </section>
+
+  <footer class="text-center text-muted small py-4">
+    &copy; 2026 StockScan System — Powered by Google Sheets &amp; Apps Script
+  </footer>
+</div>
+
+<!-- Bottom Nav (mobile) -->
+<div class="bottom-nav glass">
+  <button class="nav-item-btn active" data-view="scan"><i class="bi bi-qr-code-scan"></i>สแกน</button>
+  <button class="nav-item-btn" data-view="history"><i class="bi bi-clock-history"></i>ประวัติ</button>
+  <button class="nav-item-btn" data-view="stock"><i class="bi bi-boxes"></i>สต็อก</button>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+/* ============ ตั้งค่า ============ */
+// ใส่ URL ของ Web App ที่ Deploy จาก Apps Script (ลงท้ายด้วย /exec)
+const API_URL = 'https://script.google.com/macros/s/AKfycbw525KTrFvGTogXuP2bGP9XUi6d8pd-9NBYzK5Ic8kyBI8isRyBSL5aMVBt0gFWPRpE/exec';
+// ถ้าตั้ง SECRET ใน Code.gs ให้ใส่ค่าเดียวกันที่นี่ (ไม่ตั้ง = เว้นว่าง)
+const SECRET = 'sg26';
+const PAGE_LIMIT = 8;
+/* ================================= */
+
+const Toast = Swal.mixin({
+  toast:true, position:'top-end', showConfirmButton:false, timer:2200, timerProgressBar:true,
+  showClass:{popup:'animate__animated animate__fadeInDown'},
+  hideClass:{popup:'animate__animated animate__fadeOutUp'}
+});
+
+/* ---------------- Canvas Animated Background ---------------- */
+(function(){
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, blobs = [];
+  const colors = ['#a5b4fc','#c4b5fd','#93c5fd','#99f6e4','#fbcfe8'];
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  function initBlobs(){
+    blobs = [];
+    const count = Math.max(5, Math.floor(W/260));
+    for(let i=0;i<count;i++){
+      blobs.push({
+        x:Math.random()*W, y:Math.random()*H,
+        r:60+Math.random()*120,
+        dx:(Math.random()-.5)*.4, dy:(Math.random()-.5)*.4,
+        color: colors[i % colors.length]
+      });
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    blobs.forEach(b=>{
+      const grad = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r);
+      grad.addColorStop(0, b.color+'aa');
+      grad.addColorStop(1, b.color+'00');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fill();
+      b.x += b.dx; b.y += b.dy;
+      if(b.x < -b.r || b.x > W+b.r) b.dx *= -1;
+      if(b.y < -b.r || b.y > H+b.r) b.dy *= -1;
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', ()=>{ resize(); initBlobs(); });
+  resize(); initBlobs(); draw();
+})();
+
+/* ---------------- Navigation between views ---------------- */
+function showView(view){
+  $('.view-section').removeClass('active');
+  $('#view-'+view).addClass('active');
+  $('.nav-item-btn, .nav-link-btn').removeClass('active');
+  $('.nav-item-btn[data-view="'+view+'"], .nav-link-btn[data-view="'+view+'"]').addClass('active');
+  if(view === 'history') loadHistory(1);
+  if(view === 'stock'){ loadStock(1); loadDashboard(); }
+  const collapse = document.getElementById('navMenu');
+  if(collapse && collapse.classList.contains('show')) bootstrap.Collapse.getOrCreateInstance(collapse).hide();
+}
+$(document).on('click','[data-view]', function(){ showView($(this).data('view')); });
+
+/* ---------------- QR Scanner ---------------- */
+const html5QrCode = new Html5Qrcode("reader");
+let scanning = false;
+
+function showCamError(msg){
+  $('#camError').text(msg).show();
+}
+async function startCamera(){
+  $('#camError').hide();
+  if(scanning) return;
+  try{
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      message => { stopCamera().then(()=> scanresult(message)); }
+    );
+    scanning = true;
+  }catch(err){
+    showCamError('เปิดกล้องไม่ได้: ' + err + ' (ตรวจสอบว่าเปิดผ่าน https และอนุญาตการใช้กล้องแล้ว) — หรือใช้ปุ่มเลือกไฟล์ด้านล่างแทน');
+  }
+}
+async function stopCamera(){
+  if(!scanning) return;
+  try{ await html5QrCode.stop(); }catch(e){}
+  scanning = false;
+}
+$('#btnRestartCam').on('click', startCamera);
+
+$('#file').on('change', async function(e){
+  if(e.target.files.length === 0) return;
+  await stopCamera();
+  try{
+    const message = await html5QrCode.scanFile(e.target.files[0], true);
+    scanresult(message);
+  }catch(err){
+    Swal.fire({icon:'error', title:'อ่าน QR Code จากรูปไม่ได้', text:String(err)});
+  }
+  $(this).val('');
+});
+
+function scanresult(message){
+  const s = message.split(",");
+  const ids = ['_code','_io','_num','_note','_vc','_vcode','_xmonth'];
+  ids.forEach((id,i)=>{ $('#'+id).val((s[i]||'').trim()); });
+  Swal.fire({
+    title: 'รหัส: ' + message,
+    icon: 'warning',
+    confirmButtonText: 'ตกลง',
+    confirmButtonColor: '#6366f1',
+    showClass:{popup:'animate__animated animate__fadeInDown'},
+    hideClass:{popup:'animate__animated animate__fadeOutUp'}
+  }).then(result=>{
+    if(result.isConfirmed){
+      $('#page1').hide();
+      $('#page3').hide();
+      $('#page2').show().addClass('fade-in');
+    }
+  });
+}
+
+$('#btnBackScan').on('click', function(){
+  $('#page2').hide();
+  $('#page1').show();
+  startCamera();
+});
+
+/* ---------------- Submit Form ---------------- */
+$('#myForm').on('submit', async function(e){
+  e.preventDefault();
+  const obj = Object.fromEntries(new FormData(e.target).entries());
+  obj.action = 'insert';
+  if(SECRET) obj._secret = SECRET;
+
+  $('#btn1').hide();
+  $('#btn2').show();
+
+  try{
+    const res = await fetch(API_URL, { method:'POST', body: JSON.stringify(obj) });
+    const out = await res.json();
+    if(!out.ok) throw new Error(out.error || 'บันทึกไม่สำเร็จ');
+    success(out);
+  }catch(err){
+    $('#btn2').hide();
+    $('#btn1').show();
+    Swal.fire({icon:'error', title:'บันทึกข้อมูลไม่สำเร็จ', text:String(err)});
+  }
+});
+
+function success(output){
+  $('#myForm')[0].reset();
+  $('#page1').hide();
+  $('#page2').hide();
+  $('#page3').show().addClass('fade-in');
+  $('#btn2').hide();
+  $('#btn1').show();
+
+  Toast.fire({icon:'success', title:'บันทึกข้อมูลเรียบร้อย'});
+
+  const labels = ['ลำดับ','วันที่บันทึก','รหัส','รับเข้า-ส่งออก','จำนวน','เอกสารอ้างอิง','ผู้ค้า-ลูกค้า','รหัส ผู้ค้า-ลูกค้า','เดือนหมดอายุ'];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let html = '';
+  labels.forEach((l,i)=>{
+    html += `<tr><th>${l}</th><td>${esc(output.data[i])}</td></tr>`;
+  });
+  $('#tb').html(html);
+  loadDashboard();
+}
+
+$('#btnScanAgain').on('click', function(){
+  $('#page3').hide();
+  $('#page1').show();
+  startCamera();
+});
+$('#btnGoHistory').on('click', function(){
+  $('#page3').hide();
+  $('#page1').show();
+  showView('history');
+});
+
+/* ---------------- History (with pagination & search) ---------------- */
+let historySearchTimer;
+$('#searchHistory').on('input', function(){
+  clearTimeout(historySearchTimer);
+  historySearchTimer = setTimeout(()=> loadHistory(1), 400);
+});
+
+async function loadHistory(page){
+  const search = $('#searchHistory').val().trim();
+  $('#historyBody').html('<tr><td colspan="10" class="text-center py-4 text-muted"><div class="spinner-border text-primary"></div></td></tr>');
+  try{
+    const url = `${API_URL}?action=list&page=${page}&limit=${PAGE_LIMIT}&search=${encodeURIComponent(search)}`;
+    const res = await fetch(url);
+    const out = await res.json();
+    if(!out.ok) throw new Error(out.error);
+    renderHistory(out);
+  }catch(err){
+    $('#historyBody').html(`<tr><td colspan="10" class="text-center text-danger py-4">โหลดข้อมูลไม่สำเร็จ: ${String(err)}</td></tr>`);
+  }
+}
+
+function renderHistory(out){
+  if(out.rows.length === 0){
+    $('#historyBody').html('<tr><td colspan="10" class="text-center py-4 text-muted">ไม่พบข้อมูล</td></tr>');
+  }else{
+    let html = '';
+    out.rows.forEach(r=>{
+      html += `<tr>
+        <td>${r.id}</td><td>${r.timestamp}</td><td class="fw-semibold">${r.code}</td>
+        <td><span class="badge ${r.io==='รับเข้า'?'bg-success':'bg-danger'}">${r.io}</span></td>
+        <td>${r.num}</td><td>${r.note||'-'}</td><td>${r.vc||'-'}</td><td>${r.vcode||'-'}</td><td>${r.xmonth||'-'}</td>
+        <td><button class="btn btn-sm btn-outline-danger rounded-circle btnDelete" data-id="${r.id}"><i class="bi bi-trash"></i></button></td>
+      </tr>`;
+    });
+    $('#historyBody').html(html);
+  }
+  renderPagination('#paginationHistory', out.page, out.totalPages, loadHistory);
+}
+
+$(document).on('click', '.btnDelete', function(){
+  const id = $(this).data('id');
+  Swal.fire({
+    title:'ยืนยันการลบ?', text:'ต้องการลบรายการนี้ใช่หรือไม่', icon:'warning',
+    showCancelButton:true, confirmButtonColor:'#ef4444', cancelButtonColor:'#6366f1',
+    confirmButtonText:'ลบเลย', cancelButtonText:'ยกเลิก'
+  }).then(async result=>{
+    if(result.isConfirmed){
+      try{
+        const body = {action:'delete', id};
+        if(SECRET) body._secret = SECRET;
+        const res = await fetch(API_URL, {method:'POST', body:JSON.stringify(body)});
+        const out = await res.json();
+        if(!out.ok) throw new Error(out.error);
+        Toast.fire({icon:'success', title:'ลบข้อมูลเรียบร้อย'});
+        loadHistory(1); loadDashboard();
+      }catch(err){
+        Swal.fire({icon:'error', title:'ลบไม่สำเร็จ', text:String(err)});
+      }
+    }
+  });
+});
+
+/* ---------------- Stock Summary ---------------- */
+let stockSearchTimer;
+$('#searchStock').on('input', function(){
+  clearTimeout(stockSearchTimer);
+  stockSearchTimer = setTimeout(()=> loadStock(1), 400);
+});
+
+async function loadStock(page){
+  const search = $('#searchStock').val().trim();
+  $('#stockBody').html('<tr><td colspan="5" class="text-center py-4 text-muted"><div class="spinner-border text-primary"></div></td></tr>');
+  try{
+    const url = `${API_URL}?action=stock&page=${page}&limit=${PAGE_LIMIT}&search=${encodeURIComponent(search)}`;
+    const res = await fetch(url);
+    const out = await res.json();
+    if(!out.ok) throw new Error(out.error);
+    renderStock(out);
+  }catch(err){
+    $('#stockBody').html(`<tr><td colspan="5" class="text-center text-danger py-4">โหลดข้อมูลไม่สำเร็จ: ${String(err)}</td></tr>`);
+  }
+}
+
+function renderStock(out){
+  if(out.rows.length === 0){
+    $('#stockBody').html('<tr><td colspan="5" class="text-center py-4 text-muted">ไม่พบข้อมูล</td></tr>');
+  }else{
+    let html = '';
+    out.rows.forEach(r=>{
+      html += `<tr class="${r.low ? 'low-stock-row':''}">
+        <td class="fw-semibold">${r.code}</td>
+        <td><span class="badge bg-success-subtle text-success">${r.inQty}</span></td>
+        <td><span class="badge bg-danger-subtle text-danger">${r.outQty}</span></td>
+        <td class="fw-bold">${r.balance}</td>
+        <td>${r.low ? '<span class="badge bg-danger">ใกล้หมด</span>' : '<span class="badge bg-success">ปกติ</span>'}</td>
+      </tr>`;
+    });
+    $('#stockBody').html(html);
+  }
+  renderPagination('#paginationStock', out.page, out.totalPages, loadStock);
+}
+
+/* ---------------- Pagination renderer ---------------- */
+function renderPagination(target, current, totalPages, callback){
+  let html = '';
+  html += `<li class="page-item ${current<=1?'disabled':''}"><button class="page-link" data-p="${current-1}"><i class="bi bi-chevron-left"></i></button></li>`;
+  const maxShow = 5;
+  let start = Math.max(1, current - Math.floor(maxShow/2));
+  let end = Math.min(totalPages, start + maxShow - 1);
+  start = Math.max(1, end - maxShow + 1);
+  for(let i=start;i<=end;i++){
+    html += `<li class="page-item ${i===current?'active':''}"><button class="page-link" data-p="${i}">${i}</button></li>`;
+  }
+  html += `<li class="page-item ${current>=totalPages?'disabled':''}"><button class="page-link" data-p="${current+1}"><i class="bi bi-chevron-right"></i></button></li>`;
+  $(target).html(html);
+  $(target+' .page-link').off('click').on('click', function(){
+    const p = Number($(this).data('p'));
+    if(p >= 1 && p <= totalPages) callback(p);
+  });
+}
+
+/* ---------------- Dashboard / Badges ---------------- */
+async function loadDashboard(){
+  try{
+    const res = await fetch(`${API_URL}?action=dashboard`);
+    const out = await res.json();
+    if(!out.ok) return;
+    $('#statCodes').text(out.totalCodes);
+    $('#statIn').text(out.totalIn);
+    $('#statOut').text(out.totalOut);
+    $('#statLow').text(out.lowStockCount);
+    if(out.lowStockCount > 0){
+      $('#lowStockBadge').text(out.lowStockCount).show();
+    }else{
+      $('#lowStockBadge').hide();
+    }
+  }catch(err){ /* เงียบไว้ ไม่รบกวนผู้ใช้ */ }
+}
+
+/* ---------------- PWA: Service Worker + Install Prompt ---------------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  $('#installBtn').show();
+});
+$('#installBtn').on('click', async ()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $('#installBtn').hide();
+});
+
+/* ---------------- Online/Offline Toast ---------------- */
+window.addEventListener('online', ()=> Toast.fire({icon:'success', title:'เชื่อมต่ออินเทอร์เน็ตแล้ว'}));
+window.addEventListener('offline', ()=> Toast.fire({icon:'warning', title:'ขาดการเชื่อมต่ออินเทอร์เน็ต'}));
+
+/* ---------------- Init ---------------- */
+startCamera();
+loadDashboard();
+setInterval(loadDashboard, 30000);
+</script>
+</body>
+</html>
