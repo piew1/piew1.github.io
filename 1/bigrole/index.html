@@ -78,14 +78,6 @@
                 <option value="Customer">ลูกค้า</option>
               </select>
             </div>
-            <div class="col-md-6 mb-2">
-              <label>รหัส ผู้ค้า-ลูกค้า</label>
-              <input type="text" class="form-control" name="_vcode" id="_vcode">
-            </div>
-            <div class="col-md-6 mb-2">
-              <label>เดือนหมดอายุ</label>
-              <input type="text" class="form-control" name="_xmonth" id="_xmonth">
-            </div>
           </div>
           <div class="col-md-12 mb-2 mx-auto">
             <button type="submit" id="btn1" class="btn btn-warning col-12"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
@@ -217,7 +209,7 @@
         showConfirmButton: false, timer: 1500
       });
 
-      const labels = ['รหัส', 'รับเข้า-ส่งออก', 'จำนวน', 'เอกสารอ้างอิง', 'ผู้ค้า-ลูกค้า', 'รหัส ผู้ค้า-ลูกค้า', 'เดือนหมดอายุ'];
+      const labels = ['รหัส', 'รับเข้า-ส่งออก', 'จำนวน', 'เอกสารอ้างอิง', 'ผู้ค้า-ลูกค้า'];
       const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       document.getElementById('tb').innerHTML = labels
         .map((l, i) => `<tr><th scope="row">${l}</th><td>${esc(output.data[i + 1])}</td></tr>`)
