@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบสแกนสต๊อกสินค้า</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{--c1:#c7d7fe;--c2:#d9ccfb;--c3:#f3c9ee;--ink:#2f3358;--mute:#6b6f93;--acc:#6d78e8;--acc2:#9a6fe0;--ok:#3fae8c}
+*{font-family:'Sarabun',sans-serif}
+body{min-height:100vh;color:var(--ink);background:linear-gradient(135deg,var(--c1),var(--c2) 50%,var(--c3));background-attachment:fixed;position:relative}
+body::before,body::after{content:"";position:fixed;width:340px;height:340px;border-radius:50%;filter:blur(60px);opacity:.55;z-index:-1;animation:float 14s ease-in-out infinite}
+body::before{background:#a5b8ff;top:-80px;left:-80px}
+body::after{background:#f0b4ea;bottom:-90px;right:-70px;animation-delay:-7s}
+@keyframes float{50%{transform:translate(40px,30px) scale(1.12)}}
+.wrap{max-width:560px;margin:0 auto;padding:18px 14px 40px}
+.glass{background:rgba(255,255,255,.52);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.7);border-radius:22px;box-shadow:0 10px 30px rgba(110,100,190,.18);padding:20px;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.brand .logo{width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:grid;place-items:center;font-size:26px;box-shadow:0 6px 16px rgba(109,120,232,.4)}
+.brand h1{font-size:1.35rem;font-weight:700;margin:0}.brand small{color:var(--mute)}
+#reader{width:100%;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.4)}
+#reader video{border-radius:16px}
+.form-control,.form-select{background:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.9);border-radius:14px;padding:.65rem .9rem;font-size:1rem}
+.form-control:focus,.form-select:focus{border-color:var(--acc);box-shadow:0 0 0 .2rem rgba(109,120,232,.2)}
+label{font-weight:600;margin-bottom:4px;font-size:.95rem}.req{color:#e0527a}
+.btn-main{background:linear-gradient(135deg,var(--acc),var(--acc2));border:0;color:#fff;border-radius:14px;padding:.75rem;font-weight:700;font-size:1.05rem;box-shadow:0 8px 18px rgba(109,120,232,.35);transition:transform .15s}
+.btn-main:hover,.btn-main:focus{color:#fff;transform:translateY(-2px)}.btn-main:disabled{opacity:.6;transform:none}
+.btn-soft{background:rgba(255,255,255,.7);border:1px solid #fff;border-radius:14px;color:var(--acc);font-weight:600}
+.seg{display:flex;gap:8px}.seg input{display:none}
+.seg label{flex:1;text-align:center;padding:.6rem;margin:0;border-radius:14px;background:rgba(255,255,255,.65);border:2px solid transparent;cursor:pointer;transition:.2s}
+.seg input:checked+label.in{background:#d6f3e9;border-color:var(--ok);color:#1d7d62}
+.seg input:checked+label.out{background:#fde0ea;border-color:#e0527a;color:#b3305a}
+.seg input:checked+label.pt{background:#e2e5ff;border-color:var(--acc);color:#4650c4}
+.prod{background:rgba(255,255,255,.7);border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;margin-bottom:14px;animation:pop .35s ease}
+.prod i{font-size:1.8rem;color:var(--acc)}
+@keyframes pop{from{opacity:0;transform:scale(.96)}}
+.dl{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed rgba(109,120,232,.3)}
+.dl:last-child{border:0}.dl span{color:var(--mute)}.dl b{text-align:right;word-break:break-word}
+.hide{display:none!important}
+.loading{text-align:center;color:var(--mute);margin-top:10px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="logo"><i class="bi bi-upc-scan"></i></div><div><h1>ระบบสแกนสต๊อกสินค้า</h1><small>สแกนรหัส แล้วบันทึกรับเข้า-ส่งออก</small></div></div>
+
+  <!-- สแกน -->
+  <div class="glass" id="scanCard">
+    <div id="reader"></div>
+    <button class="btn btn-soft w-100 mt-3 hide" id="btnCam"><i class="bi bi-camera-video"></i> เปิดกล้องอีกครั้ง</button>
+    <div class="mt-3">
+      <label>รหัส</label>
+      <div class="input-group">
+        <input type="text" class="form-control" id="code" placeholder="สแกน หรือพิมพ์รหัสสินค้า" autocomplete="off">
+        <button class="btn btn-soft" id="btnCheck" type="button"><i class="bi bi-search"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ฟอร์ม -->
+  <div class="glass hide" id="formCard">
+    <div class="prod"><i class="bi bi-box-seam"></i><div><b id="pName"></b><br><small class="text-secondary" id="pMeta"></small></div></div>
+    <div class="mb-3"><label>รับเข้า-ส่งออก <span class="req">*</span></label>
+      <div class="seg">
+        <input type="radio" name="dir" id="dIn" value="รับเข้า"><label class="in" for="dIn"><i class="bi bi-box-arrow-in-down"></i> รับเข้า</label>
+        <input type="radio" name="dir" id="dOut" value="ส่งออก"><label class="out" for="dOut"><i class="bi bi-box-arrow-up"></i> ส่งออก</label>
+      </div></div>
+    <div class="mb-3"><label>จำนวน <span class="req">*</span></label><input type="number" inputmode="decimal" min="0" step="any" class="form-control" id="qty"></div>
+    <div class="mb-3"><label>เอกสารอ้างอิง <span class="req">*</span></label><input type="text" class="form-control" id="ref" placeholder="เช่น เลขที่ใบส่งของ / PO"></div>
+    <div class="mb-3"><label>ผู้ค้า-ลูกค้า <span class="req">*</span></label>
+      <div class="seg">
+        <input type="radio" name="pt" id="pV" value="ผู้ค้า" checked><label class="pt" for="pV">ผู้ค้า</label>
+        <input type="radio" name="pt" id="pC" value="ลูกค้า"><label class="pt" for="pC">ลูกค้า</label>
+      </div></div>
+    <div class="mb-3"><label>รหัส ผู้ค้า-ลูกค้า <span class="req">*</span></label>
+      <input type="text" class="form-control" id="pcode" list="plist" placeholder="เลือกหรือพิมพ์รหัส" autocomplete="off"><datalist id="plist"></datalist></div>
+    <div class="mb-3"><label>วันที่หมดอายุ</label><input type="date" class="form-control" id="expiry"></div>
+    <div class="mb-3"><label>หมายเหตุ</label><textarea class="form-control" id="note" rows="2"></textarea></div>
+    <button class="btn btn-main w-100" id="btnSave"><i class="bi bi-save2"></i> บันทึกข้อมูล</button>
+    <div class="loading hide" id="saving"><span class="spinner-border spinner-border-sm"></span> รอสักครู่..</div>
+  </div>
+
+  <!-- ผลลัพธ์ -->
+  <div class="glass hide" id="resultCard">
+    <h5 class="fw-bold mb-2"><i class="bi bi-check-circle-fill text-success"></i> รายละเอียดข้อมูลที่บันทึก</h5>
+    <div id="detail"></div>
+    <button class="btn btn-main w-100 mt-3" id="btnNew"><i class="bi bi-arrow-repeat"></i> สแกนใหม่</button>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+// ★ ใส่ URL ของ Web App ที่ Deploy จาก Apps Script
+const API_URL = 'https://script.google.com/macros/s/AKfycbwukLkjpTt4BEFuHXPn2R69lrEjmSJlu6OL5qtJp1Cn3X49LDxlLrvL4lnDSJ-OnFix/exec';
+
+let scanner = null, product = null, busy = false;
+
+function api(payload){
+  // ใช้ text/plain เพื่อเลี่ยง CORS preflight ของ Apps Script
+  return fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)})
+    .then(r => r.json());
+}
+function err(msg){ return Swal.fire({icon:'error', title:'เกิดข้อผิดพลาด', text:msg, confirmButtonText:'ตกลง'}); }
+function esc(s){ return $('<div>').text(s == null ? '' : s).html(); }
+
+function startCam(){
+  $('#btnCam').addClass('hide');
+  if(!scanner) scanner = new Html5Qrcode('reader');
+  scanner.start({facingMode:'environment'}, {fps:10, qrbox:{width:240, height:160}}, onScan, () => {})
+    .catch(() => {
+      $('#btnCam').removeClass('hide');
+      Swal.fire({icon:'info', title:'เปิดกล้องไม่ได้', text:'กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์ หรือพิมพ์รหัสเอง', confirmButtonText:'ตกลง'});
+    });
+}
+function stopCam(){
+  if(scanner && scanner.isScanning) return scanner.stop().catch(() => {});
+  return Promise.resolve();
+}
+function onScan(text){
+  if(busy) return;
+  $('#code').val(text);
+  stopCam().then(() => { $('#btnCam').removeClass('hide'); check(text); });
+}
+
+function check(code){
+  code = $.trim(code);
+  if(!code || busy) return;
+  busy = true;
+  Swal.fire({title:'กำลังตรวจสอบรหัส...', allowOutsideClick:false, didOpen:() => Swal.showLoading()});
+  api({action:'checkProduct', code:code}).then(res => {
+    busy = false; Swal.close();
+    if(!res.success) return err(res.message);
+    if(!res.found){
+      $('#code').val(''); $('#formCard').addClass('hide');
+      return Swal.fire({icon:'error', title:'ไม่พบรหัสนี้', text:res.message, confirmButtonText:'ตกลง'});
+    }
+    product = res;
+    $('#code').val(res.code);
+    $('#pName').text(res.name);
+    $('#pMeta').text('รหัส ' + res.code + ' • ' + res.category + ' • หน่วย: ' + res.unit);
+    $('#formCard').removeClass('hide');
+    loadPartners();
+    setTimeout(() => $('#qty').focus(), 200);
+  }).catch(() => { busy = false; Swal.close(); err('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบ API_URL และอินเทอร์เน็ต'); });
+}
+
+function loadPartners(){
+  api({action:'getPartners', type:$('input[name=pt]:checked').val()}).then(res => {
+    if(!res.success) return;
+    $('#plist').html(res.partners.map(p => '<option value="' + esc(p.code) + '">' + esc(p.name) + '</option>').join(''));
+  });
+}
+
+function save(){
+  const dir = $('input[name=dir]:checked').val(), qty = $('#qty').val(), ref = $.trim($('#ref').val()), pcode = $.trim($('#pcode').val());
+  const miss = [];
+  if(!dir) miss.push('รับเข้า-ส่งออก');
+  if(!(parseFloat(qty) > 0)) miss.push('จำนวน');
+  if(!ref) miss.push('เอกสารอ้างอิง');
+  if(!pcode) miss.push('รหัส ผู้ค้า-ลูกค้า');
+  if(miss.length) return Swal.fire({icon:'warning', title:'กรอกข้อมูลไม่ครบ', text:'กรุณากรอก: ' + miss.join(', '), confirmButtonText:'ตกลง'});
+
+  $('#btnSave').prop('disabled', true); $('#saving').removeClass('hide');
+  api({action:'save', code:product.code, direction:dir, qty:qty, ref:ref, partnerType:$('input[name=pt]:checked').val(),
+       partnerCode:pcode, expiry:$('#expiry').val(), note:$.trim($('#note').val())})
+  .then(res => {
+    $('#btnSave').prop('disabled', false); $('#saving').addClass('hide');
+    if(!res.success) return err(res.message);
+    showResult(res.record);
+  }).catch(() => { $('#btnSave').prop('disabled', false); $('#saving').addClass('hide'); err('บันทึกไม่สำเร็จ กรุณาลองใหม่'); });
+}
+
+function showResult(r){
+  const rows = [['เวลาที่บันทึก', r.time], ['รหัสสินค้า', r.code], ['ชื่อสินค้า', r.name], ['ประเภท', r.category],
+    ['รับเข้า-ส่งออก', r.direction], ['จำนวน', r.qty + ' ' + r.unit], ['เอกสารอ้างอิง', r.ref],
+    [r.partnerType || 'ผู้ค้า-ลูกค้า', r.partnerCode + ' (' + r.partnerName + ')'], ['วันที่หมดอายุ', r.expiry], ['หมายเหตุ', r.note]];
+  $('#detail').html(rows.map(x => '<div class="dl"><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>').join(''));
+  $('#scanCard,#formCard').addClass('hide'); $('#resultCard').removeClass('hide');
+  Swal.fire({icon:'success', title:'บันทึกสำเร็จ', timer:1600, showConfirmButton:false});
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function resetAll(){
+  product = null;
+  $('#code,#qty,#ref,#pcode,#expiry,#note').val('');
+  $('input[name=dir]').prop('checked', false); $('#pV').prop('checked', true);
+  $('#formCard,#resultCard').addClass('hide'); $('#scanCard').removeClass('hide');
+  startCam();
+}
+
+$(function(){
+  $('#btnCam').on('click', startCam);
+  $('#btnCheck').on('click', () => check($('#code').val()));
+  $('#code').on('keydown', e => { if(e.key === 'Enter') check($('#code').val()); });
+  $('input[name=pt]').on('change', () => { $('#pcode').val(''); loadPartners(); });
+  $('#btnSave').on('click', save);
+  $('#btnNew').on('click', resetAll);
+  startCam();
+});
+</script>
+</body>
+</html>
