@@ -41,12 +41,31 @@ label{font-weight:600;margin-bottom:4px;font-size:.95rem}.req{color:#e0527a}
 .hide{display:none!important}
 .loading{text-align:center;color:var(--mute);margin-top:10px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.wrap{max-width:980px}
+#pg-scan{max-width:560px;margin:0 auto}
+.tabs{display:flex;gap:6px;padding:8px;border-radius:18px;margin-bottom:16px}
+.tabbtn{flex:1;border:0;background:transparent;border-radius:12px;padding:8px 4px;color:var(--mute);font-weight:600;position:relative;display:flex;flex-direction:column;align-items:center;font-size:.85rem;transition:.2s}
+.tabbtn i{font-size:1.25rem}
+.tabbtn.on{background:#fff;color:var(--acc);box-shadow:0 4px 12px rgba(109,120,232,.2)}
+.bdg{position:absolute;top:0;right:12%;min-width:20px;height:20px;border-radius:10px;background:#e0527a;color:#fff;font-size:.72rem;display:grid;place-items:center;padding:0 5px;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{transform:scale(1.18)}}
+.table{--bs-table-bg:transparent;font-size:.9rem}.table th{white-space:nowrap}
+.chip{padding:6px 14px;border-radius:12px;background:rgba(255,255,255,.75);font-weight:600}
+.kpi{background:rgba(255,255,255,.6);border:1px solid #fff;border-radius:18px;padding:14px;height:100%}.kpi small{color:var(--mute)}.kpi h3{margin:0;font-weight:700}
+.form-check-input:checked{background-color:var(--acc);border-color:var(--acc)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="brand"><div class="logo"><i class="bi bi-upc-scan"></i></div><div><h1>ระบบสแกนสต๊อกสินค้า</h1><small>สแกนรหัส แล้วบันทึกรับเข้า-ส่งออก</small></div></div>
 
+  <div class="tabs glass">
+    <button class="tabbtn on" data-pg="scan"><i class="bi bi-upc-scan"></i><span>สแกน</span></button>
+    <button class="tabbtn" data-pg="search"><i class="bi bi-search"></i><span>ค้นหา</span><b id="badge" class="bdg hide"></b></button>
+    <button class="tabbtn" data-pg="dash"><i class="bi bi-bar-chart-line"></i><span>แดชบอร์ด</span></button>
+    <button class="tabbtn" data-pg="set"><i class="bi bi-gear"></i><span>ตั้งค่า</span></button>
+  </div>
+  <div id="pg-scan" class="pg">
   <!-- สแกน -->
   <div class="glass" id="scanCard">
     <div id="reader"></div>
@@ -89,14 +108,76 @@ label{font-weight:600;margin-bottom:4px;font-size:.95rem}.req{color:#e0527a}
     <div id="detail"></div>
     <button class="btn btn-main w-100 mt-3" id="btnNew"><i class="bi bi-arrow-repeat"></i> สแกนใหม่</button>
   </div>
+  </div>
+  <!-- ค้นหา -->
+  <div class="pg hide" id="pg-search">
+    <div class="glass">
+      <div class="row g-2">
+        <div class="col-6 col-md-3"><label>ตั้งแต่วันที่</label><input type="date" id="fFrom" class="form-control"></div>
+        <div class="col-6 col-md-3"><label>ถึงวันที่</label><input type="date" id="fTo" class="form-control"></div>
+        <div class="col-6 col-md-3"><label>รับเข้า-ส่งออก</label><select id="fDir" class="form-select"><option value="">ทั้งหมด</option><option>รับเข้า</option><option>ส่งออก</option></select></div>
+        <div class="col-6 col-md-3"><label>ประเภทสินค้า</label><select id="fCat" class="form-select"><option value="">ทั้งหมด</option></select></div>
+        <div class="col-12 col-md-6"><label>ผู้ค้า-ลูกค้า (รหัสหรือชื่อ)</label><input id="fPartner" list="fPlist" class="form-control" autocomplete="off"><datalist id="fPlist"></datalist></div>
+        <div class="col-12 col-md-6"><label>สินค้า (รหัสหรือชื่อ)</label><input id="fProd" class="form-control" autocomplete="off"></div>
+      </div>
+      <div class="d-flex gap-2 mt-3"><button id="btnSearch" class="btn btn-main flex-fill"><i class="bi bi-search"></i> ค้นหา</button>
+        <button id="btnSend" class="btn btn-soft flex-fill hide"><i class="bi bi-send"></i> ส่งผลไปแจ้งเตือน</button></div>
+    </div>
+    <div class="glass hide" id="sRes">
+      <div id="sTot" class="d-flex flex-wrap gap-2 mb-3"></div>
+      <div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>เวลา</th><th>สินค้า</th><th>ประเภท</th><th>รายการ</th><th class="text-end">จำนวน</th><th>เอกสาร</th><th>ผู้ค้า-ลูกค้า</th></tr></thead><tbody id="sBody"></tbody></table></div>
+      <small class="text-secondary" id="sMore"></small>
+    </div>
+  </div>
+  <!-- แดชบอร์ด -->
+  <div class="pg hide" id="pg-dash">
+    <div class="glass">
+      <div class="d-flex flex-wrap gap-2 justify-content-between">
+        <select id="dDays" class="form-select w-auto"><option value="7">7 วันล่าสุด</option><option value="30" selected>30 วันล่าสุด</option><option value="90">90 วันล่าสุด</option></select>
+        <button class="btn btn-soft" id="btnW"><i class="bi bi-sliders"></i> เลือกการแสดง</button>
+      </div>
+      <div id="wcfg" class="mt-3 d-flex flex-wrap gap-3" style="display:none">
+        <label class="form-check"><input type="checkbox" class="form-check-input wchk" data-w="kpi"> ตัวเลขสรุป</label>
+        <label class="form-check"><input type="checkbox" class="form-check-input wchk" data-w="daily"> กราฟรายวัน</label>
+        <label class="form-check"><input type="checkbox" class="form-check-input wchk" data-w="cat"> สัดส่วนประเภท</label>
+        <label class="form-check"><input type="checkbox" class="form-check-input wchk" data-w="top"> สินค้าสูงสุด</label>
+        <label class="form-check"><input type="checkbox" class="form-check-input wchk" data-w="exp"> ใกล้หมดอายุ</label>
+      </div>
+    </div>
+    <div id="w-kpi" class="row g-2 mb-3"></div>
+    <div class="row g-3">
+      <div class="col-lg-8" id="w-daily"><div class="glass h-100"><h6 class="fw-bold">รับเข้า-ส่งออกรายวัน</h6><canvas id="cDaily" height="170"></canvas></div></div>
+      <div class="col-lg-4" id="w-cat"><div class="glass h-100"><h6 class="fw-bold">สัดส่วนตามประเภท</h6><canvas id="cCat"></canvas></div></div>
+      <div class="col-lg-6" id="w-top"><div class="glass h-100"><h6 class="fw-bold">สินค้าเคลื่อนไหวสูงสุด</h6><canvas id="cTop"></canvas></div></div>
+      <div class="col-lg-6" id="w-exp"><div class="glass h-100"><h6 class="fw-bold">ใกล้หมดอายุ (ภายใน 60 วัน)</h6><div id="expList"></div></div></div>
+    </div>
+  </div>
+  <!-- ตั้งค่า -->
+  <div class="pg hide" id="pg-set"><div class="glass" style="max-width:640px;margin:0 auto">
+    <h5 class="fw-bold">ตั้งค่าการแจ้งเตือน</h5>
+    <div class="row g-2 mb-2">
+      <div class="col-6"><label>รหัสผู้ดูแล (ปัจจุบัน)</label><input type="password" id="sPin" class="form-control" autocomplete="off"></div>
+      <div class="col-6"><label>ตั้ง/เปลี่ยนรหัสผู้ดูแล</label><input type="password" id="sNewPin" class="form-control" autocomplete="off"></div>
+    </div>
+    <div class="d-flex gap-2 align-items-center mb-3"><button class="btn btn-soft" id="btnLoadSet"><i class="bi bi-unlock"></i> โหลดการตั้งค่า</button><small class="text-secondary" id="sMsg"></small></div>
+    <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" id="sLineOn"><label class="form-check-label"><i class="bi bi-chat-dots"></i> LINE Messaging API</label></div>
+    <input class="form-control mb-2" id="sLineToken" placeholder="Channel Access Token" autocomplete="off"><input class="form-control mb-3" id="sLineTo" placeholder="userId / groupId ผู้รับ">
+    <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" id="sTgOn"><label class="form-check-label"><i class="bi bi-telegram"></i> Telegram Bot</label></div>
+    <input class="form-control mb-2" id="sTgToken" placeholder="Bot Token" autocomplete="off"><input class="form-control mb-3" id="sTgChat" placeholder="Chat ID">
+    <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" id="sMailOn"><label class="form-check-label"><i class="bi bi-envelope"></i> อีเมล</label></div>
+    <input class="form-control mb-3" id="sMailTo" type="email" placeholder="อีเมลผู้รับ">
+    <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" id="sAuto"><label class="form-check-label"><i class="bi bi-bell"></i> แจ้งเตือนอัตโนมัติทุกครั้งที่บันทึกรายการใหม่</label></div>
+    <div class="d-flex gap-2"><button class="btn btn-main flex-fill" id="btnSaveSet"><i class="bi bi-save2"></i> บันทึกการตั้งค่า</button><button class="btn btn-soft flex-fill" id="btnTest"><i class="bi bi-send-check"></i> ทดสอบส่ง</button></div>
+  </div></div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 // ★ ใส่ URL ของ Web App ที่ Deploy จาก Apps Script
-const API_URL = 'https://script.google.com/macros/s/AKfycbwukLkjpTt4BEFuHXPn2R69lrEjmSJlu6OL5qtJp1Cn3X49LDxlLrvL4lnDSJ-OnFix/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxpAows8bBb066T5RXqtK4NuwC1NrL0GyeIBFBuMZR6ZwNkXoSDTIZQAqTzf57rUAtf/exec';
 
 let scanner = null, product = null, busy = false;
 
@@ -201,6 +282,119 @@ $(function(){
   $('#btnSave').on('click', save);
   $('#btnNew').on('click', resetAll);
   startCam();
+});
+/* ===================== เฟส 2 ===================== */
+const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {} return null; };
+const fN = n => Number(n || 0).toLocaleString('th-TH');
+const PAL = ['#8fa2ff', '#c5a3f5', '#f5a8e0', '#9fdcc8', '#ffd3a8'];
+let filtersLoaded = false, lastSearch = null, charts = {};
+
+function show(pg){
+  $('.pg').addClass('hide'); $('#pg-' + pg).removeClass('hide');
+  $('.tabbtn').removeClass('on').filter('[data-pg=' + pg + ']').addClass('on');
+  if(pg !== 'scan'){ stopCam().then(() => $('#btnCam').removeClass('hide')); }
+  else if(!(scanner && scanner.isScanning) && !product && $('#resultCard').hasClass('hide')) startCam();
+  if(pg === 'search'){ ls('seen', Date.now()); $('#badge').addClass('hide'); loadFilters(); }
+  if(pg === 'dash') loadDash();
+  if(pg === 'set') loadSettings();
+}
+
+function pollBadge(){
+  if(!ls('seen')) ls('seen', Date.now());
+  api({action:'newCount', since:ls('seen')}).then(r => {
+    if(r.success && r.count > 0 && $('#pg-search').hasClass('hide')) $('#badge').text(r.count > 99 ? '99+' : r.count).removeClass('hide');
+  }).catch(() => {});
+}
+
+/* ---- ค้นหา ---- */
+function loadFilters(){
+  if(filtersLoaded) return;
+  api({action:'getFilters'}).then(r => {
+    if(!r.success) return; filtersLoaded = true;
+    $('#fCat').html('<option value="">ทั้งหมด</option>' + r.categories.map(c => '<option>' + esc(c) + '</option>').join(''));
+    $('#fPlist').html(r.partners.map(p => '<option value="' + esc(p.code) + '">' + esc(p.name) + '</option>').join(''));
+  }).catch(() => {});
+}
+function doSearch(){
+  Swal.fire({title:'กำลังค้นหา...', allowOutsideClick:false, didOpen:() => Swal.showLoading()});
+  api({action:'search', from:$('#fFrom').val(), to:$('#fTo').val(), direction:$('#fDir').val(), category:$('#fCat').val(),
+       partner:$.trim($('#fPartner').val()), product:$.trim($('#fProd').val())}).then(r => {
+    Swal.close(); if(!r.success) return err(r.message);
+    lastSearch = r;
+    $('#sTot').html('<span class="chip">พบ ' + fN(r.count) + ' รายการ</span><span class="chip text-success"><i class="bi bi-box-arrow-in-down"></i> รับเข้ารวม ' + fN(r.totalIn) +
+      '</span><span class="chip text-danger"><i class="bi bi-box-arrow-up"></i> ส่งออกรวม ' + fN(r.totalOut) + '</span>');
+    $('#sBody').html(r.rows.length ? r.rows.map(x => '<tr><td>' + esc(x.time) + '</td><td>' + esc(x.code) + '<br><small>' + esc(x.name) + '</small></td><td>' + esc(x.cat) +
+      '</td><td><span class="badge ' + (x.dir === 'รับเข้า' ? 'text-bg-success' : 'text-bg-danger') + '">' + esc(x.dir) + '</span></td><td class="text-end">' + fN(x.qty) +
+      '</td><td>' + esc(x.ref) + '</td><td>' + esc(x.pcode) + '<br><small>' + esc(x.pname) + '</small></td></tr>').join('') : '<tr><td colspan="7" class="text-center text-secondary py-4">ไม่พบข้อมูลตามเงื่อนไข ลองขยายช่วงวันที่</td></tr>');
+    $('#sMore').text(r.truncated ? 'แสดง 300 รายการล่าสุด (ยอดรวมคำนวณจากทุกรายการที่พบ)' : '');
+    $('#sRes').removeClass('hide'); $('#btnSend').toggleClass('hide', !r.count);
+  }).catch(() => { Swal.close(); err('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'); });
+}
+function sendResult(){
+  if(!lastSearch) return;
+  Swal.fire({icon:'question', title:'ส่งผลการค้นหาไปช่องทางแจ้งเตือน?', showCancelButton:true, confirmButtonText:'ส่งเลย', cancelButtonText:'ยกเลิก'}).then(c => {
+    if(!c.isConfirmed) return;
+    api({action:'sendNotify', text:lastSearch.summary}).then(r => {
+      if(!r.success) return err(r.message);
+      Swal.fire({icon:'success', title:'ส่งแล้ว', html:Object.keys(r.results).map(k => esc(k) + ': ' + esc(r.results[k])).join('<br>')});
+    }).catch(() => err('ส่งไม่สำเร็จ'));
+  });
+}
+
+/* ---- แดชบอร์ด ---- */
+const W = ['kpi', 'daily', 'cat', 'top', 'exp'];
+function wcfg(){ try { return JSON.parse(ls('w') || '{}'); } catch(e){ return {}; } }
+function applyW(){ const c = wcfg(); W.forEach(k => $('#w-' + k).toggleClass('hide', c[k] === false)); }
+function mk(id, cfg){ if(charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), cfg); }
+function loadDash(){
+  applyW();
+  api({action:'dashboard', days:$('#dDays').val()}).then(r => {
+    if(!r.success) return err(r.message);
+    const k = (t, v, c) => '<div class="col-6 col-md-3"><div class="kpi"><small>' + t + '</small><h3 class="' + c + '">' + fN(v) + '</h3></div></div>';
+    $('#w-kpi').html(k('รายการทั้งหมด', r.count, '') + k('รับเข้ารวม', r.totalIn, 'text-success') + k('ส่งออกรวม', r.totalOut, 'text-danger') + k('สุทธิ (รับเข้า-ส่งออก)', r.totalIn - r.totalOut, ''));
+    mk('cDaily', {type:'bar', data:{labels:r.labels, datasets:[{label:'รับเข้า', data:r.din, backgroundColor:'#9fdcc8'}, {label:'ส่งออก', data:r.dout, backgroundColor:'#f5a8c8'}]}, options:{responsive:true, scales:{x:{ticks:{maxTicksLimit:10}}}}});
+    const cn = Object.keys(r.cat);
+    mk('cCat', {type:'doughnut', data:{labels:cn, datasets:[{data:cn.map(c => r.cat[c]), backgroundColor:PAL}]}});
+    mk('cTop', {type:'bar', data:{labels:r.top.map(t => t.name), datasets:[{label:'รับเข้า', data:r.top.map(t => t.i), backgroundColor:'#9fdcc8'}, {label:'ส่งออก', data:r.top.map(t => t.o), backgroundColor:'#f5a8c8'}]}, options:{indexAxis:'y', scales:{x:{stacked:true}, y:{stacked:true}}}});
+    $('#expList').html(r.expiring.length ? r.expiring.map(e => '<div class="dl"><span>' + esc(e.name) + '</span><b class="' + (e.left < 0 ? 'text-danger' : e.left <= 14 ? 'text-warning' : '') + '">' + esc(e.exp) + (e.left < 0 ? ' (หมดอายุแล้ว)' : ' (อีก ' + e.left + ' วัน)') + '</b></div>').join('') : '<span class="text-secondary">ไม่มีสินค้าใกล้หมดอายุ</span>');
+  }).catch(() => err('โหลดแดชบอร์ดไม่ได้'));
+}
+
+/* ---- ตั้งค่า ---- */
+const SMAP = {lineOn:'#sLineOn', tgOn:'#sTgOn', mailOn:'#sMailOn', autoNotify:'#sAuto', lineToken:'#sLineToken', lineTo:'#sLineTo', tgToken:'#sTgToken', tgChat:'#sTgChat', mailTo:'#sMailTo'};
+const SBOOL = ['lineOn', 'tgOn', 'mailOn', 'autoNotify'];
+function loadSettings(){
+  api({action:'getSettings', pin:$('#sPin').val()}).then(r => {
+    if(!r.success){ $('#sMsg').text(r.message); return; }
+    $('#sMsg').text(r.hasPin ? 'ปลดล็อกแล้ว' : 'ยังไม่ได้ตั้งรหัสผู้ดูแล ควรตั้งรหัสก่อนใช้งานจริง');
+    Object.keys(SMAP).forEach(k => SBOOL.includes(k) ? $(SMAP[k]).prop('checked', r.s[k] === '1') : $(SMAP[k]).val(r.s[k] || ''));
+  }).catch(() => $('#sMsg').text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'));
+}
+function saveSet(){
+  const s = {}; Object.keys(SMAP).forEach(k => s[k] = SBOOL.includes(k) ? ($(SMAP[k]).is(':checked') ? '1' : '0') : $.trim($(SMAP[k]).val()));
+  api({action:'saveSettings', pin:$('#sPin').val(), newPin:$('#sNewPin').val(), s:s}).then(r => {
+    if(!r.success) return err(r.message);
+    if($('#sNewPin').val()){ $('#sPin').val($('#sNewPin').val()); $('#sNewPin').val(''); }
+    Swal.fire({icon:'success', title:r.message, timer:1500, showConfirmButton:false});
+  }).catch(() => err('บันทึกไม่สำเร็จ'));
+}
+function testSet(){
+  api({action:'testNotify', pin:$('#sPin').val()}).then(r => {
+    if(!r.success) return err(r.message);
+    Swal.fire({icon:'info', title:'ผลการทดสอบ', html:Object.keys(r.results).map(k => esc(k) + ': ' + esc(r.results[k])).join('<br>')});
+  }).catch(() => err('ทดสอบไม่สำเร็จ'));
+}
+
+const _sr = showResult; showResult = function(r){ _sr(r); ls('seen', Date.now()); };
+$(function(){
+  $('.tabbtn').on('click', function(){ show($(this).data('pg')); });
+  $('#btnSearch').on('click', doSearch); $('#btnSend').on('click', sendResult);
+  $('#dDays').on('change', loadDash);
+  $('#btnW').on('click', () => $('#wcfg').slideToggle());
+  const c = wcfg(); $('.wchk').each(function(){ $(this).prop('checked', c[$(this).data('w')] !== false); })
+    .on('change', function(){ const o = wcfg(); o[$(this).data('w')] = $(this).is(':checked'); ls('w', JSON.stringify(o)); applyW(); });
+  $('#btnLoadSet').on('click', loadSettings); $('#btnSaveSet').on('click', saveSet); $('#btnTest').on('click', testSet);
+  pollBadge(); setInterval(pollBadge, 60000);
 });
 </script>
 </body>
