@@ -112,6 +112,10 @@ html, body{
 .table-glass{ background: rgba(255,255,255,.55); border-radius:14px; overflow:hidden; }
 .tab-section{ display:none; }
 .tab-section.active{ display:block; }
+/* ใช้แทน jQuery .hide()/.show() สำหรับ element ที่มีคลาส Bootstrap d-flex ฯลฯ
+   เนื่องจาก Bootstrap utility (เช่น .d-flex) ใช้ !important ทำให้ inline style
+   ที่ jQuery ตั้งให้ (display:none) ถูกบังคับทับจนซ่อนไม่ได้ จึงต้องใช้คลาสนี้แทน */
+.force-hidden{ display:none !important; }
 .spinner-border-sm-custom{ width:1rem;height:1rem; }
 .summary-box{ border-left:5px solid #7a6ae0; }
 footer{ opacity:.7; font-size:.85rem; text-align:center; padding:20px 0; }
@@ -152,7 +156,7 @@ footer{ opacity:.7; font-size:.85rem; text-align:center; padding:20px 0; }
   </div>
 
   <!-- ============== App Shell ============== -->
-  <div id="appShell" style="display:none;">
+  <div id="appShell" class="force-hidden">
     <!-- Navbar -->
     <nav class="navbar navbar-glass rounded-4 mb-3 px-3 py-2 d-flex flex-wrap justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2 logo-area">
@@ -515,7 +519,10 @@ async function api(action, data) {
 
 function forceLogoutUI() {
   sessionToken = null; currentUser = null;
-  $('#appShell').hide(); $('#loginScreen').show();
+  // ใช้ addClass/removeClass('force-hidden') แทน hide()/show() เพราะ #loginScreen มีคลาส d-flex ของ Bootstrap
+  // ที่กำหนด display ด้วย !important ซึ่งจะทับ inline style ที่ jQuery hide()/show() ตั้งค่าไว้
+  $('#appShell').addClass('force-hidden');
+  $('#loginScreen').removeClass('force-hidden');
   Swal.fire({ icon: 'warning', title: 'เซสชันหมดอายุ', text: 'กรุณาเข้าสู่ระบบใหม่' });
 }
 
@@ -539,8 +546,9 @@ async function doLogin() {
 }
 
 function enterApp() {
-  $('#loginScreen').hide();
-  $('#appShell').fadeIn();
+  // ใช้คลาส force-hidden แทน hide()/fadeIn() เพื่อให้ชนะคลาส d-flex ของ Bootstrap ที่มี !important
+  $('#loginScreen').addClass('force-hidden');
+  $('#appShell').removeClass('force-hidden').addClass('fade-in');
   $('#userInfoLabel').html('<i class="bi bi-person-circle"></i> ' + currentUser.name + ' (' + currentUser.role + ')');
   if (currentUser.role === 'Admin') { $('#menuDashboard').show(); $('#smUsers').show(); $('#smImport').show(); }
   else { $('#menuDashboard').hide(); $('#smUsers').hide(); $('#smImport').hide(); }
@@ -556,7 +564,9 @@ async function doLogout() {
   await api('logout', { email: currentUser ? currentUser.email : '' });
   stopScanner();
   sessionToken = null; currentUser = null;
-  $('#appShell').hide(); $('#loginScreen').fadeIn();
+  // ใช้คลาส force-hidden แทน hide()/fadeIn() (ดูเหตุผลเดียวกับ enterApp)
+  $('#appShell').addClass('force-hidden');
+  $('#loginScreen').removeClass('force-hidden');
   $('#loginEmail').val(''); $('#loginPassword').val('');
 }
 
