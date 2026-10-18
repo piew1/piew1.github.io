@@ -1,549 +1,480 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>ระบบสแกนสต๊อกสินค้า | Stock Scan System</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ระบบสแกนสต๊อกสินค้า</title>
 
-<!-- ============ CDN: Bootstrap 5 / Bootstrap Icons / Google Fonts / SweetAlert2 ============ -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<!-- Google Fonts: Sarabun -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<!-- SweetAlert2 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
 <style>
-/* ============================= THEME: Pastel Analogous + Glassmorphism ============================= */
+/* =========================== THEME: Pastel Analogous + Glassmorphism =========================== */
 :root{
-  --p1:#eaf2ff; --p2:#f1ecff; --p3:#ffeef7; --p4:#e8fbf5;
-  --a1:#8ab4f8; --a2:#b39ddb; --a3:#f2a6c8; --a4:#8fd9c4;
-  --ink:#3a3a55; --ink-soft:#6b6b86;
-  --glass-bg: rgba(255,255,255,0.55);
-  --glass-border: rgba(255,255,255,0.65);
-  --shadow-soft: 0 10px 30px rgba(120,120,180,0.18);
+  --p1:#e6e6fa; /* lavender */
+  --p2:#d6eaf8; /* baby blue */
+  --p3:#d5f5e3; /* mint */
+  --p4:#fdebd0; /* peach */
+  --accent:#8e7cc3;
+  --accent2:#7fb3d5;
+  --text-dark:#3b3b58;
 }
-*{ box-sizing:border-box; }
-html, body{
+*{ font-family:'Sarabun', sans-serif; }
+html,body{
   min-height:100%;
-  font-family:'Sarabun',sans-serif;
-  color:var(--ink);
-  background: linear-gradient(135deg,var(--p1) 0%, var(--p2) 35%, var(--p3) 70%, var(--p4) 100%);
+  background: linear-gradient(135deg, var(--p1) 0%, var(--p2) 35%, var(--p3) 70%, var(--p4) 100%);
   background-attachment: fixed;
+  color: var(--text-dark);
+  overflow-x:hidden; /* ป้องกันเลื่อนแนวนอนเท่านั้น ไม่บล็อกแนวตั้ง */
 }
-/* ห้าม overflow hidden บน body เพื่อให้เลื่อนหน้าได้ตามปกติ */
-body{ overflow-y:auto; padding-bottom:90px; }
+body{ padding-bottom: 90px; } /* เผื่อพื้นที่ bottom nav มือถือ */
 
-::-webkit-scrollbar{ width:8px; height:8px; }
-::-webkit-scrollbar-thumb{ background:rgba(139,180,248,0.5); border-radius:10px; }
-
+/* --- Glass card --- */
 .glass{
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border:1px solid var(--glass-border);
-  border-radius:20px;
-  box-shadow: var(--shadow-soft);
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(100,100,150,0.15);
 }
 .glass-strong{
-  background: rgba(255,255,255,0.72);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border:1px solid rgba(255,255,255,0.8);
-  border-radius:22px;
-  box-shadow: var(--shadow-soft);
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(18px);
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(100,100,150,0.2);
 }
-.btn{ border-radius:14px; font-weight:600; padding:.65rem 1.2rem; }
-.btn-lg{ padding:.85rem 1.4rem; font-size:1.05rem; }
+.btn-pastel{
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color:#fff; border:none; border-radius:14px; font-weight:600;
+  transition: all .25s ease;
+  box-shadow: 0 4px 14px rgba(142,124,195,0.4);
+}
+.btn-pastel:hover{ transform: translateY(-2px); box-shadow:0 8px 20px rgba(142,124,195,0.5); color:#fff; }
+.btn-pastel:disabled{ opacity:.6; transform:none; }
+.btn-soft{ background:rgba(255,255,255,0.6); border:1px solid rgba(142,124,195,0.3); border-radius:14px; color:var(--text-dark); font-weight:600; }
+.btn-soft:hover{ background:rgba(255,255,255,0.9); color:var(--text-dark); }
 .form-control, .form-select{
-  border-radius:14px; border:1px solid #dfe3f3; padding:.65rem .9rem; background:rgba(255,255,255,0.75);
+  border-radius:12px; border:1px solid rgba(142,124,195,0.3); background:rgba(255,255,255,0.7);
+  min-height:48px; font-size:1rem;
 }
-.form-control:focus, .form-select:focus{ border-color:var(--a1); box-shadow:0 0 0 .2rem rgba(138,180,248,.25); }
-.form-label{ font-weight:600; color:var(--ink-soft); font-size:.92rem; }
+.form-control:focus, .form-select:focus{ border-color:var(--accent); box-shadow:0 0 0 .2rem rgba(142,124,195,.2); }
 
-.btn-grad-blue{ background:linear-gradient(135deg,var(--a1),#6fa8ff); color:#fff; border:none; }
-.btn-grad-purple{ background:linear-gradient(135deg,var(--a2),#9b7fd4); color:#fff; border:none; }
-.btn-grad-pink{ background:linear-gradient(135deg,var(--a3),#e887b5); color:#fff; border:none; }
-.btn-grad-green{ background:linear-gradient(135deg,var(--a4),#6cc9ae); color:#fff; border:none; }
-.btn-grad-blue:hover,.btn-grad-purple:hover,.btn-grad-pink:hover,.btn-grad-green:hover{ filter:brightness(1.06); color:#fff; }
-.btn-soft{ background:rgba(255,255,255,0.65); border:1px solid #e3e7f7; color:var(--ink); }
+/* --- Animations (CSS3 only) --- */
+@keyframes floatIn{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
+.animate-in{ animation: floatIn .45s ease both; }
+@keyframes pulseGlow{ 0%,100%{box-shadow:0 0 0 0 rgba(142,124,195,.5);} 50%{box-shadow:0 0 0 10px rgba(142,124,195,0);} }
+.pulse{ animation: pulseGlow 1.8s infinite; }
+@keyframes spinSlow{ from{transform:rotate(0);} to{transform:rotate(360deg);} }
+.spin-slow{ animation: spinSlow 2.4s linear infinite; }
 
-@keyframes floatUp{ 0%{transform:translateY(0);} 50%{transform:translateY(-8px);} 100%{transform:translateY(0);} }
-@keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
-@keyframes pulseRing{ 0%{box-shadow:0 0 0 0 rgba(242,166,200,.55);} 100%{box-shadow:0 0 0 18px rgba(242,166,200,0);} }
-@keyframes spin{ from{transform:rotate(0);} to{transform:rotate(360deg);} }
-.animate-fade{ animation: fadeIn .45s ease; }
-.animate-float{ animation: floatUp 3.4s ease-in-out infinite; }
+/* --- Top navbar --- */
+.navbar-glass{
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.6);
+}
+.logo-circle{
+  width:46px; height:46px; border-radius:50%; object-fit:cover;
+  border:2px solid rgba(255,255,255,0.8); background:#fff;
+}
+.badge-dot{
+  position:absolute; top:-4px; right:-4px; background:#e74c3c; color:#fff;
+  border-radius:50%; font-size:.65rem; padding:2px 6px; min-width:18px; text-align:center;
+}
 
-/* ---------- Logo ---------- */
-.logo-wrap{ width:72px; height:72px; border-radius:20px; display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(135deg,var(--a1),var(--a2)); box-shadow:var(--shadow-soft); animation: floatUp 4s ease-in-out infinite; overflow:hidden; }
-.logo-wrap img{ width:100%; height:100%; object-fit:cover; }
-.logo-wrap i{ font-size:2rem; color:#fff; }
+/* --- Bottom nav (mobile) --- */
+.bottom-nav{
+  position:fixed; bottom:0; left:0; right:0; z-index:1030;
+  background: rgba(255,255,255,0.75); backdrop-filter: blur(18px);
+  border-top:1px solid rgba(255,255,255,0.6);
+  display:flex; justify-content:space-around; padding:6px 4px;
+}
+.bottom-nav .nav-item-btn{
+  flex:1; text-align:center; border:none; background:transparent; color:#7a7a9a;
+  padding:6px 2px; border-radius:14px; font-size:.72rem; transition:.2s;
+}
+.bottom-nav .nav-item-btn.active{ color:var(--accent); background:rgba(142,124,195,0.12); font-weight:700; }
+.bottom-nav .nav-item-btn i{ font-size:1.3rem; display:block; }
 
-/* ---------- Auth Screen ---------- */
-#authScreen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 14px; }
-.auth-card{ width:100%; max-width:430px; padding:2rem 1.75rem; }
-.auth-tab-link{ cursor:pointer; color:var(--ink-soft); font-weight:600; }
-.auth-tab-link.active{ color:var(--a2); text-decoration:underline; }
+#reader{ width:100%; border-radius:16px; overflow:hidden; }
+.section-page{ display:none; }
+.section-page.active{ display:block; }
 
-/* ---------- Navbar ---------- */
-.topbar{ position:sticky; top:0; z-index:1030; padding:10px 14px; margin-bottom:14px; border-radius:0 0 22px 22px; }
-.badge-dot{ position:absolute; top:-4px; right:-6px; background:linear-gradient(135deg,#ff7a9c,#ff4d6d); color:#fff; font-size:.65rem;
-  border-radius:20px; padding:1px 6px; animation: pulseRing 1.8s infinite; }
-.user-chip{ background:rgba(255,255,255,0.6); border-radius:16px; padding:6px 12px; font-size:.85rem; }
-
-/* ---------- Bottom Nav ---------- */
-.bottom-nav{ position:fixed; left:0; right:0; bottom:0; z-index:1040; padding:8px 10px calc(8px + env(safe-area-inset-bottom));
-  display:flex; justify-content:space-around; gap:6px; border-radius:22px 22px 0 0; }
-.nav-item-btn{ flex:1; border:none; background:transparent; display:flex; flex-direction:column; align-items:center; gap:2px;
-  color:var(--ink-soft); font-size:.72rem; font-weight:600; padding:6px 2px; border-radius:14px; transition:.2s; position:relative; }
-.nav-item-btn.active{ color:#fff; background:linear-gradient(135deg,var(--a1),var(--a2)); box-shadow:0 6px 16px rgba(139,157,248,.4); }
-.nav-item-btn i{ font-size:1.25rem; }
-
-.app-section{ display:none; }
-.app-section.active{ display:block; animation: fadeIn .4s ease; }
-
-/* ---------- Scanner ---------- */
-#reader{ width:100%; border-radius:18px; overflow:hidden; border:3px dashed var(--a1); }
-.scan-placeholder{ border:3px dashed var(--a2); border-radius:18px; padding:2.4rem 1rem; text-align:center; color:var(--ink-soft); }
-
-/* ---------- Cards ---------- */
-.stat-card{ padding:1.1rem 1.2rem; border-radius:18px; }
-.stat-card .num{ font-size:1.7rem; font-weight:800; }
-.stat-icon{ width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.3rem; }
-
+.scan-code-box{
+  font-size:1.2rem; font-weight:700; letter-spacing:1px; text-align:center;
+  background:rgba(255,255,255,0.7); border-radius:12px; padding:10px;
+}
 .table-glass{ background:rgba(255,255,255,0.55); border-radius:16px; overflow:hidden; }
-.table-glass thead{ background:rgba(139,180,248,0.25); }
-table{ font-size:.9rem; }
-
-.chip{ display:inline-block; padding:.2rem .65rem; border-radius:20px; font-size:.78rem; font-weight:700; }
-.chip-in{ background:#dff7ea; color:#1f8a52; }
-.chip-out{ background:#ffe3ea; color:#c43a63; }
-
-.sidebar-tab{ cursor:pointer; padding:.6rem .9rem; border-radius:14px; font-weight:600; color:var(--ink-soft); }
-.sidebar-tab.active{ background:linear-gradient(135deg,var(--a1),var(--a2)); color:#fff; }
-
-.summary-row{ display:flex; justify-content:space-between; padding:.4rem 0; border-bottom:1px dashed #e3e7f7; font-size:.92rem; }
-.summary-row:last-child{ border-bottom:none; }
-
-.spin-loader{ width:18px; height:18px; border:3px solid rgba(255,255,255,.5); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; display:inline-block; }
-
-@media (max-width: 480px){
-  .auth-card{ padding:1.4rem 1.1rem; }
-  .stat-card .num{ font-size:1.4rem; }
-}
+.table-glass thead{ background:rgba(142,124,195,0.18); }
+.chart-card canvas{ max-height:280px; }
+#loginScreen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+.login-card{ max-width:420px; width:100%; }
+.spinner-border-sm-custom{ width:1rem; height:1rem; }
+.summary-row{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed rgba(0,0,0,0.08); }
+.cursor-pointer{ cursor:pointer; }
 </style>
 </head>
 <body>
 
-<!-- ======================================================================= -->
-<!-- หน้าจอเข้าสู่ระบบ / สมัครสมาชิก / ลืมรหัสผ่าน                              -->
-<!-- ======================================================================= -->
-<div id="authScreen">
-  <div class="glass-strong auth-card animate-fade">
+<!-- ============================= LOGIN SCREEN ============================= -->
+<div id="loginScreen">
+  <div class="glass-strong login-card p-4 animate-in">
     <div class="text-center mb-3">
-      <div class="logo-wrap mx-auto mb-2" id="logoBoxAuth"><i class="bi bi-upc-scan"></i></div>
+      <img id="logoImgLogin" src="https://quickchart.io/qr?text=StockScan&margin=0" class="logo-circle mb-2" alt="logo">
       <h4 class="fw-bold mb-0">ระบบสแกนสต๊อกสินค้า</h4>
-      <div class="text-muted small">Stock Scan &amp; Inventory System</div>
+      <small class="text-muted">เข้าสู่ระบบเพื่อใช้งาน</small>
     </div>
-
-    <!-- ฟอร์มเข้าสู่ระบบ -->
-    <form id="formLogin" class="auth-panel">
+    <form id="loginForm">
       <div class="mb-3">
-        <label class="form-label">อีเมล</label>
-        <input type="email" class="form-control" id="loginEmail" placeholder="name@example.com" required>
+        <label class="form-label fw-semibold"><i class="bi bi-envelope"></i> อีเมล</label>
+        <input type="email" class="form-control" id="loginEmail" required placeholder="admin@system.local">
       </div>
-      <div class="mb-2">
-        <label class="form-label">รหัสผ่าน</label>
-        <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
-      </div>
-      <div class="text-end mb-3">
-        <span class="auth-tab-link small" onclick="switchAuthPanel('forgot')">ลืมรหัสผ่าน?</span>
-      </div>
-      <button type="submit" class="btn btn-grad-blue w-100 btn-lg"><i class="bi bi-box-arrow-in-right me-1"></i> เข้าสู่ระบบ</button>
-      <div class="text-center mt-3 small text-muted">
-        ยังไม่มีบัญชี? <span class="auth-tab-link" onclick="switchAuthPanel('register')">สมัครสมาชิก</span>
-      </div>
-      <div class="text-center mt-2 small text-muted">
-        บัญชีผู้ดูแลเริ่มต้น: admin@system.local / Admin@1234
-      </div>
-    </form>
-
-    <!-- ฟอร์มสมัครสมาชิก -->
-    <form id="formRegister" class="auth-panel d-none">
-      <div class="mb-3"><label class="form-label">ชื่อ-นามสกุล</label><input type="text" class="form-control" id="regName" required></div>
-      <div class="mb-3"><label class="form-label">อีเมล</label><input type="email" class="form-control" id="regEmail" required></div>
       <div class="mb-3">
-        <label class="form-label">รหัสผ่าน</label>
-        <input type="password" class="form-control" id="regPassword" required>
-        <div class="form-text">อย่างน้อย 8 ตัว มีพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข</div>
+        <label class="form-label fw-semibold"><i class="bi bi-lock"></i> รหัสผ่าน</label>
+        <input type="password" class="form-control" id="loginPassword" required placeholder="Admin@1234">
       </div>
-      <button type="submit" class="btn btn-grad-purple w-100 btn-lg"><i class="bi bi-person-plus me-1"></i> สมัครสมาชิก</button>
-      <div class="text-center mt-3 small"><span class="auth-tab-link" onclick="switchAuthPanel('login')">&larr; กลับไปเข้าสู่ระบบ</span></div>
-    </form>
-
-    <!-- ฟอร์มลืมรหัสผ่าน -->
-    <form id="formForgot" class="auth-panel d-none">
-      <p class="small text-muted">ระบบจะส่งรหัสยืนยันไปยังอีเมลของคุณ</p>
-      <div class="mb-3"><label class="form-label">อีเมล</label><input type="email" class="form-control" id="forgotEmail" required></div>
-      <button type="submit" class="btn btn-grad-pink w-100 btn-lg"><i class="bi bi-send me-1"></i> ส่งรหัสยืนยัน</button>
-      <div class="text-center mt-3 small">
-        <span class="auth-tab-link" onclick="switchAuthPanel('reset')">มีรหัสยืนยันแล้ว?</span> |
-        <span class="auth-tab-link" onclick="switchAuthPanel('login')">กลับไปเข้าสู่ระบบ</span>
+      <button type="submit" class="btn btn-pastel w-100 py-2"><i class="bi bi-box-arrow-in-right"></i> เข้าสู่ระบบ</button>
+      <div class="text-center mt-3">
+        <a href="#" class="small text-decoration-none" id="btnForgotPassword">ลืมรหัสผ่าน?</a>
       </div>
     </form>
-
-    <!-- ฟอร์มตั้งรหัสผ่านใหม่ด้วยโทเคน -->
-    <form id="formReset" class="auth-panel d-none">
-      <div class="mb-3"><label class="form-label">อีเมล</label><input type="email" class="form-control" id="resetEmail" required></div>
-      <div class="mb-3"><label class="form-label">รหัสยืนยัน (จากอีเมล)</label><input type="text" class="form-control" id="resetToken" required></div>
-      <div class="mb-3"><label class="form-label">รหัสผ่านใหม่</label><input type="password" class="form-control" id="resetNewPassword" required></div>
-      <button type="submit" class="btn btn-grad-green w-100 btn-lg"><i class="bi bi-key me-1"></i> ตั้งรหัสผ่านใหม่</button>
-      <div class="text-center mt-3 small"><span class="auth-tab-link" onclick="switchAuthPanel('login')">&larr; กลับไปเข้าสู่ระบบ</span></div>
-    </form>
+    <div class="text-center mt-3">
+      <small class="text-muted">บัญชีเริ่มต้น: admin@system.local / Admin@1234</small>
+    </div>
   </div>
 </div>
 
-<!-- ======================================================================= -->
-<!-- แอปหลัก (หลังเข้าสู่ระบบ)                                                -->
-<!-- ======================================================================= -->
-<div id="appScreen" class="d-none">
-
-  <!-- Topbar -->
-  <div class="topbar glass d-flex align-items-center justify-content-between">
-    <div class="d-flex align-items-center gap-2">
-      <div class="logo-wrap" style="width:42px;height:42px;border-radius:12px;" id="logoBoxApp"><i class="bi bi-upc-scan" style="font-size:1.1rem;"></i></div>
-      <div>
-        <div class="fw-bold" style="font-size:.95rem;">ระบบสแกนสต๊อกสินค้า</div>
-        <div class="text-muted" style="font-size:.7rem;" id="roleLabel">-</div>
+<!-- ============================= APP SHELL ============================= -->
+<div id="appShell" style="display:none;">
+  <!-- Top Navbar -->
+  <nav class="navbar navbar-glass sticky-top px-3 py-2">
+    <div class="d-flex align-items-center justify-content-between w-100">
+      <div class="d-flex align-items-center gap-2">
+        <img id="logoImgApp" src="https://quickchart.io/qr?text=StockScan&margin=0" class="logo-circle" alt="logo">
+        <div>
+          <div class="fw-bold" style="font-size:1rem;">สแกนสต๊อกสินค้า</div>
+          <div class="small text-muted" id="userInfoLabel">-</div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="position-relative">
+          <button class="btn btn-soft btn-sm" id="btnNotifBell"><i class="bi bi-bell"></i></button>
+          <span class="badge-dot" id="notifBadge" style="display:none;">0</span>
+        </div>
+        <button class="btn btn-soft btn-sm" id="btnLogout"><i class="bi bi-box-arrow-right"></i></button>
       </div>
     </div>
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-soft position-relative" style="padding:.5rem .7rem;" onclick="onBellClick()">
-        <i class="bi bi-bell"></i>
-        <span class="badge-dot d-none" id="badgeCount">0</span>
-      </button>
-      <div class="dropdown">
-        <button class="btn user-chip dropdown-toggle" type="button" data-bs-toggle="dropdown">
-          <i class="bi bi-person-circle me-1"></i><span id="userNameLabel">-</span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li><button class="dropdown-item" onclick="openChangePasswordModal(false)"><i class="bi bi-key me-2"></i>เปลี่ยนรหัสผ่าน</button></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><button class="dropdown-item text-danger" onclick="doLogout()"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</button></li>
-        </ul>
-      </div>
-    </div>
-  </div>
+  </nav>
 
-  <div class="container pb-5" style="max-width:1100px;">
+  <div class="container py-3" style="max-width:900px;">
 
-    <!-- ============== SECTION: สแกน ============== -->
-    <section id="section-scan" class="app-section">
-      <div class="glass p-3 p-md-4 animate-fade">
-        <h5 class="fw-bold mb-3"><i class="bi bi-upc-scan me-2"></i>สแกนบาร์โค้ด / QR Code</h5>
+    <!-- ================= SCAN SECTION ================= -->
+    <div class="section-page" id="page-scan">
+      <div class="glass p-3 mb-3 animate-in">
+        <h5 class="fw-bold mb-3"><i class="bi bi-upc-scan"></i> สแกนบาร์โค้ด/QR สินค้า</h5>
 
-        <div id="scanCameraBlock">
+        <div id="scannerWrap">
           <div id="reader"></div>
-          <div id="scannerPlaceholder" class="scan-placeholder d-none">
-            <i class="bi bi-camera-video-off" style="font-size:2.4rem;"></i>
-            <p class="mt-2 mb-0">ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตสิทธิ์กล้อง<br>หรือพิมพ์รหัสสินค้าด้วยตนเองด้านล่าง</p>
-          </div>
-          <div class="text-center mt-3">
-            <button class="btn btn-grad-blue d-none" id="btnReopenCamera" onclick="startScanner()"><i class="bi bi-camera me-1"></i> เปิดกล้องอีกครั้ง</button>
+          <div class="text-center mt-2">
+            <button class="btn btn-pastel" id="btnStartScan"><i class="bi bi-camera"></i> เปิดกล้องอีกครั้ง</button>
           </div>
         </div>
 
-        <div class="row g-2 mt-3">
-          <div class="col-8">
-            <input type="text" class="form-control" id="scanCodeInput" placeholder="รหัสสินค้าที่สแกนได้ / พิมพ์เอง" readonly>
-          </div>
-          <div class="col-4">
-            <button class="btn btn-grad-purple w-100" id="btnManualCheck"><i class="bi bi-search"></i> ตรวจสอบ</button>
-          </div>
-        </div>
-        <div class="form-check mt-2">
-          <input class="form-check-input" type="checkbox" id="chkManualEdit">
-          <label class="form-check-label small text-muted" for="chkManualEdit">พิมพ์รหัสสินค้าด้วยตนเอง (กรณีสแกนไม่ได้)</label>
+        <div id="cameraErrorBox" class="alert alert-warning mt-3" style="display:none;">
+          <i class="bi bi-exclamation-triangle"></i> ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตสิทธิ์กล้องในเบราว์เซอร์ (ไอคอนกุญแจ/กล้องที่แถบ URL) แล้วกด "เปิดกล้องอีกครั้ง" หรือพิมพ์รหัสสินค้าด้านล่างแทน
         </div>
 
-        <!-- ข้อมูลสินค้า + ฟอร์มบันทึก -->
-        <div id="productFormBlock" class="mt-4 d-none animate-fade">
-          <div class="glass p-3 mb-3" style="background:rgba(143,217,196,0.18);">
-            <div class="d-flex justify-content-between">
-              <div><i class="bi bi-box-seam me-1"></i><b id="pName">-</b></div>
-              <span class="chip chip-in" id="pCategory">-</span>
-            </div>
-            <div class="small text-muted mt-1">รหัส: <span id="pCode">-</span> | หน่วย: <span id="pUnit">-</span></div>
-          </div>
-
-          <form id="transactionForm">
-            <div class="row g-3">
-              <div class="col-12">
-                <label class="form-label">รับเข้า-ส่งออก *</label>
-                <div class="d-flex gap-3">
-                  <div class="form-check"><input class="form-check-input" type="radio" name="txType" id="txTypeIn" value="รับเข้า" checked><label class="form-check-label" for="txTypeIn">รับเข้า</label></div>
-                  <div class="form-check"><input class="form-check-input" type="radio" name="txType" id="txTypeOut" value="ส่งออก"><label class="form-check-label" for="txTypeOut">ส่งออก</label></div>
-                </div>
-              </div>
-              <div class="col-6">
-                <label class="form-label">จำนวน *</label>
-                <input type="number" min="1" step="1" class="form-control" id="txQty" required>
-              </div>
-              <div class="col-6">
-                <label class="form-label">เอกสารอ้างอิง *</label>
-                <input type="text" class="form-control" id="txRefDoc" required>
-              </div>
-              <div class="col-6">
-                <label class="form-label">ผู้ค้า-ลูกค้า *</label>
-                <select class="form-select" id="txPartnerType" required>
-                  <option value="">-- เลือก --</option>
-                  <option value="ผู้ค้า">ผู้ค้า</option>
-                  <option value="ลูกค้า">ลูกค้า</option>
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label">รหัสผู้ค้า-ลูกค้า *</label>
-                <input type="text" class="form-control" id="txPartnerCode" list="partnerListOptions" placeholder="พิมพ์หรือเลือกรหัส" required>
-                <datalist id="partnerListOptions"></datalist>
-              </div>
-              <div class="col-6">
-                <label class="form-label">วันที่หมดอายุ</label>
-                <input type="date" class="form-control" id="txExpiry">
-              </div>
-              <div class="col-12">
-                <label class="form-label">หมายเหตุ</label>
-                <textarea class="form-control" id="txNote" rows="2"></textarea>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-grad-green w-100 btn-lg mt-4" id="btnSaveTx">
-              <i class="bi bi-save me-1"></i> บันทึกข้อมูล
-            </button>
-          </form>
-        </div>
-
-        <!-- สรุปรายละเอียดข้อมูลหลังบันทึกสำเร็จ -->
-        <div id="summaryBlock" class="mt-4 d-none animate-fade">
-          <div class="glass p-3" style="background:rgba(138,180,248,0.16);">
-            <h6 class="fw-bold mb-3"><i class="bi bi-clipboard-check me-2"></i>รายละเอียดข้อมูลที่บันทึก</h6>
-            <div id="summaryContent"></div>
-          </div>
-          <button class="btn btn-grad-blue w-100 btn-lg mt-3" onclick="resetScanAll()"><i class="bi bi-arrow-repeat me-1"></i> สแกนใหม่</button>
+        <hr>
+        <label class="form-label fw-semibold">รหัสสินค้า</label>
+        <div class="input-group mb-2">
+          <input type="text" class="form-control scan-code-box" id="scannedCode" placeholder="พิมพ์หรือสแกนรหัสสินค้า">
+          <button class="btn btn-pastel" id="btnCheckCode"><i class="bi bi-search"></i> ตรวจสอบ</button>
         </div>
       </div>
-    </section>
 
-    <!-- ============== SECTION: ค้นหา ============== -->
-    <section id="section-search" class="app-section">
-      <div class="glass p-3 p-md-4 animate-fade">
-        <h5 class="fw-bold mb-3"><i class="bi bi-search me-2"></i>ค้นหารายการสต๊อกสินค้า</h5>
+      <!-- ข้อมูลสินค้า + ฟอร์มบันทึก -->
+      <div class="glass p-3 mb-3 animate-in" id="productFormCard" style="display:none;">
+        <div class="p-3 mb-3 rounded-4" style="background:rgba(142,124,195,0.12);">
+          <div class="fw-bold"><i class="bi bi-box-seam"></i> <span id="pfName">-</span></div>
+          <div class="small text-muted">ประเภท: <span id="pfCategory">-</span> | หน่วย: <span id="pfUnit">-</span> | รหัส: <span id="pfCode">-</span></div>
+        </div>
+
+        <form id="transactionForm">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">รับเข้า-ส่งออก *</label>
+            <div class="d-flex gap-2">
+              <div class="form-check form-check-inline flex-fill border rounded-3 p-2">
+                <input class="form-check-input" type="radio" name="txType" id="typeIn" value="รับเข้า" checked>
+                <label class="form-check-label" for="typeIn"><i class="bi bi-box-arrow-in-down text-success"></i> รับเข้า</label>
+              </div>
+              <div class="form-check form-check-inline flex-fill border rounded-3 p-2">
+                <input class="form-check-input" type="radio" name="txType" id="typeOut" value="ส่งออก">
+                <label class="form-check-label" for="typeOut"><i class="bi bi-box-arrow-up text-danger"></i> ส่งออก</label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">จำนวน *</label>
+            <input type="number" min="1" step="1" class="form-control" id="txQty" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">เอกสารอ้างอิง *</label>
+            <input type="text" class="form-control" id="txDocRef" required placeholder="เลขที่ใบส่งของ/PO">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">ผู้ค้า-ลูกค้า *</label>
+              <select class="form-select" id="txPartnerType" required>
+                <option value="">เลือก</option>
+                <option value="ผู้ค้า">ผู้ค้า</option>
+                <option value="ลูกค้า">ลูกค้า</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">รหัส *</label>
+              <input type="text" class="form-control" id="txPartnerCode" list="partnerList" required placeholder="รหัส">
+              <datalist id="partnerList"></datalist>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">วันที่หมดอายุ</label>
+            <input type="date" class="form-control" id="txExpiry">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">หมายเหตุ</label>
+            <textarea class="form-control" id="txNote" rows="2"></textarea>
+          </div>
+          <button type="submit" class="btn btn-pastel w-100 py-2" id="btnSaveTx"><i class="bi bi-save"></i> บันทึกข้อมูล</button>
+        </form>
+      </div>
+
+      <!-- สรุปผลหลังบันทึก -->
+      <div class="glass p-3 mb-3 animate-in" id="resultCard" style="display:none;">
+        <h5 class="fw-bold text-success"><i class="bi bi-check-circle"></i> รายละเอียดข้อมูล</h5>
+        <div id="resultDetail"></div>
+        <button class="btn btn-pastel w-100 mt-3" id="btnScanAgain"><i class="bi bi-arrow-repeat"></i> สแกนใหม่</button>
+      </div>
+    </div>
+
+    <!-- ================= SEARCH SECTION ================= -->
+    <div class="section-page" id="page-search">
+      <div class="glass p-3 mb-3 animate-in">
+        <h5 class="fw-bold mb-3"><i class="bi bi-search"></i> ค้นหารายการสต๊อก</h5>
         <div class="row g-2">
-          <div class="col-6 col-md-3"><label class="form-label">วันที่เริ่ม</label><input type="date" class="form-control" id="searchDateFrom"></div>
-          <div class="col-6 col-md-3"><label class="form-label">ถึงวันที่</label><input type="date" class="form-control" id="searchDateTo"></div>
-          <div class="col-6 col-md-3">
-            <label class="form-label">รับเข้า/ส่งออก</label>
-            <select class="form-select" id="searchType"><option value="">ทั้งหมด</option><option value="รับเข้า">รับเข้า</option><option value="ส่งออก">ส่งออก</option></select>
+          <div class="col-6"><label class="form-label small">วันที่เริ่ม</label><input type="date" class="form-control" id="sStart"></div>
+          <div class="col-6"><label class="form-label small">วันที่สิ้นสุด</label><input type="date" class="form-control" id="sEnd"></div>
+          <div class="col-6">
+            <label class="form-label small">รับเข้า/ส่งออก</label>
+            <select class="form-select" id="sType"><option value="">ทั้งหมด</option><option value="รับเข้า">รับเข้า</option><option value="ส่งออก">ส่งออก</option></select>
           </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label">ประเภทสินค้า</label>
-            <select class="form-select" id="searchCategory"><option value="">ทั้งหมด</option></select>
-          </div>
-          <div class="col-12">
-            <label class="form-label">ผู้ค้า-ลูกค้า (รหัสหรือชื่อ)</label>
-            <input type="text" class="form-control" id="searchPartnerKeyword" placeholder="พิมพ์รหัสหรือชื่อคู่ค้า">
-          </div>
+          <div class="col-6"><label class="form-label small">ประเภทสินค้า</label><input type="text" class="form-control" id="sCategory" placeholder="เช่น เครื่องดื่ม"></div>
+          <div class="col-12"><label class="form-label small">ผู้ค้า-ลูกค้า (รหัสหรือชื่อ)</label><input type="text" class="form-control" id="sPartner" placeholder="พิมพ์รหัสหรือชื่อ"></div>
         </div>
         <div class="d-flex gap-2 mt-3">
-          <button class="btn btn-grad-blue flex-fill" onclick="doSearch()"><i class="bi bi-search me-1"></i> ค้นหา</button>
-          <button class="btn btn-grad-pink flex-fill" id="btnSendSearchNotify" onclick="sendSearchNotify()" disabled><i class="bi bi-send me-1"></i> ส่งผลไปแจ้งเตือน</button>
-        </div>
-
-        <div class="mt-4" id="searchResultBlock" style="display:none;">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="fw-bold">ผลการค้นหา: <span id="searchCount">0</span> รายการ</div>
-            <div class="fw-bold text-success">ผลรวมจำนวน: <span id="searchTotalQty">0</span></div>
-          </div>
-          <div class="table-responsive table-glass">
-            <table class="table table-sm align-middle mb-0">
-              <thead><tr>
-                <th>เวลา</th><th>รหัส</th><th>สินค้า</th><th>ประเภท</th><th>รับ/ส่ง</th><th>จำนวน</th>
-                <th>เอกสาร</th><th>คู่ค้า</th><th>หมดอายุ</th><th>หมายเหตุ</th>
-              </tr></thead>
-              <tbody id="searchResultBody"></tbody>
-            </table>
-          </div>
+          <button class="btn btn-pastel flex-fill" id="btnSearch"><i class="bi bi-search"></i> ค้นหา</button>
+          <button class="btn btn-soft flex-fill" id="btnSendSearchNotify"><i class="bi bi-send"></i> ส่งแจ้งเตือน</button>
         </div>
       </div>
-    </section>
-
-    <!-- ============== SECTION: DASHBOARD ============== -->
-    <section id="section-dashboard" class="app-section">
-      <div class="glass p-3 p-md-4 animate-fade mb-3">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <h5 class="fw-bold mb-0"><i class="bi bi-bar-chart-line me-2"></i>Dashboard ผู้บริหาร</h5>
-          <button class="btn btn-soft btn-sm" onclick="loadDashboard()"><i class="bi bi-arrow-clockwise me-1"></i> รีเฟรช</button>
+      <div class="glass p-3 mb-3 animate-in">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-bold">ผลลัพธ์: <span id="searchCount">0</span> รายการ</span>
+          <span class="fw-bold text-primary">ผลรวมจำนวน: <span id="searchSum">0</span></span>
         </div>
-        <div class="mt-3">
-          <input type="text" class="form-control" id="widgetSearchBox" placeholder="🔎 พิมพ์คำค้นเพื่อกรองการ์ด/กราฟที่ต้องการแสดง เช่น 'ใกล้หมดอายุ', 'กราฟ'">
-          <div id="widgetChooserList" class="d-flex flex-wrap gap-2 mt-2"></div>
-          <div class="text-end mt-2" id="saveDefaultWidgetBtnWrap" style="display:none;">
-            <button class="btn btn-soft btn-sm" onclick="saveDefaultWidgets()"><i class="bi bi-cloud-arrow-up me-1"></i> ตั้งเป็นค่าเริ่มต้นระบบ</button>
-          </div>
+        <div class="table-responsive table-glass">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>วันเวลา</th><th>รหัส</th><th>ชื่อสินค้า</th><th>ประเภท</th><th>รับ/ส่ง</th><th>จำนวน</th><th>คู่ค้า</th><th>เอกสาร</th></tr></thead>
+            <tbody id="searchTableBody"><tr><td colspan="8" class="text-center text-muted py-3">ยังไม่มีข้อมูล</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= DASHBOARD SECTION ================= -->
+    <div class="section-page" id="page-dashboard">
+      <div class="glass p-3 mb-3 animate-in">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="fw-bold mb-0"><i class="bi bi-speedometer2"></i> Dashboard ผู้บริหาร</h5>
+          <button class="btn btn-soft btn-sm" data-bs-toggle="collapse" data-bs-target="#dashCustomize"><i class="bi bi-sliders"></i> ปรับแต่ง</button>
+        </div>
+        <div class="collapse mt-3" id="dashCustomize">
+          <input type="text" class="form-control mb-2" id="dashSearchWidget" placeholder="พิมพ์ค้นหาการ์ด/กราฟที่ต้องการแสดง...">
+          <div id="widgetChecklist" class="d-flex flex-wrap gap-2 mb-2"></div>
+          <button class="btn btn-pastel btn-sm" id="btnSaveDashConfig"><i class="bi bi-save"></i> บันทึกการแสดงผล</button>
         </div>
       </div>
 
-      <div id="dashboardWidgetArea" class="row g-3"></div>
-    </section>
+      <div class="row g-3 mb-3" id="dashCards">
+        <div class="col-6 col-md-3 dash-widget" data-widget="cardIn">
+          <div class="glass p-3 text-center animate-in"><div class="small text-muted">รับเข้ารวม</div><div class="fs-4 fw-bold text-success" id="cardTotalIn">0</div></div>
+        </div>
+        <div class="col-6 col-md-3 dash-widget" data-widget="cardOut">
+          <div class="glass p-3 text-center animate-in"><div class="small text-muted">ส่งออกรวม</div><div class="fs-4 fw-bold text-danger" id="cardTotalOut">0</div></div>
+        </div>
+        <div class="col-6 col-md-3 dash-widget" data-widget="cardExpiry">
+          <div class="glass p-3 text-center animate-in"><div class="small text-muted">ใกล้หมดอายุ (30วัน)</div><div class="fs-4 fw-bold text-warning" id="cardNearExpiry">0</div></div>
+        </div>
+        <div class="col-6 col-md-3 dash-widget" data-widget="cardNet">
+          <div class="glass p-3 text-center animate-in"><div class="small text-muted">คงเหลือสุทธิ</div><div class="fs-4 fw-bold" id="cardNet">0</div></div>
+        </div>
+      </div>
 
-    <!-- ============== SECTION: ตั้งค่า (Admin) ============== -->
-    <section id="section-settings" class="app-section">
       <div class="row g-3">
-        <div class="col-12 col-md-3">
-          <div class="glass p-2 animate-fade">
-            <div class="sidebar-tab active" onclick="switchSettingsTab('notify', this)"><i class="bi bi-bell-fill me-2"></i>การแจ้งเตือน</div>
-            <div class="sidebar-tab" onclick="switchSettingsTab('users', this)"><i class="bi bi-people-fill me-2"></i>ผู้ใช้งาน</div>
-            <div class="sidebar-tab" onclick="switchSettingsTab('logs', this)"><i class="bi bi-journal-text me-2"></i>Activity Logs</div>
-            <div class="sidebar-tab" onclick="switchSettingsTab('import', this)"><i class="bi bi-upload me-2"></i>นำเข้าสินค้า</div>
+        <div class="col-md-6 dash-widget" data-widget="chartDaily">
+          <div class="glass p-3 chart-card animate-in"><h6 class="fw-bold">แนวโน้มรับเข้า-ส่งออกรายวัน</h6><canvas id="chartDaily"></canvas></div>
+        </div>
+        <div class="col-md-6 dash-widget" data-widget="chartCategory">
+          <div class="glass p-3 chart-card animate-in"><h6 class="fw-bold">สัดส่วนตามประเภทสินค้า</h6><canvas id="chartCategory"></canvas></div>
+        </div>
+        <div class="col-md-6 dash-widget" data-widget="chartTopProducts">
+          <div class="glass p-3 chart-card animate-in"><h6 class="fw-bold">Top 5 สินค้า</h6><canvas id="chartTopProducts"></canvas></div>
+        </div>
+        <div class="col-md-6 dash-widget" data-widget="chartTopPartners">
+          <div class="glass p-3 chart-card animate-in"><h6 class="fw-bold">Top 5 คู่ค้า</h6><canvas id="chartTopPartners"></canvas></div>
+        </div>
+        <div class="col-12 dash-widget" data-widget="tableExpiry">
+          <div class="glass p-3 animate-in">
+            <h6 class="fw-bold"><i class="bi bi-exclamation-circle text-warning"></i> สินค้าใกล้หมดอายุ</h6>
+            <div class="table-responsive table-glass"><table class="table table-sm mb-0"><thead><tr><th>รหัส</th><th>ชื่อสินค้า</th><th>วันหมดอายุ</th><th>จำนวน</th></tr></thead><tbody id="expiryTableBody"></tbody></table></div>
           </div>
         </div>
-        <div class="col-12 col-md-9">
-
-          <!-- การแจ้งเตือน -->
-          <div class="glass p-3 p-md-4 settings-panel animate-fade" id="panel-notify">
-            <h6 class="fw-bold mb-3"><i class="bi bi-line me-2"></i>LINE Messaging API</h6>
-            <div class="row g-2 mb-3">
-              <div class="col-md-6"><label class="form-label">Channel Access Token</label><input class="form-control" id="setLineToken"></div>
-              <div class="col-md-6"><label class="form-label">userId / groupId</label><input class="form-control" id="setLineTarget"></div>
-            </div>
-            <button class="btn btn-soft btn-sm mb-4" onclick="testChannel('line')">ทดสอบส่ง LINE</button>
-
-            <h6 class="fw-bold mb-3"><i class="bi bi-telegram me-2"></i>Telegram Bot</h6>
-            <div class="row g-2 mb-3">
-              <div class="col-md-6"><label class="form-label">Bot Token</label><input class="form-control" id="setTgToken"></div>
-              <div class="col-md-6"><label class="form-label">Chat ID</label><input class="form-control" id="setTgChatId"></div>
-            </div>
-            <button class="btn btn-soft btn-sm mb-4" onclick="testChannel('telegram')">ทดสอบส่ง Telegram</button>
-
-            <h6 class="fw-bold mb-3"><i class="bi bi-envelope-fill me-2"></i>Email</h6>
-            <div class="row g-2 mb-3">
-              <div class="col-md-6"><label class="form-label">อีเมลผู้รับ</label><input class="form-control" id="setEmailTo"></div>
-            </div>
-            <button class="btn btn-soft btn-sm mb-4" onclick="testChannel('email')">ทดสอบส่ง Email</button>
-
-            <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>แจ้งเตือนอัตโนมัติ</h6>
-            <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="notifyDaily"><label class="form-check-label">รายวัน (08:00)</label></div>
-            <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="notifyWeekly"><label class="form-check-label">รายสัปดาห์ (จันทร์ 08:00)</label></div>
-            <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" id="notifyMonthly"><label class="form-check-label">รายเดือน (วันที่ 1, 08:00)</label></div>
-            <div class="mb-3"><label class="form-label">แจ้งเตือนสินค้าใกล้หมดอายุล่วงหน้า (วัน)</label><input type="number" class="form-control" id="expiryAlertDays" style="max-width:160px;"></div>
-
-            <button class="btn btn-grad-blue btn-lg w-100" onclick="saveNotifySettings()"><i class="bi bi-save me-1"></i> บันทึกการตั้งค่า</button>
-          </div>
-
-          <!-- ผู้ใช้งาน -->
-          <div class="glass p-3 p-md-4 settings-panel animate-fade d-none" id="panel-users">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h6 class="fw-bold mb-0"><i class="bi bi-people-fill me-2"></i>จัดการผู้ใช้งาน</h6>
-              <button class="btn btn-grad-purple btn-sm" onclick="openUserModal()"><i class="bi bi-person-plus me-1"></i> เพิ่มผู้ใช้</button>
-            </div>
-            <div class="table-responsive table-glass">
-              <table class="table table-sm align-middle mb-0">
-                <thead><tr><th>อีเมล</th><th>ชื่อ</th><th>บทบาท</th><th>สถานะ</th><th>ล็อกอินล่าสุด</th><th>จัดการ</th></tr></thead>
-                <tbody id="usersTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Activity Logs -->
-          <div class="glass p-3 p-md-4 settings-panel animate-fade d-none" id="panel-logs">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h6 class="fw-bold mb-0"><i class="bi bi-journal-text me-2"></i>Activity Logs</h6>
-              <button class="btn btn-soft btn-sm" onclick="loadActivityLogs()"><i class="bi bi-arrow-clockwise"></i></button>
-            </div>
-            <div class="table-responsive table-glass" style="max-height:480px; overflow:auto;">
-              <table class="table table-sm align-middle mb-0">
-                <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>กิจกรรม</th><th>รายละเอียด</th></tr></thead>
-                <tbody id="logsTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- นำเข้าสินค้า -->
-          <div class="glass p-3 p-md-4 settings-panel animate-fade d-none" id="panel-import">
-            <h6 class="fw-bold mb-3"><i class="bi bi-upload me-2"></i>นำเข้าข้อมูลสินค้า (CSV / TXT)</h6>
-            <p class="small text-muted">รูปแบบไฟล์: รหัส,ชื่อสินค้า,ประเภท,หน่วย (1 บรรทัดต่อ 1 รายการ)</p>
-            <button class="btn btn-soft btn-sm mb-3" onclick="downloadTemplate()"><i class="bi bi-download me-1"></i> ดาวน์โหลดเทมเพลต</button>
-            <input type="file" class="form-control mb-3" id="importFile" accept=".csv,.txt">
-            <textarea class="form-control mb-2" id="importPreviewText" rows="6" placeholder="หรือวางข้อมูลตรงนี้ได้โดยตรง"></textarea>
-            <button class="btn btn-grad-green w-100" onclick="submitImportProducts()"><i class="bi bi-check2-circle me-1"></i> นำเข้าข้อมูล</button>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-  </div>
-
-  <!-- Bottom nav -->
-  <div class="bottom-nav glass" id="bottomNav"></div>
-</div>
-
-<!-- Modal: เปลี่ยนรหัสผ่าน -->
-<div class="modal fade" id="modalChangePassword" tabindex="-1" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content glass-strong border-0">
-      <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold"><i class="bi bi-key me-2"></i>เปลี่ยนรหัสผ่าน</h5>
-        <button type="button" class="btn-close" id="btnCloseChangePwd" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-warning small d-none" id="forcedPwdAlert"><i class="bi bi-exclamation-triangle me-1"></i>กรุณาเปลี่ยนรหัสผ่านก่อนใช้งานครั้งแรก</div>
-        <div class="mb-3 d-none" id="oldPwdWrap"><label class="form-label">รหัสผ่านเดิม</label><input type="password" class="form-control" id="cpOldPassword"></div>
-        <div class="mb-3"><label class="form-label">รหัสผ่านใหม่</label><input type="password" class="form-control" id="cpNewPassword"></div>
-        <button class="btn btn-grad-blue w-100" onclick="submitChangePassword()">บันทึกรหัสผ่านใหม่</button>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- Modal: เพิ่ม/แก้ไขผู้ใช้ -->
-<div class="modal fade" id="modalUser" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content glass-strong border-0">
-      <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold" id="userModalTitle">เพิ่มผู้ใช้</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="umUserId">
-        <div class="mb-2"><label class="form-label">ชื่อ-นามสกุล</label><input class="form-control" id="umName"></div>
-        <div class="mb-2"><label class="form-label">อีเมล</label><input class="form-control" id="umEmail"></div>
-        <div class="mb-2 d-none" id="umPasswordWrap"><label class="form-label">รหัสผ่านเริ่มต้น</label><input type="text" class="form-control" id="umPassword"></div>
-        <div class="row g-2">
-          <div class="col-6">
-            <label class="form-label">บทบาท</label>
-            <select class="form-select" id="umRole">
-              <option value="Admin">Admin</option>
-              <option value="User" selected>User</option>
-              <option value="Manager">Manager</option>
-            </select>
+    <!-- ================= SETTINGS SECTION ================= -->
+    <div class="section-page" id="page-settings">
+      <div class="glass p-3 mb-3 animate-in">
+        <h5 class="fw-bold mb-3"><i class="bi bi-gear"></i> ตั้งค่าระบบ</h5>
+        <ul class="nav nav-pills mb-3 flex-wrap gap-1" id="settingsTabs">
+          <li class="nav-item"><button class="nav-link active btn-soft" data-tab="tabNotify">แจ้งเตือน</button></li>
+          <li class="nav-item"><button class="nav-link btn-soft" data-tab="tabUsers">ผู้ใช้งาน</button></li>
+          <li class="nav-item"><button class="nav-link btn-soft" data-tab="tabLogs">ActivityLogs</button></li>
+          <li class="nav-item"><button class="nav-link btn-soft" data-tab="tabImport">นำเข้าสินค้า</button></li>
+          <li class="nav-item"><button class="nav-link btn-soft" data-tab="tabAccount">บัญชีของฉัน</button></li>
+        </ul>
+
+        <!-- Tab: แจ้งเตือน -->
+        <div class="settings-tab" id="tabNotify">
+          <h6 class="fw-bold">LINE Messaging API</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6"><input class="form-control" id="cfgLineToken" placeholder="Channel Access Token"></div>
+            <div class="col-md-5"><input class="form-control" id="cfgLineTo" placeholder="userId / groupId"></div>
+            <div class="col-md-1"><button class="btn btn-soft w-100" id="btnTestLine"><i class="bi bi-send"></i></button></div>
           </div>
-          <div class="col-6">
-            <label class="form-label">สถานะ</label>
-            <select class="form-select" id="umStatus">
-              <option value="Approved">Approved</option>
-              <option value="Pending">Pending</option>
-              <option value="Suspended">Suspended</option>
-            </select>
+          <h6 class="fw-bold">Telegram Bot</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6"><input class="form-control" id="cfgTgToken" placeholder="Bot Token"></div>
+            <div class="col-md-5"><input class="form-control" id="cfgTgChatId" placeholder="Chat ID"></div>
+            <div class="col-md-1"><button class="btn btn-soft w-100" id="btnTestTg"><i class="bi bi-send"></i></button></div>
+          </div>
+          <h6 class="fw-bold">Email</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-md-11"><input class="form-control" id="cfgEmailTo" placeholder="ปลายทางอีเมล"></div>
+            <div class="col-md-1"><button class="btn btn-soft w-100" id="btnTestEmail"><i class="bi bi-send"></i></button></div>
+          </div>
+          <h6 class="fw-bold">แจ้งเตือนอัตโนมัติ</h6>
+          <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" id="cfgNotifyDaily"><label class="form-check-label">รายวัน (08:00 น.)</label></div>
+          <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" id="cfgNotifyWeekly"><label class="form-check-label">รายสัปดาห์ (ทุกวันจันทร์)</label></div>
+          <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" id="cfgNotifyMonthly"><label class="form-check-label">รายเดือน (วันที่ 1)</label></div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-pastel" id="btnSaveNotifySettings"><i class="bi bi-save"></i> บันทึกการตั้งค่า</button>
+            <button class="btn btn-soft" id="btnInstallTrigger"><i class="bi bi-clock-history"></i> ติดตั้งตัวจับเวลาแจ้งเตือน</button>
           </div>
         </div>
-        <button class="btn btn-grad-purple w-100 mt-3" onclick="submitUserForm()">บันทึก</button>
+
+        <!-- Tab: ผู้ใช้งาน -->
+        <div class="settings-tab" id="tabUsers" style="display:none;">
+          <div class="glass p-2 mb-3">
+            <div class="row g-2">
+              <div class="col-md-4"><input class="form-control" id="newUserEmail" placeholder="อีเมล"></div>
+              <div class="col-md-4"><input class="form-control" id="newUserName" placeholder="ชื่อ-นามสกุล"></div>
+              <div class="col-md-2"><select class="form-select" id="newUserRole"><option value="User">User</option><option value="Manager">Manager</option><option value="Admin">Admin</option></select></div>
+              <div class="col-md-2"><button class="btn btn-pastel w-100" id="btnCreateUser"><i class="bi bi-person-plus"></i></button></div>
+            </div>
+          </div>
+          <div class="table-responsive table-glass"><table class="table table-sm align-middle mb-0">
+            <thead><tr><th>อีเมล</th><th>ชื่อ</th><th>สิทธิ์</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+            <tbody id="usersTableBody"></tbody>
+          </table></div>
+        </div>
+
+        <!-- Tab: ActivityLogs -->
+        <div class="settings-tab" id="tabLogs" style="display:none;">
+          <div class="table-responsive table-glass" style="max-height:420px; overflow-y:auto;">
+            <table class="table table-sm mb-0"><thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>กิจกรรม</th><th>รายละเอียด</th></tr></thead>
+            <tbody id="logsTableBody"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Tab: นำเข้าสินค้า -->
+        <div class="settings-tab" id="tabImport" style="display:none;">
+          <p class="small text-muted">รูปแบบไฟล์ CSV/TXT: <code>รหัส,ชื่อสินค้า,ประเภท,หน่วย</code> (1 แถวต่อ 1 สินค้า)</p>
+          <button class="btn btn-soft btn-sm mb-2" id="btnDownloadTemplate"><i class="bi bi-download"></i> ดาวน์โหลด Template</button>
+          <textarea class="form-control mb-2" id="importCsvText" rows="6" placeholder="P006,สินค้าใหม่,หมวดหมู่,หน่วย"></textarea>
+          <input type="file" class="form-control mb-2" id="importFile" accept=".csv,.txt">
+          <button class="btn btn-pastel" id="btnImportProducts"><i class="bi bi-upload"></i> นำเข้าข้อมูล</button>
+        </div>
+
+        <!-- Tab: บัญชีของฉัน -->
+        <div class="settings-tab" id="tabAccount" style="display:none;">
+          <h6 class="fw-bold">เปลี่ยนรหัสผ่าน</h6>
+          <div class="mb-2"><input type="password" class="form-control" id="accOldPassword" placeholder="รหัสผ่านเดิม"></div>
+          <div class="mb-2"><input type="password" class="form-control" id="accNewPassword" placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)"></div>
+          <button class="btn btn-pastel" id="btnChangePassword"><i class="bi bi-key"></i> เปลี่ยนรหัสผ่าน</button>
+        </div>
       </div>
     </div>
+
+  </div> <!-- /container -->
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-item-btn" data-page="page-scan"><i class="bi bi-upc-scan"></i>สแกน</button>
+    <button class="nav-item-btn" data-page="page-search"><i class="bi bi-search"></i>ค้นหา</button>
+    <button class="nav-item-btn" data-page="page-dashboard"><i class="bi bi-speedometer2"></i>Dashboard</button>
+    <button class="nav-item-btn" data-page="page-settings"><i class="bi bi-gear"></i>ตั้งค่า</button>
   </div>
 </div>
 
-<!-- ============ CDN: jQuery / Bootstrap JS / SweetAlert2 / html5-qrcode / Chart.js ============ -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- ============================= MODAL: บังคับเปลี่ยนรหัสผ่านครั้งแรก ============================= -->
+<div class="modal" id="forceChangeModal" data-bs-backdrop="static" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content glass-strong">
+    <div class="modal-body p-4">
+      <h5 class="fw-bold"><i class="bi bi-shield-lock"></i> กรุณาเปลี่ยนรหัสผ่าน</h5>
+      <p class="small text-muted">เพื่อความปลอดภัย กรุณาตั้งรหัสผ่านใหม่ก่อนใช้งานครั้งแรก</p>
+      <input type="password" class="form-control mb-2" id="forceNewPassword" placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)">
+      <button class="btn btn-pastel w-100" id="btnForceChangeSubmit">ยืนยันเปลี่ยนรหัสผ่าน</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- ============================= MODAL: ลืมรหัสผ่าน ============================= -->
+<div class="modal" id="forgotModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content glass-strong">
+    <div class="modal-body p-4">
+      <h5 class="fw-bold"><i class="bi bi-envelope-paper"></i> ลืมรหัสผ่าน</h5>
+      <div id="forgotStep1">
+        <input type="email" class="form-control mb-2" id="forgotEmail" placeholder="อีเมลของคุณ">
+        <button class="btn btn-pastel w-100" id="btnForgotSend">ส่งรหัสรีเซ็ตไปยังอีเมล</button>
+      </div>
+      <div id="forgotStep2" style="display:none;">
+        <input type="text" class="form-control mb-2" id="resetToken" placeholder="รหัสรีเซ็ตจากอีเมล">
+        <input type="password" class="form-control mb-2" id="resetNewPassword" placeholder="รหัสผ่านใหม่">
+        <button class="btn btn-pastel w-100" id="btnResetSubmit">ยืนยันตั้งรหัสผ่านใหม่</button>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ============================= SCRIPTS ============================= -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -551,644 +482,569 @@ table{ font-size:.9rem; }
 
 <script>
 /* ========================================================================
- * ระบบสแกนสต๊อกสินค้า - Frontend Logic
- * ======================================================================== */
+   ตั้งค่า URL ของ Web App (Google Apps Script) ที่ Deploy แล้ว
+   *** สำคัญ: แก้ไข URL นี้ให้เป็นของโปรเจกต์ตัวเองหลัง Deploy ***
+======================================================================== */
+const API_URL = "https://script.google.com/macros/s/AKfycbzURY_cfw3-hyr9nRK3ONwgOxvFfBt8raI5v8jbFFElNht_3qzfnQyD9EPiLSTBjIJClg/exec";
+// URL โลโก้ด้านบน (เปลี่ยนเป็นโลโก้บริษัทของคุณได้)
+const LOGO_URL = "https://quickchart.io/qr?text=StockScan&margin=0";
+$('#logoImgLogin, #logoImgApp').attr('src', LOGO_URL);
 
-// !!! ตั้งค่า URL ของ Web App (Google Apps Script) ที่นี่ หลังจาก Deploy แล้ว !!!
-const API_URL = 'https://script.google.com/macros/s/AKfycbwwQBxo6Mp1rZ6bbbF2dNZDdQNIQNznwQ_eeAVNgjomJ3HCuijUVUQckozlTz9oA2Nu5Q/exec';
-
-// ใส่ URL โลโก้บริษัทได้ที่นี่ (ถ้าว่างจะแสดงไอคอนแทน)
-const LOGO_URL = 'https://piew1.github.io/bblogo.png';
-
-// ----- ตัวแปร session (เก็บเป็นตัวแปร JS ล้วน ไม่เก็บใน storage ตามข้อกำหนดความปลอดภัย) -----
+/* ========================================================================
+   STATE: เก็บ session token เป็นตัวแปร JS ธรรมดาเท่านั้น (ตามข้อกำหนดความปลอดภัย)
+   ห้ามเก็บลง localStorage / sessionStorage
+======================================================================== */
 let sessionToken = null;
-let currentUser = null;
-let currentProduct = null;
-let partnersCache = [];
+let currentUser = null; // {name, role, email}
 let html5QrCode = null;
-let isScanning = false;
-let lastSearchFilters = {};
-let dashboardData = null;
-let chartInstances = {};
-let badgeTimer = null;
+let lastCheckedProduct = null;
+let notifTimer = null;
+let dashboardConfig = null; // การตั้งค่าว่าจะแสดง widget ใดบ้าง
 
-// ใส่โลโก้ถ้ามีการกำหนด URL
-if (LOGO_URL) {
-  $('#logoBoxAuth, #logoBoxApp').html('<img src="' + LOGO_URL + '">');
-}
+const ALL_WIDGETS = [
+  {key:'cardIn', label:'การ์ด: รับเข้ารวม'}, {key:'cardOut', label:'การ์ด: ส่งออกรวม'},
+  {key:'cardExpiry', label:'การ์ด: ใกล้หมดอายุ'}, {key:'cardNet', label:'การ์ด: คงเหลือสุทธิ'},
+  {key:'chartDaily', label:'กราฟ: แนวโน้มรายวัน'}, {key:'chartCategory', label:'กราฟ: สัดส่วนประเภทสินค้า'},
+  {key:'chartTopProducts', label:'กราฟ: Top 5 สินค้า'}, {key:'chartTopPartners', label:'กราฟ: Top 5 คู่ค้า'},
+  {key:'tableExpiry', label:'ตาราง: สินค้าใกล้หมดอายุ'}
+];
 
-/* ------------------------------------------------------------------ */
-/* API Wrapper: เรียก Apps Script ด้วย fetch (text/plain กัน CORS preflight) */
-/* ------------------------------------------------------------------ */
-async function callApi(action, payload) {
-  payload = Object.assign({}, payload || {});
-  if (sessionToken && payload.token === undefined) payload.token = sessionToken;
+/* ========================================================================
+   HELPER: เรียก API ของ Google Apps Script ผ่าน fetch (POST + text/plain)
+   เพื่อหลีกเลี่ยง CORS preflight request
+======================================================================== */
+async function apiCall(action, data) {
+  data = data || {};
   try {
+    const payload = Object.assign({ action: action, token: sessionToken }, data);
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: action, payload: payload })
+      body: JSON.stringify(payload)
     });
     const json = await res.json();
-    if (json && json.code === 'SESSION_EXPIRED') {
-      forceLogout('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+    if (json && json.message && typeof json.message === 'string' && json.message.indexOf('SESSION_EXPIRED') !== -1) {
+      forceLogout('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
     }
     return json;
   } catch (err) {
-    return { success: false, message: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + err.message };
+    Swal.fire('ผิดพลาด', 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้: ' + err.message, 'error');
+    return { success: false, message: err.message };
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* AUTH: Login / Register / Forgot / Reset                             */
-/* ------------------------------------------------------------------ */
-function switchAuthPanel(name) {
-  $('.auth-panel').addClass('d-none');
-  $('#form' + name.charAt(0).toUpperCase() + name.slice(1)).removeClass('d-none');
-}
-
-$('#formLogin').on('submit', async function (e) {
+/* ========================================================================
+   AUTH: Login / Logout / Forgot / Reset / Change Password
+======================================================================== */
+$('#loginForm').on('submit', async function (e) {
   e.preventDefault();
   const email = $('#loginEmail').val().trim();
   const password = $('#loginPassword').val();
   Swal.fire({ title: 'กำลังเข้าสู่ระบบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const res = await callApi('login', { email: email, password: password });
+  const res = await apiCall('login', { email, password });
   Swal.close();
-  if (!res.success) { Swal.fire('เข้าสู่ระบบไม่สำเร็จ', res.message, 'error'); return; }
-  sessionToken = res.token;
-  currentUser = res.user;
-  enterApp();
-  if (res.mustChangePassword) {
-    openChangePasswordModal(true);
+  if (res.success) {
+    sessionToken = res.token;
+    currentUser = { name: res.name, role: res.role, email: res.email };
+    if (res.mustChangePassword) {
+      $('#forceChangeModal').modal('show');
+    } else {
+      enterApp();
+    }
   } else {
-    Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', timer: 1200, showConfirmButton: false });
+    Swal.fire('เข้าสู่ระบบไม่สำเร็จ', res.message || 'เกิดข้อผิดพลาด', 'error');
   }
 });
 
-$('#formRegister').on('submit', async function (e) {
-  e.preventDefault();
-  const payload = { name: $('#regName').val().trim(), email: $('#regEmail').val().trim(), password: $('#regPassword').val() };
-  const res = await callApi('register', payload);
-  if (res.success) { Swal.fire('สำเร็จ', res.message, 'success'); switchAuthPanel('login'); }
-  else Swal.fire('ผิดพลาด', res.message, 'error');
+$('#btnForceChangeSubmit').on('click', async function () {
+  const newPassword = $('#forceNewPassword').val();
+  if (!newPassword || newPassword.length < 8) { Swal.fire('แจ้งเตือน', 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร', 'warning'); return; }
+  const res = await apiCall('changePassword', { newPassword });
+  if (res.success) {
+    Swal.fire('สำเร็จ', 'เปลี่ยนรหัสผ่านเรียบร้อย', 'success');
+    $('#forceChangeModal').modal('hide');
+    enterApp();
+  } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
 });
 
-$('#formForgot').on('submit', async function (e) {
-  e.preventDefault();
-  const res = await callApi('forgotPassword', { email: $('#forgotEmail').val().trim() });
+$('#btnForgotPassword').on('click', function (e) { e.preventDefault(); $('#forgotStep1').show(); $('#forgotStep2').hide(); $('#forgotModal').modal('show'); });
+$('#btnForgotSend').on('click', async function () {
+  const email = $('#forgotEmail').val().trim();
+  if (!email) return;
+  Swal.fire({ title: 'กำลังส่ง...', didOpen: () => Swal.showLoading() });
+  const res = await apiCall('forgotPassword', { email });
+  Swal.close();
   Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
-  if (res.success) switchAuthPanel('reset');
+  if (res.success) { $('#forgotStep1').hide(); $('#forgotStep2').show(); }
 });
-
-$('#formReset').on('submit', async function (e) {
-  e.preventDefault();
-  const payload = { email: $('#resetEmail').val().trim(), resetToken: $('#resetToken').val().trim(), newPassword: $('#resetNewPassword').val() };
-  const res = await callApi('resetPassword', payload);
+$('#btnResetSubmit').on('click', async function () {
+  const email = $('#forgotEmail').val().trim();
+  const token = $('#resetToken').val().trim();
+  const newPassword = $('#resetNewPassword').val();
+  const res = await apiCall('resetPassword', { email, token, newPassword });
   Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
-  if (res.success) switchAuthPanel('login');
+  if (res.success) $('#forgotModal').modal('hide');
 });
 
-function doLogout() {
-  Swal.fire({ title: 'ยืนยันออกจากระบบ?', icon: 'question', showCancelButton: true, confirmButtonText: 'ออกจากระบบ', cancelButtonText: 'ยกเลิก' })
-    .then(async (r) => {
-      if (!r.isConfirmed) return;
-      await callApi('logout', {});
-      forceLogout(null);
-    });
-}
+$('#btnChangePassword').on('click', async function () {
+  const oldPassword = $('#accOldPassword').val();
+  const newPassword = $('#accNewPassword').val();
+  if (!newPassword || newPassword.length < 8) { Swal.fire('แจ้งเตือน', 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร', 'warning'); return; }
+  const res = await apiCall('changePassword', { oldPassword, newPassword });
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+  if (res.success) { $('#accOldPassword,#accNewPassword').val(''); }
+});
+
+$('#btnLogout').on('click', async function () {
+  const confirm = await Swal.fire({ title: 'ออกจากระบบ?', icon:'question', showCancelButton:true, confirmButtonText:'ออกจากระบบ', cancelButtonText:'ยกเลิก' });
+  if (!confirm.isConfirmed) return;
+  await apiCall('logout', {});
+  forceLogout('ออกจากระบบเรียบร้อย');
+});
 
 function forceLogout(message) {
   sessionToken = null; currentUser = null;
+  clearInterval(notifTimer);
   stopScanner();
-  if (badgeTimer) clearInterval(badgeTimer);
-  $('#appScreen').addClass('d-none');
-  $('#authScreen').removeClass('d-none');
-  $('#formLogin input').val('');
-  switchAuthPanel('login');
-  if (message) Swal.fire('แจ้งเตือน', message, 'warning');
-}
-
-/* ------------------------------------------------------------------ */
-/* เปลี่ยนรหัสผ่าน                                                      */
-/* ------------------------------------------------------------------ */
-let forcedChangeMode = false;
-function openChangePasswordModal(forced) {
-  forcedChangeMode = !!forced;
-  $('#forcedPwdAlert').toggleClass('d-none', !forced);
-  $('#oldPwdWrap').toggleClass('d-none', !!forced);
-  $('#btnCloseChangePwd').toggleClass('d-none', !!forced);
-  $('#cpOldPassword, #cpNewPassword').val('');
-  const modal = new bootstrap.Modal('#modalChangePassword', { backdrop: forced ? 'static' : true, keyboard: !forced });
-  modal.show();
-}
-async function submitChangePassword() {
-  const payload = { newPassword: $('#cpNewPassword').val(), skipOldCheck: forcedChangeMode, oldPassword: $('#cpOldPassword').val() };
-  const res = await callApi('changePassword', payload);
-  if (res.success) {
-    Swal.fire('สำเร็จ', res.message, 'success');
-    bootstrap.Modal.getInstance(document.getElementById('modalChangePassword'))?.hide();
-  } else {
-    Swal.fire('ผิดพลาด', res.message, 'error');
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/* เข้าสู่แอปหลัก + เมนูตามบทบาท                                         */
-/* ------------------------------------------------------------------ */
-const NAV_ITEMS = [
-  { key: 'scan', label: 'สแกน', icon: 'bi-upc-scan', roles: ['Admin', 'User'] },
-  { key: 'search', label: 'ค้นหา', icon: 'bi-search', roles: ['Admin', 'User', 'Manager'] },
-  { key: 'dashboard', label: 'Dashboard', icon: 'bi-bar-chart-line', roles: ['Admin', 'Manager'] },
-  { key: 'settings', label: 'ตั้งค่า', icon: 'bi-gear-fill', roles: ['Admin'] }
-];
-
-function enterApp() {
-  $('#authScreen').addClass('d-none');
-  $('#appScreen').removeClass('d-none');
-  $('#userNameLabel').text(currentUser.name || currentUser.email);
-  $('#roleLabel').text('บทบาท: ' + currentUser.role);
-
-  const nav = $('#bottomNav').empty();
-  const allowed = NAV_ITEMS.filter(it => it.roles.indexOf(currentUser.role) > -1);
-  allowed.forEach((it, idx) => {
-    nav.append(`<button class="nav-item-btn ${idx === 0 ? 'active' : ''}" data-key="${it.key}" onclick="switchSection('${it.key}', this)">
-      <i class="bi ${it.icon}"></i><span>${it.label}</span></button>`);
-  });
-  if (allowed.length) openSection(allowed[0].key);
-
-  initScanner();
-  loadCategoriesForSearch();
-  startBadgePolling();
-}
-
-function switchSection(key, el) {
-  $('.nav-item-btn').removeClass('active');
-  $(el).addClass('active');
-  openSection(key);
-}
-function openSection(key) {
-  $('.app-section').removeClass('active');
-  $('#section-' + key).addClass('active');
-  if (key === 'dashboard') loadDashboard();
-  if (key === 'settings') { loadSettingsPanel(); }
-  if (key === 'scan' && !isScanning && !$('#productFormBlock').hasClass('d-none') === false) { /* no-op */ }
-}
-
-/* ------------------------------------------------------------------ */
-/* Badge แจ้งเตือน                                                      */
-/* ------------------------------------------------------------------ */
-function startBadgePolling() {
-  refreshBadge();
-  if (badgeTimer) clearInterval(badgeTimer);
-  badgeTimer = setInterval(refreshBadge, 30000);
-}
-async function refreshBadge() {
-  const res = await callApi('getBadgeCount', {});
-  if (res.success) {
-    if (res.count > 0) { $('#badgeCount').removeClass('d-none').text(res.count > 99 ? '99+' : res.count); }
-    else $('#badgeCount').addClass('d-none');
-  }
-}
-async function onBellClick() {
-  await callApi('markSeen', {});
-  $('#badgeCount').addClass('d-none');
-  Swal.fire({ icon: 'info', title: 'อัปเดตแล้ว', text: 'รับทราบรายการใหม่ทั้งหมดแล้ว', timer: 1300, showConfirmButton: false });
+  $('#appShell').hide(); $('#loginScreen').show();
+  $('#loginForm')[0].reset();
+  if (message) Swal.fire('แจ้งเตือน', message, 'info');
 }
 
 /* ========================================================================
- * SCAN: กล้อง + ตรวจสอบสินค้า + บันทึกรายการ
- * ======================================================================== */
-function initScanner() {
-  if (!html5QrCode) html5QrCode = new Html5Qrcode('reader');
-  startScanner();
+   เข้าสู่แอปหลัก: ตั้งเมนูตาม Role, โหลดหน้าเริ่มต้น
+======================================================================== */
+function enterApp() {
+  $('#loginScreen').hide(); $('#appShell').show();
+  $('#userInfoLabel').text(currentUser.name + ' (' + currentUser.role + ')');
+
+  // กำหนดเมนูตามสิทธิ์
+  $('#bottomNav .nav-item-btn').hide();
+  if (currentUser.role === 'Admin') {
+    $('#bottomNav .nav-item-btn').show();
+    goToPage('page-scan');
+  } else if (currentUser.role === 'User') {
+    $('#bottomNav .nav-item-btn[data-page="page-scan"]').show();
+    goToPage('page-scan');
+  } else if (currentUser.role === 'Manager') {
+    $('#bottomNav .nav-item-btn[data-page="page-search"], #bottomNav .nav-item-btn[data-page="page-dashboard"]').show();
+    goToPage('page-search');
+  }
+
+  if (currentUser.role === 'Admin' || currentUser.role === 'User') startScanner();
+  refreshNotifBadge();
+  notifTimer = setInterval(refreshNotifBadge, 30000);
 }
+
+function goToPage(pageId) {
+  $('.section-page').removeClass('active').hide();
+  $('#' + pageId).addClass('active').show();
+  $('#bottomNav .nav-item-btn').removeClass('active');
+  $('#bottomNav .nav-item-btn[data-page="' + pageId + '"]').addClass('active');
+  if (pageId === 'page-dashboard') loadDashboard();
+  if (pageId === 'page-settings') loadSettingsTab('tabNotify');
+  if (pageId !== 'page-scan') stopScanner();
+  else if (!html5QrCode || !html5QrCode._isScanning) startScanner();
+}
+$('#bottomNav').on('click', '.nav-item-btn', function () { goToPage($(this).data('page')); });
+
+/* ========================================================================
+   NOTIFICATION BADGE
+======================================================================== */
+async function refreshNotifBadge() {
+  const res = await apiCall('getNotificationCount', {});
+  if (res.success && res.count > 0) { $('#notifBadge').text(res.count > 99 ? '99+' : res.count).show(); }
+  else { $('#notifBadge').hide(); }
+}
+$('#btnNotifBell').on('click', function () { goToPage('page-search'); });
+
+/* ========================================================================
+   SCAN SECTION: html5-qrcode
+======================================================================== */
 function startScanner() {
-  if (!html5QrCode) html5QrCode = new Html5Qrcode('reader');
-  $('#scannerPlaceholder').addClass('d-none');
-  $('#reader').removeClass('d-none').show();
-  $('#btnReopenCamera').addClass('d-none');
+  $('#cameraErrorBox').hide(); $('#reader').show();
+  if (html5QrCode && html5QrCode._isScanning) return;
+  html5QrCode = new Html5Qrcode("reader");
   html5QrCode.start(
-    { facingMode: 'environment' },
+    { facingMode: "environment" },
     { fps: 10, qrbox: { width: 240, height: 240 } },
-    onScanSuccess,
-    () => {}
-  ).then(() => { isScanning = true; }).catch(() => {
-    isScanning = false;
-    $('#reader').hide();
-    $('#scannerPlaceholder').removeClass('d-none');
-    $('#btnReopenCamera').removeClass('d-none');
-    Swal.fire({
-      icon: 'warning', title: 'เปิดกล้องไม่ได้',
-      html: 'กรุณาอนุญาตสิทธิ์การใช้กล้องในเบราว์เซอร์ (ไปที่การตั้งค่าเว็บไซต์ &gt; กล้อง &gt; อนุญาต)<br>หรือพิมพ์รหัสสินค้าด้วยตนเองด้านล่าง'
-    });
+    onScanSuccess
+  ).then(() => { html5QrCode._isScanning = true; }).catch(function (err) {
+    showCameraError();
   });
 }
 function stopScanner() {
-  if (html5QrCode && isScanning) {
-    html5QrCode.stop().then(() => {
-      isScanning = false;
-      $('#reader').hide();
-      $('#btnReopenCamera').removeClass('d-none');
-    }).catch(() => {});
+  if (html5QrCode && html5QrCode._isScanning) {
+    html5QrCode.stop().then(() => { html5QrCode.clear(); html5QrCode._isScanning = false; }).catch(() => {});
   }
+}
+function showCameraError() {
+  $('#cameraErrorBox').show(); $('#reader').hide();
 }
 function onScanSuccess(decodedText) {
   stopScanner();
-  $('#scanCodeInput').val(decodedText);
-  handleCheckProduct(decodedText);
+  $('#scannedCode').val(decodedText);
+  checkScannedProduct(decodedText);
 }
-
-$('#chkManualEdit').on('change', function () {
-  $('#scanCodeInput').prop('readonly', !this.checked);
-  if (this.checked) { stopScanner(); $('#scanCodeInput').val('').focus(); }
+$('#btnStartScan').on('click', startScanner);
+$('#btnCheckCode').on('click', function () {
+  const code = $('#scannedCode').val().trim();
+  if (!code) { Swal.fire('แจ้งเตือน', 'กรุณาพิมพ์หรือสแกนรหัสสินค้า', 'warning'); return; }
+  checkScannedProduct(code);
 });
-$('#btnManualCheck').on('click', () => handleCheckProduct($('#scanCodeInput').val().trim()));
 
-async function handleCheckProduct(code) {
-  if (!code) { Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสสินค้า', 'warning'); return; }
-  Swal.fire({ title: 'กำลังตรวจสอบรหัสสินค้า...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const res = await callApi('checkProduct', { code: code });
+async function checkScannedProduct(code) {
+  Swal.fire({ title: 'กำลังตรวจสอบ...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+  const res = await apiCall('checkProduct', { code: code });
   Swal.close();
-  if (!res.success) { Swal.fire('ผิดพลาด', res.message || 'เกิดข้อผิดพลาด', 'error'); return; }
   if (!res.found) {
-    Swal.fire({ icon: 'error', title: 'ไม่พบรหัสสินค้า', text: 'กรุณาตรวจสอบรหัสสินค้าอีกครั้ง' });
-    $('#scanCodeInput').val('');
-    $('#productFormBlock').addClass('d-none');
+    Swal.fire('ไม่พบรหัสสินค้า', res.message || 'กรุณาตรวจสอบรหัสอีกครั้ง', 'error');
+    resetScanState();
     return;
   }
-  currentProduct = res;
-  $('#pName').text(res.name);
-  $('#pCode').text(res.code);
-  $('#pCategory').text(res.category);
-  $('#pUnit').text(res.unit);
-  $('#productFormBlock').removeClass('d-none');
-  await loadPartnersCache();
+  lastCheckedProduct = res;
+  $('#pfName').text(res.name); $('#pfCategory').text(res.category); $('#pfUnit').text(res.unit); $('#pfCode').text(res.code);
+  $('#productFormCard').show();
+  $('#scannerWrap').hide();
 }
 
-async function loadPartnersCache() {
-  const res = await callApi('getPartners', {});
-  partnersCache = res.success ? res.partners : [];
-  updatePartnerDatalist();
-}
-$('#txPartnerType').on('change', updatePartnerDatalist);
-function updatePartnerDatalist() {
-  const type = $('#txPartnerType').val();
-  const dl = $('#partnerListOptions').empty();
-  partnersCache.filter(p => !type || p.type === type).forEach(p => {
-    dl.append(`<option value="${p.code}">${p.code} - ${p.name}</option>`);
-  });
-}
-
-$('#transactionForm').on('submit', async function (e) {
-  e.preventDefault();
-  const data = {
-    productCode: currentProduct.code,
-    type: $('input[name="txType"]:checked').val(),
-    qty: $('#txQty').val(),
-    refDoc: $('#txRefDoc').val().trim(),
-    partnerType: $('#txPartnerType').val(),
-    partnerCode: $('#txPartnerCode').val().trim(),
-    expiry: $('#txExpiry').val(),
-    note: $('#txNote').val().trim()
-  };
-  if (!data.type || !data.qty || Number(data.qty) <= 0 || !data.refDoc || !data.partnerType || !data.partnerCode) {
-    Swal.fire('กรุณากรอกข้อมูลให้ครบถ้วน', 'โปรดตรวจสอบช่องที่มีเครื่องหมาย *', 'warning');
-    return;
-  }
-  const $btn = $('#btnSaveTx');
-  $btn.prop('disabled', true).html('<span class="spin-loader me-2"></span>รอสักครู่..');
-  const res = await callApi('saveTransaction', { data: data });
-  $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> บันทึกข้อมูล');
-  if (!res.success) { Swal.fire('บันทึกไม่สำเร็จ', res.message, 'error'); return; }
-
-  Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลสำเร็จ', timer: 1500, showConfirmButton: false });
-  renderSummary(res.record);
-  $('#productFormBlock').addClass('d-none');
-  $('#summaryBlock').removeClass('d-none');
-  refreshBadge();
-});
-
-function renderSummary(r) {
-  const rows = [
-    ['รหัสสินค้า', r.productCode], ['ชื่อสินค้า', r.productName], ['รับเข้า/ส่งออก', r.type],
-    ['จำนวน', r.qty], ['เอกสารอ้างอิง', r.refDoc], ['ผู้ค้า-ลูกค้า', r.partnerType + ' - ' + r.partnerName + ' (' + r.partnerCode + ')'],
-    ['วันหมดอายุ', r.expiry || '-'], ['หมายเหตุ', r.note || '-'], ['เวลาที่บันทึก', r.timestamp]
-  ];
-  $('#summaryContent').html(rows.map(x => `<div class="summary-row"><span class="text-muted">${x[0]}</span><b>${x[1]}</b></div>`).join(''));
-}
-
-function resetScanAll() {
-  currentProduct = null;
+function resetScanState() {
+  $('#scannedCode').val(''); $('#productFormCard').hide(); $('#resultCard').hide();
+  $('#scannerWrap').show();
   $('#transactionForm')[0].reset();
-  $('#productFormBlock, #summaryBlock').addClass('d-none');
-  $('#scanCodeInput').val('').prop('readonly', true);
-  $('#chkManualEdit').prop('checked', false);
+  lastCheckedProduct = null;
   startScanner();
 }
+$('#btnScanAgain').on('click', resetScanState);
+
+// โหลดรายชื่อคู่ค้าเมื่อเลือกประเภท
+$('#txPartnerType').on('change', async function () {
+  const type = $(this).val();
+  $('#partnerList').empty();
+  if (!type) return;
+  const res = await apiCall('getPartners', { type: type });
+  if (res.success) {
+    res.data.forEach(function (p) {
+      $('#partnerList').append('<option value="' + p.code + '">' + p.name + '</option>');
+    });
+  }
+});
 
 /* ========================================================================
- * ค้นหา
- * ======================================================================== */
-async function loadCategoriesForSearch() {
-  const res = await callApi('getProductCategories', {});
+   บันทึกรายการ (Transaction)
+======================================================================== */
+$('#transactionForm').on('submit', async function (e) {
+  e.preventDefault();
+  if (!lastCheckedProduct) { Swal.fire('ผิดพลาด', 'กรุณาสแกน/ตรวจสอบสินค้าก่อน', 'error'); return; }
+
+  const type = $('input[name="txType"]:checked').val();
+  const qty = Number($('#txQty').val());
+  const docRef = $('#txDocRef').val().trim();
+  const partnerType = $('#txPartnerType').val();
+  const partnerCode = $('#txPartnerCode').val().trim();
+  const expiry = $('#txExpiry').val();
+  const note = $('#txNote').val();
+
+  // ---------- ตรวจสอบฝั่ง Client ----------
+  if (!qty || qty <= 0) { Swal.fire('แจ้งเตือน', 'กรุณาระบุจำนวนให้ถูกต้อง (มากกว่า 0)', 'warning'); return; }
+  if (!docRef) { Swal.fire('แจ้งเตือน', 'กรุณาระบุเอกสารอ้างอิง', 'warning'); return; }
+  if (!partnerType) { Swal.fire('แจ้งเตือน', 'กรุณาเลือกประเภทผู้ค้า-ลูกค้า', 'warning'); return; }
+  if (!partnerCode) { Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสผู้ค้า-ลูกค้า', 'warning'); return; }
+
+  const $btn = $('#btnSaveTx');
+  $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> รอสักครู่..');
+
+  const res = await apiCall('saveTransaction', {
+    code: lastCheckedProduct.code, type, qty, docRef, partnerType, partnerCode, expiry, note
+  });
+
+  $btn.prop('disabled', false).html('<i class="bi bi-save"></i> บันทึกข้อมูล');
+
   if (res.success) {
-    const sel = $('#searchCategory');
-    sel.find('option:not(:first)').remove();
-    res.categories.forEach(c => sel.append(`<option>${c}</option>`));
+    Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
+    renderResultDetail(res.data);
+    $('#productFormCard').hide();
+    $('#resultCard').show();
+    refreshNotifBadge();
+  } else {
+    Swal.fire('บันทึกไม่สำเร็จ', res.message, 'error');
   }
+});
+
+function renderResultDetail(d) {
+  const html = `
+    <div class="summary-row"><span>รหัสสินค้า</span><b>${d.code}</b></div>
+    <div class="summary-row"><span>ชื่อสินค้า</span><b>${d.name}</b></div>
+    <div class="summary-row"><span>รับเข้า/ส่งออก</span><b>${d.type}</b></div>
+    <div class="summary-row"><span>จำนวน</span><b>${d.qty}</b></div>
+    <div class="summary-row"><span>เอกสารอ้างอิง</span><b>${d.docRef}</b></div>
+    <div class="summary-row"><span>ผู้ค้า-ลูกค้า</span><b>${d.partnerType} / ${d.partnerName || d.partnerCode}</b></div>
+    <div class="summary-row"><span>วันหมดอายุ</span><b>${d.expiry || '-'}</b></div>
+    <div class="summary-row"><span>หมายเหตุ</span><b>${d.note || '-'}</b></div>
+    <div class="summary-row"><span>เวลาที่บันทึก</span><b>${new Date(d.timestamp).toLocaleString('th-TH')}</b></div>
+  `;
+  $('#resultDetail').html(html);
 }
+
+/* ========================================================================
+   SEARCH SECTION
+======================================================================== */
+$('#btnSearch').on('click', async function () {
+  const filters = getSearchFilters();
+  const res = await apiCall('searchTransactions', filters);
+  if (!res.success) { Swal.fire('ผิดพลาด', res.message, 'error'); return; }
+  $('#searchCount').text(res.count); $('#searchSum').text(res.sumQty);
+  if (res.data.length === 0) {
+    $('#searchTableBody').html('<tr><td colspan="8" class="text-center text-muted py-3">ไม่พบข้อมูล</td></tr>');
+    return;
+  }
+  let rows = '';
+  res.data.forEach(function (r) {
+    rows += `<tr>
+      <td>${new Date(r.timestamp).toLocaleString('th-TH')}</td>
+      <td>${r.code}</td><td>${r.name}</td><td>${r.category}</td>
+      <td>${r.type === 'รับเข้า' ? '<span class="text-success">รับเข้า</span>' : '<span class="text-danger">ส่งออก</span>'}</td>
+      <td>${r.qty}</td><td>${r.partnerName || r.partnerCode}</td><td>${r.docRef}</td>
+    </tr>`;
+  });
+  $('#searchTableBody').html(rows);
+});
+
 function getSearchFilters() {
   return {
-    dateFrom: $('#searchDateFrom').val(), dateTo: $('#searchDateTo').val(),
-    type: $('#searchType').val(), category: $('#searchCategory').val(),
-    partnerKeyword: $('#searchPartnerKeyword').val().trim()
+    startDate: $('#sStart').val(), endDate: $('#sEnd').val(),
+    type: $('#sType').val(), category: $('#sCategory').val().trim(),
+    partnerKeyword: $('#sPartner').val().trim()
   };
 }
-async function doSearch() {
-  lastSearchFilters = getSearchFilters();
-  Swal.fire({ title: 'กำลังค้นหา...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const res = await callApi('searchTransactions', { filters: lastSearchFilters });
-  Swal.close();
-  if (!res.success) { Swal.fire('ผิดพลาด', res.message, 'error'); return; }
-  $('#searchResultBlock').show();
-  $('#searchCount').text(res.count);
-  $('#searchTotalQty').text(res.totalQty);
-  $('#btnSendSearchNotify').prop('disabled', res.count === 0);
-  const body = $('#searchResultBody').empty();
-  if (!res.results.length) { body.append('<tr><td colspan="10" class="text-center text-muted py-3">ไม่พบข้อมูล</td></tr>'); return; }
-  res.results.forEach(r => {
-    body.append(`<tr>
-      <td>${r.timestamp}</td><td>${r.productCode}</td><td>${r.productName}</td><td>${r.category}</td>
-      <td><span class="chip ${r.type === 'รับเข้า' ? 'chip-in' : 'chip-out'}">${r.type}</span></td>
-      <td>${r.qty}</td><td>${r.refDoc}</td><td>${r.partnerName} (${r.partnerCode})</td>
-      <td>${r.expiry || '-'}</td><td>${r.note || '-'}</td>
-    </tr>`);
-  });
-}
-async function sendSearchNotify() {
-  Swal.fire({ title: 'กำลังส่งแจ้งเตือน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const res = await callApi('sendSearchNotification', { filters: lastSearchFilters });
-  Swal.close();
-  Swal.fire(res.success ? 'ส่งสำเร็จ' : 'ผิดพลาด', res.message || '', res.success ? 'success' : 'error');
-}
 
-/* ========================================================================
- * DASHBOARD
- * ======================================================================== */
-const WIDGET_DEFS = [
-  { key: 'cardTotals', label: 'การ์ด: สรุปยอดรับเข้า-ส่งออก', type: 'card' },
-  { key: 'cardExpiring', label: 'การ์ด: สินค้าใกล้หมดอายุ', type: 'card' },
-  { key: 'cardTopProducts', label: 'การ์ด: Top สินค้า', type: 'card' },
-  { key: 'cardTopPartners', label: 'การ์ด: Top คู่ค้า', type: 'card' },
-  { key: 'chartMonthly', label: 'กราฟ: แนวโน้มรับเข้า-ส่งออกรายเดือน', type: 'chart' },
-  { key: 'chartType', label: 'กราฟ: สัดส่วนรับเข้า/ส่งออก', type: 'chart' },
-  { key: 'chartTopProducts', label: 'กราฟ: Top สินค้า', type: 'chart' }
-];
-function getSelectedWidgets() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('stockapp_dashboard_widgets') || 'null');
-    if (saved && saved.length) return saved;
-  } catch (e) {}
-  return WIDGET_DEFS.map(w => w.key); // ค่าเริ่มต้น: แสดงทั้งหมด
-}
-function renderWidgetChooser(filterText) {
-  const selected = getSelectedWidgets();
-  const list = $('#widgetChooserList').empty();
-  WIDGET_DEFS.filter(w => !filterText || w.label.toLowerCase().includes(filterText.toLowerCase())).forEach(w => {
-    const checked = selected.includes(w.key) ? 'checked' : '';
-    list.append(`<label class="btn btn-sm btn-soft">
-      <input type="checkbox" class="form-check-input me-1 widget-chk" data-key="${w.key}" ${checked}> ${w.label}
-    </label>`);
-  });
-  $('#saveDefaultWidgetBtnWrap').toggle(currentUser && currentUser.role === 'Admin');
-}
-$(document).on('change', '.widget-chk', function () {
-  const keys = []; $('.widget-chk:checked').each(function () { keys.push($(this).data('key')); });
-  const all = getSelectedWidgets().filter(k => !$(`.widget-chk[data-key="${k}"]`).length); // รักษารายการที่ไม่ได้แสดงเพราะถูกกรองด้วยคำค้น
-  localStorage.setItem('stockapp_dashboard_widgets', JSON.stringify([...new Set([...keys, ...all])]));
-  renderDashboardWidgets();
+$('#btnSendSearchNotify').on('click', async function () {
+  Swal.fire({ title: 'กำลังส่งแจ้งเตือน...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+  const res = await apiCall('sendSearchNotification', getSearchFilters());
+  Swal.close();
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
 });
-$('#widgetSearchBox').on('input', function () { renderWidgetChooser($(this).val()); });
-async function saveDefaultWidgets() {
-  const widgets = getSelectedWidgets();
-  const res = await callApi('saveSettings', { settings: { DASHBOARD_DEFAULT_WIDGETS: JSON.stringify(widgets) } });
-  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message || '', res.success ? 'success' : 'error');
-}
-
-async function loadDashboard() {
-  renderWidgetChooser('');
-  const res = await callApi('getDashboardData', {});
-  if (!res.success) { Swal.fire('ผิดพลาด', res.message, 'error'); return; }
-  dashboardData = res;
-  renderDashboardWidgets();
-}
-
-function destroyCharts() { Object.values(chartInstances).forEach(c => c.destroy()); chartInstances = {}; }
-
-function renderDashboardWidgets() {
-  if (!dashboardData) return;
-  destroyCharts();
-  const selected = getSelectedWidgets();
-  const area = $('#dashboardWidgetArea').empty();
-  const d = dashboardData;
-
-  if (selected.includes('cardTotals')) {
-    area.append(`
-    <div class="col-6 col-md-3"><div class="glass stat-card animate-fade">
-      <div class="stat-icon mb-2" style="background:linear-gradient(135deg,#8fd9c4,#6cc9ae);"><i class="bi bi-box-arrow-in-down"></i></div>
-      <div class="num">${d.totals.inQty}</div><div class="text-muted small">รับเข้ารวม (${d.totals.inCount} รายการ)</div>
-    </div></div>
-    <div class="col-6 col-md-3"><div class="glass stat-card animate-fade">
-      <div class="stat-icon mb-2" style="background:linear-gradient(135deg,#f2a6c8,#e887b5);"><i class="bi bi-box-arrow-up"></i></div>
-      <div class="num">${d.totals.outQty}</div><div class="text-muted small">ส่งออกรวม (${d.totals.outCount} รายการ)</div>
-    </div></div>`);
-  }
-  if (selected.includes('cardExpiring')) {
-    const rows = d.expiringSoon.slice(0, 6).map(x => `<div class="summary-row"><span>${x.productName}</span><b class="${x.daysLeft < 0 ? 'text-danger' : 'text-warning'}">${x.expiry} (${x.daysLeft}ว.)</b></div>`).join('') || '<div class="text-muted small">ไม่มีสินค้าใกล้หมดอายุ</div>';
-    area.append(`<div class="col-12 col-md-6"><div class="glass p-3 animate-fade h-100">
-      <h6 class="fw-bold mb-2"><i class="bi bi-hourglass-split me-2"></i>สินค้าใกล้หมดอายุ</h6>${rows}</div></div>`);
-  }
-  if (selected.includes('cardTopProducts')) {
-    const rows = d.topProducts.map(x => `<div class="summary-row"><span>${x.name}</span><b>${x.qty}</b></div>`).join('') || '<div class="text-muted small">ไม่มีข้อมูล</div>';
-    area.append(`<div class="col-12 col-md-3"><div class="glass p-3 animate-fade h-100">
-      <h6 class="fw-bold mb-2"><i class="bi bi-trophy me-2"></i>Top สินค้า</h6>${rows}</div></div>`);
-  }
-  if (selected.includes('cardTopPartners')) {
-    const rows = d.topPartners.map(x => `<div class="summary-row"><span>${x.name}</span><b>${x.qty}</b></div>`).join('') || '<div class="text-muted small">ไม่มีข้อมูล</div>';
-    area.append(`<div class="col-12 col-md-3"><div class="glass p-3 animate-fade h-100">
-      <h6 class="fw-bold mb-2"><i class="bi bi-people me-2"></i>Top คู่ค้า</h6>${rows}</div></div>`);
-  }
-  if (selected.includes('chartMonthly')) {
-    area.append(`<div class="col-12 col-md-7"><div class="glass p-3 animate-fade"><h6 class="fw-bold mb-2">แนวโน้มรายเดือน</h6><canvas id="chartMonthlyCanvas" height="200"></canvas></div></div>`);
-  }
-  if (selected.includes('chartType')) {
-    area.append(`<div class="col-12 col-md-5"><div class="glass p-3 animate-fade"><h6 class="fw-bold mb-2">สัดส่วนรับเข้า/ส่งออก</h6><canvas id="chartTypeCanvas" height="200"></canvas></div></div>`);
-  }
-  if (selected.includes('chartTopProducts')) {
-    area.append(`<div class="col-12"><div class="glass p-3 animate-fade"><h6 class="fw-bold mb-2">Top สินค้า (กราฟ)</h6><canvas id="chartTopProductsCanvas" height="160"></canvas></div></div>`);
-  }
-
-  // สร้างกราฟหลังจาก canvas ถูกแทรกใน DOM แล้ว
-  if (selected.includes('chartMonthly') && document.getElementById('chartMonthlyCanvas')) {
-    chartInstances.monthly = new Chart(document.getElementById('chartMonthlyCanvas'), {
-      type: 'line',
-      data: { labels: d.monthly.map(m => m.month), datasets: [
-        { label: 'รับเข้า', data: d.monthly.map(m => m.inQty), borderColor: '#6cc9ae', backgroundColor: 'rgba(143,217,196,.3)', tension: .35, fill: true },
-        { label: 'ส่งออก', data: d.monthly.map(m => m.outQty), borderColor: '#e887b5', backgroundColor: 'rgba(242,166,200,.3)', tension: .35, fill: true }
-      ]},
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-    });
-  }
-  if (selected.includes('chartType') && document.getElementById('chartTypeCanvas')) {
-    chartInstances.type = new Chart(document.getElementById('chartTypeCanvas'), {
-      type: 'doughnut',
-      data: { labels: ['รับเข้า', 'ส่งออก'], datasets: [{ data: [d.totals.inQty, d.totals.outQty], backgroundColor: ['#8fd9c4', '#f2a6c8'] }] },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-    });
-  }
-  if (selected.includes('chartTopProducts') && document.getElementById('chartTopProductsCanvas')) {
-    chartInstances.topProducts = new Chart(document.getElementById('chartTopProductsCanvas'), {
-      type: 'bar',
-      data: { labels: d.topProducts.map(p => p.name), datasets: [{ label: 'จำนวนรวม', data: d.topProducts.map(p => p.qty), backgroundColor: '#8ab4f8' }] },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-  }
-}
 
 /* ========================================================================
- * SETTINGS (Admin)
- * ======================================================================== */
-function switchSettingsTab(name, el) {
-  $('.sidebar-tab').removeClass('active'); $(el).addClass('active');
-  $('.settings-panel').addClass('d-none'); $('#panel-' + name).removeClass('d-none');
-  if (name === 'users') loadUsers();
-  if (name === 'logs') loadActivityLogs();
+   DASHBOARD SECTION
+======================================================================== */
+let chartInstances = {};
+async function loadDashboard() {
+  // โหลด config การแสดงผล (จากเครื่อง หรือจาก Settings sheet)
+  if (!dashboardConfig) {
+    const local = localStorage.getItem('dashboardConfig');
+    if (local) { dashboardConfig = JSON.parse(local); }
+    else {
+      const cfgRes = await apiCall('getDashboardConfig', {});
+      dashboardConfig = (cfgRes.success && cfgRes.data) ? cfgRes.data : ALL_WIDGETS.map(w => w.key);
+    }
+  }
+  renderWidgetChecklist();
+  applyWidgetVisibility();
+
+  const res = await apiCall('getDashboardData', {});
+  if (!res.success) { Swal.fire('ผิดพลาด', res.message, 'error'); return; }
+
+  $('#cardTotalIn').text(res.totalIn);
+  $('#cardTotalOut').text(res.totalOut);
+  $('#cardNearExpiry').text(res.nearExpiry.length);
+  $('#cardNet').text(res.totalIn - res.totalOut);
+
+  // ตารางใกล้หมดอายุ
+  let expRows = '';
+  res.nearExpiry.forEach(function (r) { expRows += `<tr><td>${r.code}</td><td>${r.name}</td><td>${r.expiry}</td><td>${r.qty}</td></tr>`; });
+  $('#expiryTableBody').html(expRows || '<tr><td colspan="4" class="text-center text-muted">ไม่มีสินค้าใกล้หมดอายุ</td></tr>');
+
+  // กราฟรายวัน
+  const dailyLabels = Object.keys(res.dailyChart);
+  renderChart('chartDaily', 'line', dailyLabels, [
+    { label: 'รับเข้า', data: dailyLabels.map(k => res.dailyChart[k].in), borderColor: '#7fb3d5', backgroundColor:'rgba(127,179,213,.3)', tension:.35 },
+    { label: 'ส่งออก', data: dailyLabels.map(k => res.dailyChart[k].out), borderColor: '#e67e7e', backgroundColor:'rgba(230,126,126,.3)', tension:.35 }
+  ]);
+
+  // กราฟประเภทสินค้า
+  renderChart('chartCategory', 'doughnut', res.categoryBreakdown.map(x => x.name), [
+    { data: res.categoryBreakdown.map(x => x.value), backgroundColor: ['#8e7cc3','#7fb3d5','#a9dfbf','#f9e79f','#f5b7b1','#d2b4de','#aed6f1','#fad7a0'] }
+  ]);
+
+  // Top products / partners
+  renderChart('chartTopProducts', 'bar', res.topProducts.map(x => x.name), [{ label:'จำนวน', data: res.topProducts.map(x => x.value), backgroundColor:'#8e7cc3' }]);
+  renderChart('chartTopPartners', 'bar', res.topPartners.map(x => x.name), [{ label:'จำนวน', data: res.topPartners.map(x => x.value), backgroundColor:'#7fb3d5' }]);
 }
-function loadSettingsPanel() { loadNotifySettings(); loadUsers(); }
+
+function renderChart(canvasId, type, labels, datasets) {
+  if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, { type: type, data: { labels: labels, datasets: datasets }, options: { responsive:true, plugins:{legend:{position:'bottom'}} } });
+}
+
+function renderWidgetChecklist(filterText) {
+  filterText = (filterText || '').toLowerCase();
+  let html = '';
+  ALL_WIDGETS.filter(w => w.label.toLowerCase().indexOf(filterText) !== -1).forEach(function (w) {
+    const checked = dashboardConfig.indexOf(w.key) !== -1 ? 'checked' : '';
+    html += `<div class="form-check form-switch"><input class="form-check-input widget-toggle" type="checkbox" data-key="${w.key}" ${checked}><label class="form-check-label small">${w.label}</label></div>`;
+  });
+  $('#widgetChecklist').html(html);
+}
+$('#dashSearchWidget').on('input', function () { renderWidgetChecklist($(this).val()); });
+$('#widgetChecklist').on('change', '.widget-toggle', function () {
+  const key = $(this).data('key');
+  if ($(this).is(':checked')) { if (dashboardConfig.indexOf(key) === -1) dashboardConfig.push(key); }
+  else { dashboardConfig = dashboardConfig.filter(k => k !== key); }
+  applyWidgetVisibility();
+});
+function applyWidgetVisibility() {
+  $('.dash-widget').each(function () {
+    const key = $(this).data('widget');
+    $(this).toggle(dashboardConfig.indexOf(key) !== -1);
+  });
+}
+$('#btnSaveDashConfig').on('click', async function () {
+  localStorage.setItem('dashboardConfig', JSON.stringify(dashboardConfig));
+  const res = await apiCall('saveDashboardConfig', { config: dashboardConfig });
+  Swal.fire(res.success ? 'สำเร็จ' : 'บันทึกเฉพาะเครื่องนี้', res.success ? 'บันทึกการแสดงผล Dashboard แล้ว' : 'บันทึกลงเครื่องนี้แล้ว', res.success ? 'success' : 'info');
+});
+
+/* ========================================================================
+   SETTINGS SECTION
+======================================================================== */
+$('#settingsTabs').on('click', '.nav-link', function () {
+  $('#settingsTabs .nav-link').removeClass('active');
+  $(this).addClass('active');
+  loadSettingsTab($(this).data('tab'));
+});
+function loadSettingsTab(tabId) {
+  $('.settings-tab').hide();
+  $('#' + tabId).show();
+  if (tabId === 'tabNotify') loadNotifySettings();
+  if (tabId === 'tabUsers') loadUsersList();
+  if (tabId === 'tabLogs') loadActivityLogs();
+}
 
 async function loadNotifySettings() {
-  const res = await callApi('getSettings', {});
+  const res = await apiCall('getSettings', {});
   if (!res.success) return;
-  const s = res.settings;
-  $('#setLineToken').val(s.LINE_TOKEN || '');
-  $('#setLineTarget').val(s.LINE_TARGET || '');
-  $('#setTgToken').val(s.TELEGRAM_TOKEN || '');
-  $('#setTgChatId').val(s.TELEGRAM_CHATID || '');
-  $('#setEmailTo').val(s.EMAIL_TO || '');
-  $('#notifyDaily').prop('checked', String(s.NOTIFY_DAILY) === 'true');
-  $('#notifyWeekly').prop('checked', String(s.NOTIFY_WEEKLY) === 'true');
-  $('#notifyMonthly').prop('checked', String(s.NOTIFY_MONTHLY) === 'true');
-  $('#expiryAlertDays').val(s.EXPIRY_ALERT_DAYS || 30);
+  const s = res.data;
+  $('#cfgLineToken').val(s.lineToken || ''); $('#cfgLineTo').val(s.lineTo || '');
+  $('#cfgTgToken').val(s.telegramToken || ''); $('#cfgTgChatId').val(s.telegramChatId || '');
+  $('#cfgEmailTo').val(s.emailTo || '');
+  $('#cfgNotifyDaily').prop('checked', String(s.notifyDaily) === 'true');
+  $('#cfgNotifyWeekly').prop('checked', String(s.notifyWeekly) === 'true');
+  $('#cfgNotifyMonthly').prop('checked', String(s.notifyMonthly) === 'true');
 }
-async function saveNotifySettings() {
+$('#btnSaveNotifySettings').on('click', async function () {
   const settings = {
-    LINE_TOKEN: $('#setLineToken').val().trim(), LINE_TARGET: $('#setLineTarget').val().trim(),
-    TELEGRAM_TOKEN: $('#setTgToken').val().trim(), TELEGRAM_CHATID: $('#setTgChatId').val().trim(),
-    EMAIL_TO: $('#setEmailTo').val().trim(),
-    NOTIFY_DAILY: $('#notifyDaily').is(':checked') ? 'true' : 'false',
-    NOTIFY_WEEKLY: $('#notifyWeekly').is(':checked') ? 'true' : 'false',
-    NOTIFY_MONTHLY: $('#notifyMonthly').is(':checked') ? 'true' : 'false',
-    EXPIRY_ALERT_DAYS: $('#expiryAlertDays').val() || '30'
+    lineToken: $('#cfgLineToken').val(), lineTo: $('#cfgLineTo').val(),
+    telegramToken: $('#cfgTgToken').val(), telegramChatId: $('#cfgTgChatId').val(),
+    emailTo: $('#cfgEmailTo').val(),
+    notifyDaily: $('#cfgNotifyDaily').is(':checked'), notifyWeekly: $('#cfgNotifyWeekly').is(':checked'),
+    notifyMonthly: $('#cfgNotifyMonthly').is(':checked')
   };
-  const res = await callApi('saveSettings', { settings: settings });
+  const res = await apiCall('saveSettings', { settings });
   Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
-}
-async function testChannel(channel) {
-  Swal.fire({ title: 'กำลังทดสอบส่ง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const res = await callApi('testNotification', { channel: channel });
-  Swal.close();
-  Swal.fire(res.success ? 'ผลการทดสอบ' : 'ผิดพลาด', JSON.stringify(res.result || res.message), res.success ? 'info' : 'error');
-}
+});
+$('#btnInstallTrigger').on('click', async function () {
+  const res = await apiCall('installTriggers', {});
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+});
+$('#btnTestLine').on('click', async function () {
+  const res = await apiCall('testNotification', { channel: 'line', lineToken: $('#cfgLineToken').val(), lineTo: $('#cfgLineTo').val() });
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+});
+$('#btnTestTg').on('click', async function () {
+  const res = await apiCall('testNotification', { channel: 'telegram', telegramToken: $('#cfgTgToken').val(), telegramChatId: $('#cfgTgChatId').val() });
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+});
+$('#btnTestEmail').on('click', async function () {
+  const res = await apiCall('testNotification', { channel: 'email', emailTo: $('#cfgEmailTo').val() });
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+});
 
-/* ---- Users management ---- */
-async function loadUsers() {
-  const res = await callApi('getUsers', {});
+async function loadUsersList() {
+  const res = await apiCall('listUsers', {});
   if (!res.success) return;
-  const body = $('#usersTableBody').empty();
-  res.users.forEach(u => {
-    body.append(`<tr>
-      <td>${u.email}</td><td>${u.name}</td><td>${u.role}</td>
-      <td><span class="chip ${u.status === 'Approved' ? 'chip-in' : 'chip-out'}">${u.status}</span></td>
-      <td>${u.lastLogin}</td>
-      <td class="text-nowrap">
-        <button class="btn btn-sm btn-soft" onclick='editUser(${JSON.stringify(u)})'><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-soft" onclick="resetUserPassword('${u.userId}')"><i class="bi bi-key"></i></button>
-        <button class="btn btn-sm btn-soft text-danger" onclick="removeUser('${u.userId}')"><i class="bi bi-trash"></i></button>
+  let rows = '';
+  res.data.forEach(function (u) {
+    rows += `<tr>
+      <td>${u.email}</td><td>${u.name}</td>
+      <td><select class="form-select form-select-sm user-role" data-email="${u.email}">
+        <option value="User" ${u.role==='User'?'selected':''}>User</option>
+        <option value="Manager" ${u.role==='Manager'?'selected':''}>Manager</option>
+        <option value="Admin" ${u.role==='Admin'?'selected':''}>Admin</option>
+      </select></td>
+      <td><select class="form-select form-select-sm user-status" data-email="${u.email}">
+        <option value="Approved" ${u.status==='Approved'?'selected':''}>Approved</option>
+        <option value="Pending" ${u.status==='Pending'?'selected':''}>Pending</option>
+        <option value="Suspended" ${u.status==='Suspended'?'selected':''}>Suspended</option>
+      </select></td>
+      <td class="d-flex gap-1">
+        <button class="btn btn-sm btn-soft reset-pw-btn" data-email="${u.email}"><i class="bi bi-key"></i></button>
+        <button class="btn btn-sm btn-soft del-user-btn" data-email="${u.email}"><i class="bi bi-trash text-danger"></i></button>
       </td>
-    </tr>`);
+    </tr>`;
   });
+  $('#usersTableBody').html(rows);
 }
-function openUserModal() {
-  $('#userModalTitle').text('เพิ่มผู้ใช้');
-  $('#umUserId').val(''); $('#umName').val(''); $('#umEmail').val('').prop('disabled', false);
-  $('#umPasswordWrap').removeClass('d-none'); $('#umPassword').val('');
-  $('#umRole').val('User'); $('#umStatus').val('Approved');
-  new bootstrap.Modal('#modalUser').show();
-}
-function editUser(u) {
-  $('#userModalTitle').text('แก้ไขผู้ใช้');
-  $('#umUserId').val(u.userId); $('#umName').val(u.name); $('#umEmail').val(u.email).prop('disabled', true);
-  $('#umPasswordWrap').addClass('d-none');
-  $('#umRole').val(u.role); $('#umStatus').val(u.status);
-  new bootstrap.Modal('#modalUser').show();
-}
-async function submitUserForm() {
-  const user = {
-    userId: $('#umUserId').val() || undefined,
-    name: $('#umName').val().trim(), email: $('#umEmail').val().trim(),
-    password: $('#umPassword').val(), role: $('#umRole').val(), status: $('#umStatus').val()
-  };
-  const res = await callApi('saveUser', { user: user });
-  if (res.success) {
-    bootstrap.Modal.getInstance(document.getElementById('modalUser'))?.hide();
-    loadUsers();
-    Swal.fire('สำเร็จ', res.message, 'success');
-  } else Swal.fire('ผิดพลาด', res.message, 'error');
-}
-async function resetUserPassword(userId) {
-  const confirm = await Swal.fire({ title: 'ยืนยันรีเซ็ตรหัสผ่าน?', icon: 'question', showCancelButton: true });
+$('#btnCreateUser').on('click', async function () {
+  const email = $('#newUserEmail').val().trim(), name = $('#newUserName').val().trim(), role = $('#newUserRole').val();
+  if (!email || !name) { Swal.fire('แจ้งเตือน', 'กรุณากรอกอีเมลและชื่อ', 'warning'); return; }
+  const res = await apiCall('createUser', { email, name, role });
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+  if (res.success) { $('#newUserEmail,#newUserName').val(''); loadUsersList(); }
+});
+$('#usersTableBody').on('change', '.user-role', async function () {
+  const res = await apiCall('updateUserRole', { email: $(this).data('email'), role: $(this).val() });
+  if (res.success) Swal.fire({toast:true, position:'top-end', icon:'success', title:'อัปเดตสิทธิ์แล้ว', showConfirmButton:false, timer:1500});
+});
+$('#usersTableBody').on('change', '.user-status', async function () {
+  const res = await apiCall('updateUserStatus', { email: $(this).data('email'), status: $(this).val() });
+  if (res.success) Swal.fire({toast:true, position:'top-end', icon:'success', title:'อัปเดตสถานะแล้ว', showConfirmButton:false, timer:1500});
+});
+$('#usersTableBody').on('click', '.reset-pw-btn', async function () {
+  const email = $(this).data('email');
+  const confirm = await Swal.fire({ title: 'รีเซ็ตรหัสผ่าน?', text: email, icon:'question', showCancelButton:true });
   if (!confirm.isConfirmed) return;
-  const res = await callApi('adminResetPassword', { userId: userId });
-  if (res.success) Swal.fire('รีเซ็ตสำเร็จ', 'รหัสผ่านชั่วคราว: ' + res.tempPassword, 'success');
-  else Swal.fire('ผิดพลาด', res.message, 'error');
-}
-async function removeUser(userId) {
-  const confirm = await Swal.fire({ title: 'ยืนยันลบผู้ใช้นี้?', icon: 'warning', showCancelButton: true });
+  const res = await apiCall('adminResetPassword', { email });
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+});
+$('#usersTableBody').on('click', '.del-user-btn', async function () {
+  const email = $(this).data('email');
+  const confirm = await Swal.fire({ title: 'ลบผู้ใช้นี้?', text: email, icon:'warning', showCancelButton:true });
   if (!confirm.isConfirmed) return;
-  const res = await callApi('deleteUser', { userId: userId });
-  if (res.success) { loadUsers(); Swal.fire('สำเร็จ', res.message, 'success'); }
-  else Swal.fire('ผิดพลาด', res.message, 'error');
-}
+  const res = await apiCall('deleteUser', { email });
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+  if (res.success) loadUsersList();
+});
 
-/* ---- Activity Logs ---- */
 async function loadActivityLogs() {
-  const res = await callApi('getActivityLogs', { limit: 300 });
+  const res = await apiCall('getActivityLogs', {});
   if (!res.success) return;
-  const body = $('#logsTableBody').empty();
-  res.logs.forEach(l => body.append(`<tr><td>${l.time}</td><td>${l.user}</td><td>${l.action}</td><td>${l.detail}</td></tr>`));
+  let rows = '';
+  res.data.forEach(function (l) { rows += `<tr><td>${new Date(l.time).toLocaleString('th-TH')}</td><td>${l.user}</td><td>${l.action}</td><td>${l.detail}</td></tr>`; });
+  $('#logsTableBody').html(rows || '<tr><td colspan="4" class="text-center text-muted">ไม่มีข้อมูล</td></tr>');
 }
 
-/* ---- นำเข้าสินค้า ---- */
-function downloadTemplate() {
-  const content = 'รหัส,ชื่อสินค้า,ประเภท,หน่วย\nP100,ตัวอย่างสินค้า,ตัวอย่างประเภท,ชิ้น';
-  const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'products_template.csv'; a.click();
-}
+$('#btnDownloadTemplate').on('click', function () {
+  const csv = 'รหัส,ชื่อสินค้า,ประเภท,หน่วย\nP100,ตัวอย่างสินค้า,ประเภทตัวอย่าง,หน่วย';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob); link.download = 'products_template.csv'; link.click();
+});
 $('#importFile').on('change', function (e) {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => $('#importPreviewText').val(ev.target.result);
-  reader.readAsText(file, 'UTF-8');
+  reader.onload = function (evt) { $('#importCsvText').val(evt.target.result); };
+  reader.readAsText(file);
 });
-async function submitImportProducts() {
-  const csvText = $('#importPreviewText').val().trim();
-  if (!csvText) { Swal.fire('แจ้งเตือน', 'กรุณาเลือกไฟล์หรือวางข้อมูลก่อน', 'warning'); return; }
-  Swal.fire({ title: 'กำลังนำเข้าข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const res = await callApi('importProducts', { csvText: csvText });
-  Swal.close();
-  if (res.success) Swal.fire('นำเข้าสำเร็จ', `เพิ่ม ${res.added} / แก้ไข ${res.updated} / ข้าม ${res.skipped}`, 'success');
-  else Swal.fire('ผิดพลาด', res.message, 'error');
-}
+$('#btnImportProducts').on('click', async function () {
+  const csvText = $('#importCsvText').val().trim();
+  if (!csvText) { Swal.fire('แจ้งเตือน', 'กรุณาใส่ข้อมูลหรือเลือกไฟล์', 'warning'); return; }
+  const res = await apiCall('importProducts', { csvText });
+  Swal.fire(res.success ? 'สำเร็จ' : 'ผิดพลาด', res.message, res.success ? 'success' : 'error');
+  if (res.success) $('#importCsvText').val('');
+});
+
 </script>
 </body>
 </html>
