@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบสแกนสต๊อกสินค้า</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{font-family:'Sarabun',sans-serif}
+body{background:linear-gradient(135deg,#fdf2f8,#eef2ff,#ecfeff);min-height:100vh}
+.glass{backdrop-filter:blur(16px);background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 32px rgba(0,0,0,.06)}
+</style>
+</head>
+<body>
+<!-- โลโก้ -->
+<div class="text-center py-3">
+  <img id="logo" src="https://example.com/logo.png" style="height:56px" alt="Logo">
+  <h5 class="fw-bold mt-2">ระบบสแกนสต๊อกสินค้า</h5>
+</div>
+
+<div class="container" style="max-width:480px">
+  <!-- กล้อง -->
+  <div id="reader" class="glass rounded-4 p-2"></div>
+  <button class="btn btn-dark rounded-pill w-100 mt-2" onclick="startScanner()">เปิดกล้องอีกครั้ง</button>
+
+  <!-- ช่องรหัส -->
+  <div class="input-group mt-3">
+    <input id="code" class="form-control" placeholder="รหัสสินค้า">
+    <button class="btn btn-primary" onclick="onCheck()">ตรวจสอบ</button>
+  </div>
+  <div id="productName" class="alert alert-success d-none mt-2"></div>
+
+  <!-- ฟอร์ม -->
+  <form id="stockForm" class="glass rounded-4 p-3 mt-3 d-none">
+    <select id="inout" class="form-select mb-2" required>
+      <option value="">รับเข้า-ส่งออก*</option><option>รับเข้า</option><option>ส่งออก</option>
+    </select>
+    <input id="qty" type="number" class="form-control mb-2" placeholder="จำนวน*" required>
+    <input id="doc" class="form-control mb-2" placeholder="เอกสารอ้างอิง*" required>
+    <select id="partnerType" class="form-select mb-2" required><option value="">ผู้ค้า-ลูกค้า*</option><option>ผู้ค้า</option><option>ลูกค้า</option></select>
+    <select id="partnerCode" class="form-select mb-2" required></select>
+    <input id="expiry" type="date" class="form-control mb-2" placeholder="วันหมดอายุ">
+    <input id="note" class="form-control mb-2" placeholder="หมายเหตุ">
+    <button id="btnSave" type="submit" class="btn btn-primary w-100 rounded-pill">บันทึกข้อมูล</button>
+  </form>
+
+  <div id="summary" class="glass rounded-4 p-3 mt-3 d-none"></div>
+  <button id="btnRescan" class="btn btn-outline-dark w-100 rounded-pill mt-3 d-none" onclick="resetAll()">สแกนใหม่</button>
+</div>
+
+<script>
+// ***** ตั้งค่า URL Web App ที่นี่ *****
+const API_URL = 'https://script.google.com/macros/s/AKfycbwnbGvJYg5ZJj2oz9_1H4Q9A5O4mK0cCR6LTIfIW49tc_PE8NVX6fkrhgSE7z6iT4mv/exec';
+let sessionToken = null; // เก็บในตัวแปรธรรมดา ไม่ใช้ localStorage
+let currentCode = null;
+let html5Qr = null;
+
+// เปิดกล้องอัตโนมัติ
+document.addEventListener('DOMContentLoaded', startScanner);
+function startScanner(){
+  html5Qr = new Html5Qrcode("reader");
+  html5Qr.start({facingMode:"environment"}, {fps:10, qrbox:250},
+    (decoded)=>{ onScanSuccess(decoded); },
+    ()=>{}
+  ).catch(err=>{
+    Swal.fire('เปิดกล้องไม่ได้','กรุณาอนุญาตสิทธิ์กล้อง หรือพิมพ์รหัสเอง','warning');
+  });
+}
+function onScanSuccess(code){
+  document.getElementById('code').value = code;
+  html5Qr.stop();
+  onCheck();
+}
+async function onCheck(){
+  const code=document.getElementById('code').value.trim();
+  if(!code) return Swal.fire('กรุณาระบุรหัส','','warning');
+  // เรียก API แบบ text/plain เลี่ยง CORS preflight
+  const res = await fetch(API_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({action:'checkProduct', code})
+  }).then(r=>r.json());
+  if(!res.found){
+    Swal.fire('ไม่พบรหัส','ไม่พบรหัสสินค้านี้ในชีต Products','error');
+    document.getElementById('stockForm').classList.add('d-none'); return;
+  }
+  currentCode = code;
+  document.getElementById('productName').innerText = res.name+' ('+res.category+')';
+  document.getElementById('productName').classList.remove('d-none');
+  document.getElementById('stockForm').classList.remove('d-none');
+  loadPartners();
+}
+async function loadPartners(){
+  const type=document.getElementById('partnerType').value;
+  const res=await fetch(API_URL,{method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'getPartners', type})}).then(r=>r.json());
+  const sel=document.getElementById('partnerCode'); sel.innerHTML='';
+  res.data.forEach(p=> sel.innerHTML+=`<option value="${p.code}">${p.code} - ${p.name}</option>`);
+}
+document.getElementById('stockForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn=document.getElementById('btnSave'); btn.disabled=true; btn.innerText='รอสักครู่..';
+  const payload={
+    action:'saveTransaction',
+    data:{
+      sessionToken, code: currentCode,
+      inout: document.getElementById('inout').value,
+      qty: document.getElementById('qty').value,
+      doc: document.getElementById('doc').value,
+      partnerType: document.getElementById('partnerType').value,
+      partnerCode: document.getElementById('partnerCode').value,
+      expiry: document.getElementById('expiry').value,
+      note: document.getElementById('note').value
+    }
+  };
+  const res=await fetch(API_URL,{method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload)}).then(r=>r.json());
+  btn.disabled=false; btn.innerText='บันทึกข้อมูล';
+  if(!res.success) return Swal.fire('ผิดพลาด', res.message,'error');
+  Swal.fire('สำเร็จ','บันทึกข้อมูลแล้ว','success');
+  document.getElementById('summary').innerHTML = `
+    รหัส: ${res.saved.code} <br> ชื่อ: ${res.saved.name} <br>
+    รับเข้า/ส่งออก: ${res.saved.inout} จำนวน: ${res.saved.qty} <br>
+    เอกสาร: ${res.saved.doc} <br> คู่ค้า: ${res.saved.partnerName} <br>
+    วันหมดอายุ: ${res.saved.expiry} หมายเหตุ: ${res.saved.note} <br> เวลา: ${res.saved.time}
+  `;
+  document.getElementById('summary').classList.remove('d-none');
+  document.getElementById('stockForm').classList.add('d-none');
+  document.getElementById('btnRescan').classList.remove('d-none');
+}
+function resetAll(){
+  currentCode=null; document.getElementById('code').value='';
+  document.getElementById('stockForm').classList.add('d-none');
+  document.getElementById('summary').classList.add('d-none');
+  document.getElementById('btnRescan').classList.add('d-none');
+  document.getElementById('productName').classList.add('d-none');
+  startScanner();
+}
+</script>
+</body>
+</html>
