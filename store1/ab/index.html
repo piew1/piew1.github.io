@@ -242,6 +242,11 @@
             <button type="button" class="pw-toggle" data-target="#loginPassword" aria-label="แสดงรหัสผ่าน"><i class="bi bi-eye"></i></button></div>
         </div>
         <button class="btn btn-grad w-100" id="btnLogin" type="submit"><i class="bi bi-box-arrow-in-right me-1"></i> เข้าสู่ระบบ</button>
+
+<div class="form-check mb-3">
+  <input class="form-check-input" type="checkbox" id="rememberMe">
+  <label class="form-check-label" for="rememberMe">จดจำอีเมลนี้</label>
+</div>
         <div class="d-flex justify-content-between mt-3">
           <a href="#" data-goto="forgot"><i class="bi bi-key me-1"></i>ลืมรหัสผ่าน?</a>
           <a href="#" data-goto="register"><i class="bi bi-person-plus me-1"></i>สมัครใช้งาน</a>
@@ -1160,6 +1165,22 @@
       showErr(err, 'ตรวจสอบรหัสไม่สำเร็จ'); scanLock = false;
     } finally { checking = false; setBtnLoading('#btnCheck', false); }
   }
+
+// โหลดอีเมลที่เคยจำไว้ตอนเปิดหน้า
+const savedEmail = localStorage.getItem('rememberedEmail');
+if (savedEmail) {
+  document.getElementById('loginEmail').value = savedEmail;
+  document.getElementById('rememberMe').checked = true;
+}
+
+// เรียกหลังล็อกอินสำเร็จ
+function handleRemember(email) {
+  if (document.getElementById('rememberMe').checked) {
+    localStorage.setItem('rememberedEmail', email);
+  } else {
+    localStorage.removeItem('rememberedEmail');
+  }
+}
 
   /* ---------------- ฟอร์มบันทึก ---------------- */
   function resetTxForm() {
