@@ -880,27 +880,26 @@
   });
 
   /* ---- จดจำผู้ใช้ (Remember me) ----
-   * อีเมล  : เก็บใน localStorage ของเครื่องนี้
-   * รหัสผ่าน: ไม่เก็บเองเป็นข้อความธรรมดา แต่ฝากให้ Password Manager ของเบราว์เซอร์
-   *          (Credential Management API) เพื่อให้เติมอัตโนมัติอย่างปลอดภัย */
-  const REMEMBER_KEY = 'stock_rememberEmail';
+   * เก็บอีเมล + รหัสผ่านใน localStorage ของเครื่องนี้ (เข้ารหัส base64 แค่กันเผลอเห็น ไม่ใช่การเข้ารหัสจริง)
+   * เหมาะกับเครื่องส่วนตัวที่ใช้คนเดียวเท่านั้น */
+  const REMEMBER_KEY = 'stock_rememberLogin';
+  const b64enc = t => btoa(unescape(encodeURIComponent(t)));
+  const b64dec = t => decodeURIComponent(escape(atob(t)));
   $(function () {
     try {
-      const saved = localStorage.getItem(REMEMBER_KEY);
-      if (saved) { $('#loginEmail').val(saved); $('#rememberMe').prop('checked', true); }
+      const saved = JSON.parse(localStorage.getItem(REMEMBER_KEY) || 'null');
+      if (saved && saved.e) {
+        $('#loginEmail').val(b64dec(saved.e));
+        $('#loginPassword').val(saved.p ? b64dec(saved.p) : '');
+        $('#rememberMe').prop('checked', true);
+      }
     } catch (e) { }
   });
-  async function saveRememberedLogin(email, password, name) {
+  function saveRememberedLogin(email, password) {
     try {
-      if ($('#rememberMe').is(':checked')) {
-        localStorage.setItem(REMEMBER_KEY, email);
-        if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
-          await navigator.credentials.store(new PasswordCredential({ id: email, password: password, name: name || email }));
-        }
-      } else {
-        localStorage.removeItem(REMEMBER_KEY);
-      }
-    } catch (e) { /* ไม่เป็นไร ถ้าเบราว์เซอร์ไม่รองรับ */ }
+      if ($('#rememberMe').is(':checked')) localStorage.setItem(REMEMBER_KEY, JSON.stringify({ e: b64enc(email), p: b64enc(password) }));
+      else localStorage.removeItem(REMEMBER_KEY);
+    } catch (e) { }
   }
 
   $('#loginForm').on('submit', async function (e) {
@@ -912,8 +911,8 @@
       const res = await api('login', { email, password });
       if (!res.success) return Swal.fire({ icon: res.locked ? 'warning' : 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: res.message });
       SESSION_TOKEN = res.token; CURRENT_USER = res.user;
-      await saveRememberedLogin(email, password, res.user.name);
-      $('#loginPassword').val('');
+      saveRememberedLogin(email, password);
+      if (!$('#rememberMe').is(':checked')) $('#loginPassword').val('');
       if (res.user.mustChange) {
         await Swal.fire({ icon: 'info', title: 'ต้องเปลี่ยนรหัสผ่าน', text: 'บัญชีนี้ต้องตั้งรหัสผ่านใหม่ก่อนเริ่มใช้งาน' });
         showForceChange();
