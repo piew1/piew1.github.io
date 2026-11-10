@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dynamic Sales Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f4f7fb;--panel:#fff;--ink:#172033;--muted:#718096;--line:#e5eaf2;--blue:#2563eb;--navy:#14213d;--green:#059669;--red:#dc2626;--shadow:0 8px 28px rgba(25,45,85,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'Sarabun',Tahoma,sans-serif;font-size:14px}
+header{background:linear-gradient(115deg,#14213d,#1d4e89);color:white;padding:24px clamp(16px,4vw,48px)}
+.header-inner{max-width:1500px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-size:26px;margin:0;font-weight:700}.subtitle{color:#c9d8ef;margin-top:3px}.status{font-size:12px;border:1px solid #6b86ac;border-radius:20px;padding:6px 12px;color:#e5efff}
+main{max-width:1500px;margin:22px auto;padding:0 clamp(12px,3vw,36px) 40px}
+.section-title{font-size:17px;font-weight:700;margin:0 0 12px}
+.panel,.kpi,.filter{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.import-panel{padding:18px;margin-bottom:18px}
+.import-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px}
+.file-slot{border:1.5px dashed #b8c6da;border-radius:12px;padding:14px 12px;text-align:center;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#fbfdff;cursor:pointer;transition:.15s}
+.file-slot.drag,.file-slot:hover{border-color:var(--blue);background:#eff6ff}
+.file-slot input{display:none}.file-icon{font-size:23px}.file-name{font-weight:700;font-size:12px;overflow-wrap:anywhere}.file-meta{font-size:11px;color:var(--muted)}
+.slot-state{font-size:11px;color:var(--muted)}.slot-state.ok{color:var(--green);font-weight:700}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{font-family:inherit;border:0;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer}
+.primary{background:var(--blue);color:#fff}.secondary{background:#edf2f8;color:#334155}.danger{background:#fff1f2;color:#be123c}
+.note{color:var(--muted);font-size:12px;line-height:1.6}
+.filters{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;margin:16px 0}
+.filter{padding:9px 10px}.filter label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+select{width:100%;border:0;outline:0;background:transparent;color:var(--ink);font-family:inherit;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{padding:15px 17px}.kpi-label{color:var(--muted);font-size:12px}.kpi-value{font-size:24px;font-weight:700;margin:3px 0}.kpi-sub{font-size:11px;color:var(--muted)}
+.content-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:16px}
+.panel{padding:16px;min-width:0}.chart-wrap{height:290px;position:relative}
+.table-wrap{overflow:auto;max-height:440px;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left}th{position:sticky;top:0;background:#f7f9fc;color:#526176;z-index:1}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{padding:32px;text-align:center;color:var(--muted)}.footer{text-align:center;color:#91a0b5;font-size:11px;margin-top:22px}
+#message{margin-top:10px;font-size:12px;color:var(--muted)}.warning{color:#b45309}
+@media(max-width:1100px){.import-grid{grid-template-columns:repeat(3,1fr)}.filters{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:700px){.import-grid{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:repeat(2,1fr)}.kpis{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<header><div class="header-inner">
+ <div><h1>Dynamic Sales Dashboard</h1><div class="subtitle">ระบบวิเคราะห์ยอดขาย · Import ข้อมูลด้วยตนเอง</div></div>
+ <div class="status" id="globalStatus">ยังไม่ได้โหลดข้อมูล</div>
+</div></header>
+<main>
+<section class="panel import-panel">
+ <div class="section-title">นำเข้าข้อมูล (ลากไฟล์มาวาง หรือคลิกเพื่อเลือก)</div>
+ <div class="import-grid" id="dropGrid">
+  <label class="file-slot" data-key="salesperson"><input type="file" accept=".txt,.tsv,.csv"><div class="file-icon">👤</div><div class="file-name">Salesperson_Monthly.txt</div><div class="file-meta">ข้อมูลรายเดือนตามพนักงานขาย</div><div class="slot-state" id="state-salesperson">รอไฟล์</div></label>
+  <label class="file-slot" data-key="customer"><input type="file" accept=".txt,.tsv,.csv"><div class="file-icon">🏢</div><div class="file-name">Customer_Monthly.txt</div><div class="file-meta">ข้อมูลรายเดือนตามลูกค้า</div><div class="slot-state" id="state-customer">รอไฟล์</div></label>
+  <label class="file-slot" data-key="territory"><input type="file" accept=".txt,.tsv,.csv"><div class="file-icon">📍</div><div class="file-name">Territory_Monthly.txt</div><div class="file-meta">ข้อมูลรายเดือนตามเขต</div><div class="slot-state" id="state-territory">รอไฟล์</div></label>
+  <label class="file-slot" data-key="productgroup"><input type="file" accept=".txt,.tsv,.csv"><div class="file-icon">📦</div><div class="file-name">ProductGroup_Monthly.txt</div><div class="file-meta">ข้อมูลรายเดือนตามกลุ่มสินค้า</div><div class="slot-state" id="state-productgroup">รอไฟล์</div></label>
+  <label class="file-slot" data-key="item"><input type="file" accept=".txt,.tsv,.csv"><div class="file-icon">🔎</div><div class="file-name">Item_Monthly.txt</div><div class="file-meta">ข้อมูลรายเดือนตามสินค้า</div><div class="slot-state" id="state-item">รอไฟล์</div></label>
+ </div>
+ <div class="toolbar"><div class="note">รองรับ Unicode Text จาก Excel (UTF-16) และ TSV แบบ Tab-delimited · ข้อมูลประมวลผลในเบราว์เซอร์นี้</div><div><button class="secondary" id="clearBtn">ล้างข้อมูล</button></div></div>
+ <div id="message">เริ่มต้นโดยนำเข้าไฟล์ได้ทีละไฟล์หรือเลือกหลายไฟล์พร้อมกัน ระบบจะจับคู่จากชื่อไฟล์</div>
+</section>
+
+<div class="section-title">ตัวกรองข้อมูล</div>
+<section class="filters">
+ <div class="filter"><label>ปี</label><select id="f-year"><option value="">ทุกปี</option></select></div>
+ <div class="filter"><label>เดือน</label><select id="f-month"><option value="">ทุกเดือน</option></select></div>
+ <div class="filter"><label>พนักงานขาย</label><select id="f-salesperson"><option value="">ทุกคน</option></select></div>
+ <div class="filter"><label>เขตการขาย</label><select id="f-territory"><option value="">ทุกเขต</option></select></div>
+ <div class="filter"><label>ลูกค้า</label><select id="f-customer"><option value="">ทุกลูกค้า</option></select></div>
+ <div class="filter"><label>กลุ่มสินค้า</label><select id="f-group"><option value="">ทุกกลุ่ม</option></select></div>
+ <div class="filter"><label>สินค้า</label><select id="f-item"><option value="">ทุกสินค้า</option></select></div>
+</section>
+
+<section class="kpis">
+ <div class="kpi"><div class="kpi-label">ยอดขายสุทธิ (ไม่รวม VAT)</div><div class="kpi-value" id="k-net">—</div><div class="kpi-sub" id="k-net-sub">รอข้อมูล</div></div>
+ <div class="kpi"><div class="kpi-label">ยอด Invoice</div><div class="kpi-value" id="k-invoice">—</div><div class="kpi-sub">ยอดขายก่อนหัก Credit Memo</div></div>
+ <div class="kpi"><div class="kpi-label">ยอด Credit Memo</div><div class="kpi-value" id="k-credit">—</div><div class="kpi-sub">ยอดใบลดหนี้</div></div>
+ <div class="kpi"><div class="kpi-label">จำนวนขายสุทธิ</div><div class="kpi-value" id="k-qty">—</div><div class="kpi-sub">หน่วยตามข้อมูลต้นทาง</div></div>
+</section>
+
+<section class="content-grid">
+ <div class="panel"><div class="section-title">ยอดขายสุทธิรายเดือน</div><div class="chart-wrap"><canvas id="monthlyChart"></canvas><div class="empty" id="chartEmpty">นำเข้าไฟล์เพื่อแสดงกราฟ</div></div></div>
+ <div class="panel"><div class="section-title">ยอดขายสุทธิตามรายการ</div><div class="chart-wrap"><canvas id="rankChart"></canvas><div class="empty" id="rankEmpty">นำเข้าไฟล์เพื่อแสดงกราฟ</div></div></div>
+</section>
+
+<section class="panel">
+ <div class="toolbar" style="margin:0 0 12px"><div class="section-title" style="margin:0">รายละเอียดข้อมูล</div><div class="note" id="tableInfo">ยังไม่มีข้อมูล</div></div>
+ <div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="tableBody"><tr><td class="empty">กรุณานำเข้าไฟล์ TSV/TXT อย่างน้อย 1 ชุด</td></tr></tbody></table></div>
+</section>
+<div class="footer">Dynamic Sales Dashboard · Manual Import · No direct SQL connection</div>
+</main>
+<script>
+const SCHEMAS = {
+ salesperson:{cols:['year','month','yearMonth','salespersonCode','salespersonName','invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'],label:'พนักงานขาย',name:'Salesperson_Monthly'},
+ customer:{cols:['year','month','yearMonth','salespersonCode','salespersonName','customerCode','customerName','territoryCode','territoryName','invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'],label:'ลูกค้า',name:'Customer_Monthly'},
+ territory:{cols:['year','month','yearMonth','territoryCode','territoryName','invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'],label:'เขตการขาย',name:'Territory_Monthly'},
+ productgroup:{cols:['year','month','yearMonth','categoryCode','categoryName','groupCode','groupName','invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'],label:'กลุ่มสินค้า',name:'ProductGroup_Monthly'},
+ item:{cols:['year','month','yearMonth','categoryCode','categoryName','groupCode','groupName','itemNo','itemDescription','invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'],label:'สินค้า',name:'Item_Monthly'}
+};
+const LABELS={year:'ปี',month:'เดือน',yearMonth:'ปี-เดือน',salespersonCode:'รหัสพนักงาน',salespersonName:'พนักงานขาย',customerCode:'รหัสลูกค้า',customerName:'ลูกค้า',territoryCode:'รหัสเขต',territoryName:'เขตการขาย',categoryCode:'รหัสหมวด',categoryName:'หมวดสินค้า',groupCode:'รหัสกลุ่ม',groupName:'กลุ่มสินค้า',itemNo:'รหัสสินค้า',itemDescription:'รายละเอียดสินค้า',invoiceQty:'Invoice Qty',creditQty:'Credit Memo Qty',netQty:'จำนวนสุทธิ',invoiceAmount:'Invoice Amount',creditAmount:'Credit Memo Amount',netSales:'ยอดขายสุทธิ'};
+const data={salesperson:[],customer:[],territory:[],productgroup:[],item:[]};
+const fileInfo={}; let monthlyChart=null,rankChart=null;
+const $=id=>document.getElementById(id);
+const num=v=>{if(v===undefined||v===null||v==='')return 0;const n=Number(String(v).replace(/,/g,''));return Number.isFinite(n)?n:0};
+const money=v=>num(v).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const qty=v=>num(v).toLocaleString('th-TH',{maximumFractionDigits:2});
+function decodeFile(buffer){
+ const b=new Uint8Array(buffer);
+ if(b.length>=2&&b[0]===0xff&&b[1]===0xfe)return new TextDecoder('utf-16le').decode(b.subarray(2));
+ if(b.length>=2&&b[0]===0xfe&&b[1]===0xff)return new TextDecoder('utf-16be').decode(b.subarray(2));
+ if(b.length>=3&&b[0]===0xef&&b[1]===0xbb&&b[2]===0xbf)return new TextDecoder('utf-8').decode(b.subarray(3));
+ return new TextDecoder('utf-8').decode(b);
+}
+function detectKey(name){const n=name.toLowerCase();for(const k of Object.keys(SCHEMAS)){if(n.includes(k))return k;}return null;}
+function parseFileText(text,key){
+ text=text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+ const lines=text.split('\n').filter(x=>x.trim().length);
+ if(!lines.length)throw new Error('ไฟล์ไม่มีข้อมูล');
+ const first=lines[0]; const delim=first.includes('\t')?'\t':',';
+ let rows=lines.map(line=>line.split(delim).map(v=>v.trim()));
+ const schema=SCHEMAS[key], expected=schema.cols.length;
+ // Accept an optional header row. Export from Excel may contain headers or data only.
+ const firstLower=rows[0].map(x=>x.toLowerCase()).join('|');
+ const hasHeader=firstLower.includes('salesyear')||firstLower.includes('salespersoncode')||firstLower.includes('customername')||firstLower.includes('itemno')||firstLower.includes('productgroupcode')||firstLower.includes('territorycode');
+ if(hasHeader)rows.shift();
+ const bad=rows.findIndex(r=>r.length!==expected);
+ if(bad>=0)throw new Error(`แถวข้อมูลที่ ${bad+1} มี ${rows[bad].length} คอลัมน์ (ควรเป็น ${expected})`);
+ return rows.map(r=>{const o={};schema.cols.forEach((c,i)=>o[c]=r[i]??'');return o;});
+}
+function setSlot(key,file,count){
+ fileInfo[key]={name:file.name,count,size:file.size};
+ const el=$('state-'+key);el.textContent=`✓ ${count.toLocaleString()} แถว`;el.className='slot-state ok';
+}
+async function loadFile(file,key){
+ try{
+  const text=decodeFile(await file.arrayBuffer());
+  const parsed=parseFileText(text,key);
+  data[key]=parsed;setSlot(key,file,parsed.length);
+  $('message').textContent=`นำเข้า ${file.name} สำเร็จ ${parsed.length.toLocaleString()} แถว`;
+  $('message').className='';
+  refresh();
+ }catch(e){$('message').textContent=`นำเข้า ${file.name} ไม่สำเร็จ: ${e.message}`;$('message').className='warning';}
+}
+document.querySelectorAll('.file-slot').forEach(slot=>{
+ const key=slot.dataset.key,input=slot.querySelector('input');
+ input.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0],key);input.value='';});
+ slot.addEventListener('dragover',e=>{e.preventDefault();slot.classList.add('drag');});
+ slot.addEventListener('dragleave',()=>slot.classList.remove('drag'));
+ slot.addEventListener('drop',e=>{e.preventDefault();slot.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)loadFile(f,key);});
+});
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{if(e.target.closest('.file-slot'))return;e.preventDefault();const files=[...e.dataTransfer.files];files.forEach(f=>{const k=detectKey(f.name);if(k)loadFile(f,k);});});
+$('clearBtn').addEventListener('click',()=>{Object.keys(data).forEach(k=>{data[k]=[];delete fileInfo[k];$('state-'+k).textContent='รอไฟล์';$('state-'+k).className='slot-state';});document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);refresh();$('message').textContent='ล้างข้อมูลเรียบร้อย';});
+['year','month','salesperson','territory','customer','group','item'].forEach(k=>$('f-'+k).addEventListener('change',refresh));
+function allRows(){return Object.values(data).reduce((a,b)=>a+b.length,0)}
+function uniqueFrom(keys,field){const set=new Set();keys.forEach(k=>data[k].forEach(r=>{const v=r[field];if(v!==undefined&&v!==''&&v!==null)set.add(v);}));return [...set].sort((a,b)=>String(a).localeCompare(String(b),'th',{numeric:true}));}
+function fillSelect(id,values,allLabel){const s=$(id),old=s.value;s.innerHTML='';const op=document.createElement('option');op.value='';op.textContent=allLabel;s.appendChild(op);values.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});if(values.includes(old))s.value=old;}
+function updateFilterOptions(){
+ fillSelect('f-year',uniqueFrom(Object.keys(data),'year'),'ทุกปี');
+ fillSelect('f-month',Array.from({length:12},(_,i)=>String(i+1)),'ทุกเดือน');
+ fillSelect('f-salesperson',uniqueFrom(['salesperson','customer'],'salespersonCode'),'ทุกคน');
+ fillSelect('f-territory',uniqueFrom(['territory','customer'],'territoryCode'),'ทุกเขต');
+ fillSelect('f-customer',uniqueFrom(['customer'],'customerCode'),'ทุกลูกค้า');
+ fillSelect('f-group',uniqueFrom(['productgroup','item'],'groupCode'),'ทุกกลุ่ม');
+ fillSelect('f-item',uniqueFrom(['item'],'itemNo'),'ทุกสินค้า');
+}
+function filters(){return {year:$('f-year').value,month:$('f-month').value,salesperson:$('f-salesperson').value,territory:$('f-territory').value,customer:$('f-customer').value,group:$('f-group').value,item:$('f-item').value};}
+function matches(r,f){
+ if(f.year&&r.year!==f.year)return false;if(f.month&&String(num(r.month))!==String(num(f.month)))return false;
+ if(f.salesperson&&r.salespersonCode!==f.salesperson)return false;
+ if(f.territory&&r.territoryCode!==f.territory)return false;
+ if(f.customer&&r.customerCode!==f.customer)return false;
+ if(f.group&&r.groupCode!==f.group)return false;
+ if(f.item&&r.itemNo!==f.item)return false;return true;
+}
+function chooseSource(f){
+ // Choose the most detailed uploaded dataset that can apply the selected dimensions.
+ if(f.item&&data.item.length)return 'item';
+ if(f.customer&&data.customer.length)return 'customer';
+ if(f.salesperson&&data.salesperson.length)return 'salesperson';
+ if(f.territory&&data.territory.length)return 'territory';
+ if(f.group&&data.productgroup.length)return 'productgroup';
+ return ['item','customer','salesperson','territory','productgroup'].find(k=>data[k].length)||null;
+}
+function aggregate(rows){
+ return rows.reduce((a,r)=>{a.iq+=num(r.invoiceQty);a.cq+=num(r.creditQty);a.nq+=num(r.netQty);a.ia+=num(r.invoiceAmount);a.ca+=num(r.creditAmount);a.ns+=num(r.netSales);return a;},{iq:0,cq:0,nq:0,ia:0,ca:0,ns:0});
+}
+function monthly(rows){
+ const m={};rows.forEach(r=>{const key=r.yearMonth||`${r.year}-${String(r.month).padStart(2,'0')}`;if(!m[key])m[key]=0;m[key]+=num(r.netSales);});
+ return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0])).slice(-24);
+}
+function rank(rows,key,labelKey){
+ const m={};rows.forEach(r=>{const k=r[key]||'ไม่ระบุ';m[k]=(m[k]||0)+num(r.netSales);});
+ return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10);
+}
+function makeChart(id,old,type,labels,values){
+ const ctx=$(id);if(old)old.destroy();
+ if(typeof Chart==='undefined')return null;
+ return new Chart(ctx,{type,data:{labels,datasets:[{label:'ยอดขายสุทธิ',data:values,borderWidth:2,tension:.25,backgroundColor:type==='line'?'rgba(37,99,235,.12)':'rgba(37,99,235,.72)',borderColor:'#2563eb',fill:type==='line'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+money(c.raw)+' บาท'}}},scales:{y:{ticks:{callback:v=>Number(v).toLocaleString('th-TH')}},x:{grid:{display:false}}}}});
+}
+function refresh(){
+ updateFilterOptions();
+ const f=filters(),source=chooseSource(f);
+ const rows=source?data[source].filter(r=>matches(r,f)):[];
+ const a=aggregate(rows);
+ $('globalStatus').textContent=allRows()?`${Object.values(data).filter(x=>x.length).length}/5 ชุดข้อมูล · ${allRows().toLocaleString()} แถว`:'ยังไม่ได้โหลดข้อมูล';
+ $('k-net').textContent=source?money(a.ns):'—';$('k-invoice').textContent=source?money(a.ia):'—';$('k-credit').textContent=source?money(a.ca):'—';$('k-qty').textContent=source?qty(a.nq):'—';
+ $('k-net-sub').textContent=source?`คำนวณจาก ${SCHEMAS[source].label} (${rows.length.toLocaleString()} แถว)`:'รอข้อมูล';
+ const m=monthly(rows);$('chartEmpty').style.display=m.length?'none':'block';$('rankEmpty').style.display=rows.length?'none':'block';
+ monthlyChart=makeChart('monthlyChart',monthlyChart,'line',m.map(x=>x[0]),m.map(x=>x[1]));
+ const rankKey=source==='salesperson'?'salespersonName':source==='customer'?'customerName':source==='territory'?'territoryName':source==='productgroup'?'groupName':'itemDescription';
+ rankChart=makeChart('rankChart',rankChart,'bar',rank(rows,rankKey).map(x=>x[0]),rank(rows,rankKey).map(x=>x[1]));
+ renderTable(rows,source);
+}
+function renderTable(rows,source){
+ const head=$('tableHead'),body=$('tableBody');head.innerHTML='';body.innerHTML='';
+ if(!source||!rows.length){body.innerHTML='<tr><td class="empty">ไม่มีข้อมูลตามตัวกรองที่เลือก</td></tr>';$('tableInfo').textContent='0 แถว';return;}
+ const cols=SCHEMAS[source].cols;const tr=document.createElement('tr');cols.forEach(c=>{const th=document.createElement('th');th.textContent=LABELS[c]||c;if(['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c))th.className='num';tr.appendChild(th);});head.appendChild(tr);
+ rows.slice(0,500).forEach(r=>{const tr=document.createElement('tr');cols.forEach(c=>{const td=document.createElement('td');const v=r[c]??'';td.textContent=['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c)?(['invoiceAmount','creditAmount','netSales'].includes(c)?money(v):qty(v)):v;if(['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c))td.className='num';tr.appendChild(td);});body.appendChild(tr);});
+ $('tableInfo').textContent=`${rows.length.toLocaleString()} แถว · แสดงสูงสุด 500 แถว · ${SCHEMAS[source].label}`;
+}
+refresh();
+</script>
+</body>
+</html>
