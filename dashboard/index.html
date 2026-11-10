@@ -30,7 +30,8 @@ button{font-family:inherit;border:0;border-radius:9px;padding:9px 15px;font-size
 .filters{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;margin:16px 0}
 .filter{padding:9px 10px}.filter label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
 select,.filter input{width:100%;border:1px solid #e5eaf2;border-radius:7px;padding:7px 8px;outline:0;background:#fff;color:var(--ink);font-family:inherit;font-size:13px;min-width:0}.filter input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
-.range-fields{display:flex;gap:6px;align-items:center}.range-fields select{flex:1}.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 2px 0}.pager-controls{display:flex;align-items:center;gap:7px}.pager button:disabled{opacity:.4;cursor:not-allowed}.pager select{width:auto;min-width:75px}
+.range-fields{display:flex;gap:6px;align-items:center}
+.autocomplete-filter{position:relative}.ac-input-row{display:flex;gap:5px;align-items:center}.ac-input-row input{flex:1;min-width:0}.ac-clear{padding:6px 8px;background:#edf2f8;color:#475569;font-size:11px;white-space:nowrap}.ac-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.ac-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:3px 7px;border-radius:14px;background:#eaf1ff;color:#1d4ed8;font-size:11px}.ac-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ac-chip button{padding:0;background:transparent;color:#1d4ed8;font-size:14px;line-height:1}.ac-menu{display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;max-height:240px;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:9px;box-shadow:0 12px 28px rgba(15,23,42,.16);z-index:20}.ac-menu.open{display:block}.ac-option{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:0;background:#fff;color:#172033;font-size:12px;font-weight:400;border-bottom:1px solid #f1f5f9}.ac-option:hover{background:#eff6ff}.ac-option small{display:block;color:#718096;font-size:10px}.ac-empty{padding:10px;color:#718096;font-size:11px}.range-fields select{flex:1}.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 2px 0}.pager-controls{display:flex;align-items:center;gap:7px}.pager button:disabled{opacity:.4;cursor:not-allowed}.pager select{width:auto;min-width:75px}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .kpi{padding:15px 17px}.kpi-label{color:var(--muted);font-size:12px}.kpi-value{font-size:24px;font-weight:700;margin:3px 0}.kpi-sub{font-size:11px;color:var(--muted)}
 .content-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:16px}
@@ -66,13 +67,13 @@ table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,t
 <section class="filters">
  <div class="filter"><label>ปี</label><select id="f-year"><option value="">ทุกปี</option></select></div>
  <div class="filter"><label>ช่วงเดือน (ตั้งแต่ – ถึง)</label><div class="range-fields"><select id="f-month-from" aria-label="เดือนเริ่มต้น"></select><span>–</span><select id="f-month-to" aria-label="เดือนสิ้นสุด"></select></div></div>
- <div class="filter"><label>พนักงานขาย (ค้นหารหัส/ชื่อ)</label><input id="f-salesperson" type="search" placeholder="พิมพ์รหัสหรือชื่อ..." autocomplete="off"></div>
- <div class="filter"><label>เขตการขาย (ค้นหารหัส/ชื่อ)</label><input id="f-territory" type="search" placeholder="พิมพ์รหัสหรือชื่อเขต..." autocomplete="off"></div>
- <div class="filter"><label>ลูกค้า (ค้นหารหัส/ชื่อ)</label><input id="f-customer" type="search" placeholder="พิมพ์รหัสหรือชื่อลูกค้า..." autocomplete="off"></div>
- <div class="filter"><label>กลุ่มสินค้า (ค้นหาชื่อ)</label><input id="f-group" type="search" placeholder="พิมพ์ชื่อกลุ่ม..." autocomplete="off"></div>
- <div class="filter"><label>สินค้า (ค้นหารหัส/ชื่อ)</label><input id="f-item" type="search" placeholder="พิมพ์รหัสหรือชื่อสินค้า..." autocomplete="off"></div>
+ <div class="filter autocomplete-filter" data-filter="salesperson"><label>พนักงานขาย</label><div class="ac-input-row"><input id="f-salesperson" type="search" placeholder="พิมพ์รหัสหรือชื่อ..." autocomplete="off"><button type="button" class="ac-clear" data-clear="salesperson">ล้าง</button></div><div class="ac-chips" id="chips-salesperson"></div><div class="ac-menu" id="menu-salesperson"></div></div>
+ <div class="filter autocomplete-filter" data-filter="territory"><label>เขตการขาย</label><div class="ac-input-row"><input id="f-territory" type="search" placeholder="พิมพ์รหัสหรือชื่อเขต..." autocomplete="off"><button type="button" class="ac-clear" data-clear="territory">ล้าง</button></div><div class="ac-chips" id="chips-territory"></div><div class="ac-menu" id="menu-territory"></div></div>
+ <div class="filter autocomplete-filter" data-filter="customer"><label>ลูกค้า</label><div class="ac-input-row"><input id="f-customer" type="search" placeholder="พิมพ์รหัสหรือชื่อลูกค้า..." autocomplete="off"><button type="button" class="ac-clear" data-clear="customer">ล้าง</button></div><div class="ac-chips" id="chips-customer"></div><div class="ac-menu" id="menu-customer"></div></div>
+ <div class="filter autocomplete-filter" data-filter="group"><label>กลุ่มสินค้า (Description 2)</label><div class="ac-input-row"><input id="f-group" type="search" placeholder="พิมพ์รหัสหรือชื่อกลุ่ม..." autocomplete="off"><button type="button" class="ac-clear" data-clear="group">ล้าง</button></div><div class="ac-chips" id="chips-group"></div><div class="ac-menu" id="menu-group"></div></div>
+ <div class="filter autocomplete-filter" data-filter="item"><label>สินค้า</label><div class="ac-input-row"><input id="f-item" type="search" placeholder="พิมพ์รหัสหรือชื่อสินค้า..." autocomplete="off"><button type="button" class="ac-clear" data-clear="item">ล้าง</button></div><div class="ac-chips" id="chips-item"></div><div class="ac-menu" id="menu-item"></div></div>
 </section>
-<div class="note" style="margin:-7px 0 14px">ค้นหาได้ทันทีจากบางส่วนของรหัสหรือชื่อ · ช่วงเดือนเป็นแบบรวมเดือนเริ่มต้นและเดือนสิ้นสุด · ตัวกรองแต่ละมิติจะใช้ชุดข้อมูลที่มีฟิลด์นั้น</div>
+<div class="note" style="margin:-7px 0 14px">พิมพ์บางส่วนเพื่อแสดงคำแนะนำ แล้วคลิกเลือกได้หลายรายการ · กด ล้าง เพื่อล้างตัวกรองแต่ละช่อง · ช่วงเดือนรวมเดือนเริ่มต้นและสิ้นสุด</div>
 
 <section class="kpis">
  <div class="kpi"><div class="kpi-label">ยอดขายสุทธิ (ไม่รวม VAT)</div><div class="kpi-value" id="k-net">—</div><div class="kpi-sub" id="k-net-sub">รอข้อมูล</div></div>
@@ -160,10 +161,55 @@ $('clearBtn').addEventListener('click',()=>{
  Object.keys(data).forEach(k=>{data[k]=[];delete fileInfo[k];$('state-'+k).textContent='รอไฟล์';$('state-'+k).className='slot-state';});
  document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);
  document.querySelectorAll('.filters input').forEach(i=>i.value='');
+ Object.keys(selectedFilters).forEach(k=>{selectedFilters[k]=[];renderChips(k);$('menu-'+k).classList.remove('open');});
  currentPage=1;refresh();$('message').textContent='ล้างข้อมูลเรียบร้อย';
 });
 ['year','month-from','month-to'].forEach(k=>$('f-'+k).addEventListener('change',()=>{currentPage=1;refresh();}));
-['salesperson','territory','customer','group','item'].forEach(k=>$('f-'+k).addEventListener('input',()=>{currentPage=1;refresh();}));
+const selectedFilters={salesperson:[],territory:[],customer:[],group:[],item:[]};
+const FILTER_META={
+ salesperson:{sources:['salesperson','customer'],code:'salespersonCode',name:'salespersonName',placeholder:'พนักงานขาย'},
+ territory:{sources:['territory','customer'],code:'territoryCode',name:'territoryName',placeholder:'เขตการขาย'},
+ customer:{sources:['customer'],code:'customerCode',name:'customerName',placeholder:'ลูกค้า'},
+ group:{sources:['productgroup','item'],code:'groupCode',name:'groupName',placeholder:'กลุ่มสินค้า'},
+ item:{sources:['item'],code:'itemNo',name:'itemDescription',placeholder:'สินค้า'}
+};
+function optionKey(code,name){return `${String(code??'')}\u001f${String(name??'')}`;}
+function getFilterOptions(key){
+ const meta=FILTER_META[key],map=new Map();
+ meta.sources.forEach(source=>data[source].forEach(r=>{
+  const code=String(r[meta.code]??'').trim(),name=String(r[meta.name]??'').trim();
+  if(!code&&!name)return;
+  const id=optionKey(code,name);if(!map.has(id))map.set(id,{id,code,name,label:code&&name?`${code} · ${name}`:(code||name)});
+ }));
+ return [...map.values()].sort((a,b)=>a.label.localeCompare(b.label,'th',{numeric:true,sensitivity:'base'}));
+}
+function renderChips(key){
+ const host=$('chips-'+key);host.innerHTML='';
+ selectedFilters[key].forEach(item=>{
+  const chip=document.createElement('span');chip.className='ac-chip';
+  const label=document.createElement('span');label.textContent=item.label;
+  const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','ลบ '+item.label);
+  remove.addEventListener('click',()=>{selectedFilters[key]=selectedFilters[key].filter(x=>x.id!==item.id);renderChips(key);currentPage=1;refresh();});
+  chip.append(label,remove);host.appendChild(chip);
+ });
+}
+function showSuggestions(key){
+ const input=$('f-'+key),menu=$('menu-'+key),query=input.value.trim().toLocaleLowerCase('th');
+ const chosen=new Set(selectedFilters[key].map(x=>x.id));
+ const matches=getFilterOptions(key).filter(x=>!chosen.has(x.id)&&(!query||x.code.toLocaleLowerCase('th').includes(query)||x.name.toLocaleLowerCase('th').includes(query)||x.label.toLocaleLowerCase('th').includes(query))).slice(0,60);
+ menu.innerHTML='';
+ if(!matches.length){const empty=document.createElement('div');empty.className='ac-empty';empty.textContent=query?'ไม่พบรายการที่ตรงกัน ลองพิมพ์บางส่วนของรหัสหรือชื่อ':'ไม่มีรายการให้เลือก';menu.appendChild(empty);}
+ else matches.forEach(item=>{const btn=document.createElement('button');btn.type='button';btn.className='ac-option';btn.textContent=item.label;btn.addEventListener('click',()=>{selectedFilters[key].push(item);input.value='';menu.classList.remove('open');renderChips(key);currentPage=1;refresh();input.focus();});menu.appendChild(btn);});
+ menu.classList.add('open');
+}
+['salesperson','territory','customer','group','item'].forEach(key=>{
+ const input=$('f-'+key),menu=$('menu-'+key);
+ input.addEventListener('focus',()=>showSuggestions(key));
+ input.addEventListener('input',()=>showSuggestions(key));
+ input.addEventListener('keydown',e=>{if(e.key==='Escape')menu.classList.remove('open');if(e.key==='Enter'){const first=menu.querySelector('.ac-option');if(first){e.preventDefault();first.click();}}});
+ document.querySelector(`[data-clear="${key}"]`).addEventListener('click',()=>{selectedFilters[key]=[];input.value='';menu.classList.remove('open');renderChips(key);currentPage=1;refresh();});
+});
+document.addEventListener('click',e=>{document.querySelectorAll('.ac-menu.open').forEach(menu=>{if(!menu.parentElement.contains(e.target))menu.classList.remove('open');});});
 $('pageSize').addEventListener('change',()=>{currentPageSize=Number($('pageSize').value)||50;currentPage=1;refresh();});
 $('prevPage').addEventListener('click',()=>{if(currentPage>1){currentPage--;refresh();}});
 $('nextPage').addEventListener('click',()=>{currentPage++;refresh();});
@@ -179,29 +225,32 @@ function updateFilterOptions(){
 }
 function filters(){return {
  year:$('f-year').value,monthFrom:Number($('f-month-from').value||1),monthTo:Number($('f-month-to').value||12),
- salesperson:$('f-salesperson').value.trim().toLocaleLowerCase(),territory:$('f-territory').value.trim().toLocaleLowerCase(),
- customer:$('f-customer').value.trim().toLocaleLowerCase(),group:$('f-group').value.trim().toLocaleLowerCase(),item:$('f-item').value.trim().toLocaleLowerCase()
+ salesperson:selectedFilters.salesperson,territory:selectedFilters.territory,customer:selectedFilters.customer,group:selectedFilters.group,item:selectedFilters.item
 };}
-function hasText(value,query){return !query||String(value??'').toLocaleLowerCase().includes(query);}
+function selectedMatch(row,items,codeField,nameField){
+ if(!items.length)return true;
+ if(!(codeField in row)&&!(nameField in row))return true;
+ const code=String(row[codeField]??'').trim(),name=String(row[nameField]??'').trim();
+ return items.some(item=>item.code===code&&item.name===name);
+}
 function matches(r,f){
  const month=num(r.month);
  if(f.year&&String(r.year)!==f.year)return false;
  if(month<f.monthFrom||month>f.monthTo)return false;
- if(f.salesperson&&('salespersonCode' in r||'salespersonName' in r)&&!hasText(r.salespersonCode,f.salesperson)&&!hasText(r.salespersonName,f.salesperson))return false;
- if(f.territory&&('territoryCode' in r||'territoryName' in r)&&!hasText(r.territoryCode,f.territory)&&!hasText(r.territoryName,f.territory))return false;
- if(f.customer&&('customerCode' in r||'customerName' in r)&&!hasText(r.customerCode,f.customer)&&!hasText(r.customerName,f.customer))return false;
- if(f.group&&('groupCode' in r||'groupName' in r)&&!hasText(r.groupCode,f.group)&&!hasText(r.groupName,f.group))return false;
- if(f.item&&('itemNo' in r||'itemDescription' in r)&&!hasText(r.itemNo,f.item)&&!hasText(r.itemDescription,f.item))return false;
+ if(!selectedMatch(r,f.salesperson,'salespersonCode','salespersonName'))return false;
+ if(!selectedMatch(r,f.territory,'territoryCode','territoryName'))return false;
+ if(!selectedMatch(r,f.customer,'customerCode','customerName'))return false;
+ if(!selectedMatch(r,f.group,'groupCode','groupName'))return false;
+ if(!selectedMatch(r,f.item,'itemNo','itemDescription'))return false;
  return true;
 }
 function chooseSource(f){
  // Select the aggregate that contains the most specifically requested dimension.
- if(f.item&&data.item.length)return 'item';
- if(f.group&&data.productgroup.length)return 'productgroup';
- if(f.customer&&data.customer.length)return 'customer';
- if(f.territory&&data.territory.length)return 'territory';
- if(f.salesperson&&data.salesperson.length)return 'salesperson';
- if(f.item&&data.item.length)return 'item';
+ if(f.item.length&&data.item.length)return 'item';
+ if(f.group.length&&data.productgroup.length)return 'productgroup';
+ if(f.customer.length&&data.customer.length)return 'customer';
+ if(f.territory.length&&data.territory.length)return 'territory';
+ if(f.salesperson.length&&data.salesperson.length)return 'salesperson';
  return ['salesperson','customer','territory','productgroup','item'].find(k=>data[k].length)||null;
 }
 function aggregate(rows){
