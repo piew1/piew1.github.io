@@ -29,7 +29,8 @@ button{font-family:inherit;border:0;border-radius:9px;padding:9px 15px;font-size
 .note{color:var(--muted);font-size:12px;line-height:1.6}
 .filters{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;margin:16px 0}
 .filter{padding:9px 10px}.filter label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
-select{width:100%;border:0;outline:0;background:transparent;color:var(--ink);font-family:inherit;font-size:13px}
+select,.filter input{width:100%;border:1px solid #e5eaf2;border-radius:7px;padding:7px 8px;outline:0;background:#fff;color:var(--ink);font-family:inherit;font-size:13px;min-width:0}.filter input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+.range-fields{display:flex;gap:6px;align-items:center}.range-fields select{flex:1}.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 2px 0}.pager-controls{display:flex;align-items:center;gap:7px}.pager button:disabled{opacity:.4;cursor:not-allowed}.pager select{width:auto;min-width:75px}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .kpi{padding:15px 17px}.kpi-label{color:var(--muted);font-size:12px}.kpi-value{font-size:24px;font-weight:700;margin:3px 0}.kpi-sub{font-size:11px;color:var(--muted)}
 .content-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:16px}
@@ -64,13 +65,14 @@ table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,t
 <div class="section-title">ตัวกรองข้อมูล</div>
 <section class="filters">
  <div class="filter"><label>ปี</label><select id="f-year"><option value="">ทุกปี</option></select></div>
- <div class="filter"><label>เดือน</label><select id="f-month"><option value="">ทุกเดือน</option></select></div>
- <div class="filter"><label>พนักงานขาย</label><select id="f-salesperson"><option value="">ทุกคน</option></select></div>
- <div class="filter"><label>เขตการขาย</label><select id="f-territory"><option value="">ทุกเขต</option></select></div>
- <div class="filter"><label>ลูกค้า</label><select id="f-customer"><option value="">ทุกลูกค้า</option></select></div>
- <div class="filter"><label>กลุ่มสินค้า</label><select id="f-group"><option value="">ทุกกลุ่ม</option></select></div>
- <div class="filter"><label>สินค้า</label><select id="f-item"><option value="">ทุกสินค้า</option></select></div>
+ <div class="filter"><label>ช่วงเดือน (ตั้งแต่ – ถึง)</label><div class="range-fields"><select id="f-month-from" aria-label="เดือนเริ่มต้น"></select><span>–</span><select id="f-month-to" aria-label="เดือนสิ้นสุด"></select></div></div>
+ <div class="filter"><label>พนักงานขาย (ค้นหารหัส/ชื่อ)</label><input id="f-salesperson" type="search" placeholder="พิมพ์รหัสหรือชื่อ..." autocomplete="off"></div>
+ <div class="filter"><label>เขตการขาย (ค้นหารหัส/ชื่อ)</label><input id="f-territory" type="search" placeholder="พิมพ์รหัสหรือชื่อเขต..." autocomplete="off"></div>
+ <div class="filter"><label>ลูกค้า (ค้นหารหัส/ชื่อ)</label><input id="f-customer" type="search" placeholder="พิมพ์รหัสหรือชื่อลูกค้า..." autocomplete="off"></div>
+ <div class="filter"><label>กลุ่มสินค้า (ค้นหาชื่อ)</label><input id="f-group" type="search" placeholder="พิมพ์ชื่อกลุ่ม..." autocomplete="off"></div>
+ <div class="filter"><label>สินค้า (ค้นหารหัส/ชื่อ)</label><input id="f-item" type="search" placeholder="พิมพ์รหัสหรือชื่อสินค้า..." autocomplete="off"></div>
 </section>
+<div class="note" style="margin:-7px 0 14px">ค้นหาได้ทันทีจากบางส่วนของรหัสหรือชื่อ · ช่วงเดือนเป็นแบบรวมเดือนเริ่มต้นและเดือนสิ้นสุด · ตัวกรองแต่ละมิติจะใช้ชุดข้อมูลที่มีฟิลด์นั้น</div>
 
 <section class="kpis">
  <div class="kpi"><div class="kpi-label">ยอดขายสุทธิ (ไม่รวม VAT)</div><div class="kpi-value" id="k-net">—</div><div class="kpi-sub" id="k-net-sub">รอข้อมูล</div></div>
@@ -87,6 +89,7 @@ table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,t
 <section class="panel">
  <div class="toolbar" style="margin:0 0 12px"><div class="section-title" style="margin:0">รายละเอียดข้อมูล</div><div class="note" id="tableInfo">ยังไม่มีข้อมูล</div></div>
  <div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="tableBody"><tr><td class="empty">กรุณานำเข้าไฟล์ TSV/TXT อย่างน้อย 1 ชุด</td></tr></tbody></table></div>
+ <div class="pager"><div class="note" id="pageInfo">หน้า 0 / 0</div><div class="pager-controls"><label class="note" for="pageSize">แสดง</label><select id="pageSize"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option><option value="250">250</option></select><span class="note">แถว/หน้า</span><button class="secondary" id="prevPage">ก่อนหน้า</button><button class="secondary" id="nextPage">ถัดไป</button></div></div>
 </section>
 <div class="footer">Dynamic Sales Dashboard · Manual Import · No direct SQL connection</div>
 </main>
@@ -151,37 +154,55 @@ document.querySelectorAll('.file-slot').forEach(slot=>{
 });
 document.addEventListener('dragover',e=>e.preventDefault());
 document.addEventListener('drop',e=>{if(e.target.closest('.file-slot'))return;e.preventDefault();const files=[...e.dataTransfer.files];files.forEach(f=>{const k=detectKey(f.name);if(k)loadFile(f,k);});});
-$('clearBtn').addEventListener('click',()=>{Object.keys(data).forEach(k=>{data[k]=[];delete fileInfo[k];$('state-'+k).textContent='รอไฟล์';$('state-'+k).className='slot-state';});document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);refresh();$('message').textContent='ล้างข้อมูลเรียบร้อย';});
-['year','month','salesperson','territory','customer','group','item'].forEach(k=>$('f-'+k).addEventListener('change',refresh));
+let currentPage=1;
+let currentPageSize=50;
+$('clearBtn').addEventListener('click',()=>{
+ Object.keys(data).forEach(k=>{data[k]=[];delete fileInfo[k];$('state-'+k).textContent='รอไฟล์';$('state-'+k).className='slot-state';});
+ document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);
+ document.querySelectorAll('.filters input').forEach(i=>i.value='');
+ currentPage=1;refresh();$('message').textContent='ล้างข้อมูลเรียบร้อย';
+});
+['year','month-from','month-to'].forEach(k=>$('f-'+k).addEventListener('change',()=>{currentPage=1;refresh();}));
+['salesperson','territory','customer','group','item'].forEach(k=>$('f-'+k).addEventListener('input',()=>{currentPage=1;refresh();}));
+$('pageSize').addEventListener('change',()=>{currentPageSize=Number($('pageSize').value)||50;currentPage=1;refresh();});
+$('prevPage').addEventListener('click',()=>{if(currentPage>1){currentPage--;refresh();}});
+$('nextPage').addEventListener('click',()=>{currentPage++;refresh();});
 function allRows(){return Object.values(data).reduce((a,b)=>a+b.length,0)}
 function uniqueFrom(keys,field){const set=new Set();keys.forEach(k=>data[k].forEach(r=>{const v=r[field];if(v!==undefined&&v!==''&&v!==null)set.add(v);}));return [...set].sort((a,b)=>String(a).localeCompare(String(b),'th',{numeric:true}));}
 function fillSelect(id,values,allLabel){const s=$(id),old=s.value;s.innerHTML='';const op=document.createElement('option');op.value='';op.textContent=allLabel;s.appendChild(op);values.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});if(values.includes(old))s.value=old;}
 function updateFilterOptions(){
  fillSelect('f-year',uniqueFrom(Object.keys(data),'year'),'ทุกปี');
- fillSelect('f-month',Array.from({length:12},(_,i)=>String(i+1)),'ทุกเดือน');
- fillSelect('f-salesperson',uniqueFrom(['salesperson','customer'],'salespersonCode'),'ทุกคน');
- fillSelect('f-territory',uniqueFrom(['territory','customer'],'territoryCode'),'ทุกเขต');
- fillSelect('f-customer',uniqueFrom(['customer'],'customerCode'),'ทุกลูกค้า');
- fillSelect('f-group',uniqueFrom(['productgroup','item'],'groupCode'),'ทุกกลุ่ม');
- fillSelect('f-item',uniqueFrom(['item'],'itemNo'),'ทุกสินค้า');
+ const months=Array.from({length:12},(_,i)=>String(i+1));
+ fillSelect('f-month-from',months,'เริ่มเดือน');fillSelect('f-month-to',months,'ถึงเดือน');
+ if(!$('f-month-from').value)$('f-month-from').value='1';
+ if(!$('f-month-to').value)$('f-month-to').value='12';
 }
-function filters(){return {year:$('f-year').value,month:$('f-month').value,salesperson:$('f-salesperson').value,territory:$('f-territory').value,customer:$('f-customer').value,group:$('f-group').value,item:$('f-item').value};}
+function filters(){return {
+ year:$('f-year').value,monthFrom:Number($('f-month-from').value||1),monthTo:Number($('f-month-to').value||12),
+ salesperson:$('f-salesperson').value.trim().toLocaleLowerCase(),territory:$('f-territory').value.trim().toLocaleLowerCase(),
+ customer:$('f-customer').value.trim().toLocaleLowerCase(),group:$('f-group').value.trim().toLocaleLowerCase(),item:$('f-item').value.trim().toLocaleLowerCase()
+};}
+function hasText(value,query){return !query||String(value??'').toLocaleLowerCase().includes(query);}
 function matches(r,f){
- if(f.year&&r.year!==f.year)return false;if(f.month&&String(num(r.month))!==String(num(f.month)))return false;
- if(f.salesperson&&r.salespersonCode!==f.salesperson)return false;
- if(f.territory&&r.territoryCode!==f.territory)return false;
- if(f.customer&&r.customerCode!==f.customer)return false;
- if(f.group&&r.groupCode!==f.group)return false;
- if(f.item&&r.itemNo!==f.item)return false;return true;
+ const month=num(r.month);
+ if(f.year&&String(r.year)!==f.year)return false;
+ if(month<f.monthFrom||month>f.monthTo)return false;
+ if(f.salesperson&&('salespersonCode' in r||'salespersonName' in r)&&!hasText(r.salespersonCode,f.salesperson)&&!hasText(r.salespersonName,f.salesperson))return false;
+ if(f.territory&&('territoryCode' in r||'territoryName' in r)&&!hasText(r.territoryCode,f.territory)&&!hasText(r.territoryName,f.territory))return false;
+ if(f.customer&&('customerCode' in r||'customerName' in r)&&!hasText(r.customerCode,f.customer)&&!hasText(r.customerName,f.customer))return false;
+ if(f.group&&('groupCode' in r||'groupName' in r)&&!hasText(r.groupCode,f.group)&&!hasText(r.groupName,f.group))return false;
+ if(f.item&&('itemNo' in r||'itemDescription' in r)&&!hasText(r.itemNo,f.item)&&!hasText(r.itemDescription,f.item))return false;
+ return true;
 }
 function chooseSource(f){
- // Choose the most detailed uploaded dataset that can apply the selected dimensions.
+ // Select the aggregate that contains the most specifically requested dimension.
  if(f.item&&data.item.length)return 'item';
- if(f.customer&&data.customer.length)return 'customer';
- if(f.salesperson&&data.salesperson.length)return 'salesperson';
- if(f.territory&&data.territory.length)return 'territory';
  if(f.group&&data.productgroup.length)return 'productgroup';
- return ['item','customer','salesperson','territory','productgroup'].find(k=>data[k].length)||null;
+ if(f.customer&&data.customer.length)return 'customer';
+ if(f.territory&&data.territory.length)return 'territory';
+ if(f.salesperson&&data.salesperson.length)return 'salesperson';
+ if(f.item&&data.item.length)return 'item';
+ return ['salesperson','customer','territory','productgroup','item'].find(k=>data[k].length)||null;
 }
 function aggregate(rows){
  return rows.reduce((a,r)=>{a.iq+=num(r.invoiceQty);a.cq+=num(r.creditQty);a.nq+=num(r.netQty);a.ia+=num(r.invoiceAmount);a.ca+=num(r.creditAmount);a.ns+=num(r.netSales);return a;},{iq:0,cq:0,nq:0,ia:0,ca:0,ns:0});
@@ -215,10 +236,16 @@ function refresh(){
 }
 function renderTable(rows,source){
  const head=$('tableHead'),body=$('tableBody');head.innerHTML='';body.innerHTML='';
- if(!source||!rows.length){body.innerHTML='<tr><td class="empty">ไม่มีข้อมูลตามตัวกรองที่เลือก</td></tr>';$('tableInfo').textContent='0 แถว';return;}
- const cols=SCHEMAS[source].cols;const tr=document.createElement('tr');cols.forEach(c=>{const th=document.createElement('th');th.textContent=LABELS[c]||c;if(['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c))th.className='num';tr.appendChild(th);});head.appendChild(tr);
- rows.slice(0,500).forEach(r=>{const tr=document.createElement('tr');cols.forEach(c=>{const td=document.createElement('td');const v=r[c]??'';td.textContent=['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c)?(['invoiceAmount','creditAmount','netSales'].includes(c)?money(v):qty(v)):v;if(['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c))td.className='num';tr.appendChild(td);});body.appendChild(tr);});
- $('tableInfo').textContent=`${rows.length.toLocaleString()} แถว · แสดงสูงสุด 500 แถว · ${SCHEMAS[source].label}`;
+ if(!source||!rows.length){body.innerHTML='<tr><td class="empty">ไม่มีข้อมูลตามตัวกรองที่เลือก</td></tr>';$('tableInfo').textContent='0 แถว';$('pageInfo').textContent='หน้า 0 / 0';$('prevPage').disabled=true;$('nextPage').disabled=true;return;}
+ const cols=SCHEMAS[source].cols;const tr=document.createElement('tr');
+ cols.forEach(c=>{const th=document.createElement('th');th.textContent=LABELS[c]||c;if(['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c))th.className='num';tr.appendChild(th);});head.appendChild(tr);
+ const total=rows.length,totalPages=Math.max(1,Math.ceil(total/currentPageSize));
+ if(currentPage>totalPages)currentPage=totalPages;
+ const start=(currentPage-1)*currentPageSize,end=Math.min(start+currentPageSize,total);
+ rows.slice(start,end).forEach(r=>{const tr=document.createElement('tr');cols.forEach(c=>{const td=document.createElement('td');const v=r[c]??'';td.textContent=['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c)?(['invoiceAmount','creditAmount','netSales'].includes(c)?money(v):qty(v)):v;if(['invoiceQty','creditQty','netQty','invoiceAmount','creditAmount','netSales'].includes(c))td.className='num';tr.appendChild(td);});body.appendChild(tr);});
+ $('tableInfo').textContent=`ทั้งหมด ${total.toLocaleString()} แถว · ${SCHEMAS[source].label}`;
+ $('pageInfo').textContent=`แสดง ${(start+1).toLocaleString()}–${end.toLocaleString()} จาก ${total.toLocaleString()} แถว · หน้า ${currentPage} / ${totalPages}`;
+ $('prevPage').disabled=currentPage<=1;$('nextPage').disabled=currentPage>=totalPages;
 }
 refresh();
 </script>
